@@ -52,7 +52,7 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
           child: Column(
             children: [
               const Spacer(),
-              // Vòng tròn SOS + hiệu ứng
+              // Vòng tròn SOS, hiệu ứng
               Center(
                 child: AnimatedBuilder(
                   animation: _ac,
