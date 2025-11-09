@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(const SOSApp());
-
-class SOSApp extends StatelessWidget {
-  const SOSApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SOS',
-      theme: ThemeData(useMaterial3: true),
-      home: const WelcomeSOSScreen(),
-    );
-  }
-}
-
 class WelcomeSOSScreen extends StatefulWidget {
   const WelcomeSOSScreen({super.key});
 
@@ -51,6 +35,62 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
+              const SizedBox(height: 60),
+              // Logo và tiêu đề
+              Column(
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.red.shade400,
+                          Colors.red.shade700,
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.emergency,
+                      size: 60,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'SOS App',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'An toàn của bạn là ưu tiên hàng đầu của chúng tôi',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const Spacer(),
               // Vòng tròn SOS, hiệu ứng
               Center(
@@ -69,9 +109,7 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.blueAccent.withOpacity(
-                              opacity * 0.35,
-                            ),
+                            color: Colors.redAccent.withValues(alpha: opacity * 0.35),
                             width: 10 * (1 - v * 0.7),
                           ),
                         ),
@@ -86,43 +124,38 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                         // Nút tròn SOS
                         GestureDetector(
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('SOS pressed')),
-                            );
+                            Navigator.pushNamed(context, '/login');
                           },
                           child: Container(
                             width: baseSize,
                             height: baseSize,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: RadialGradient(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                                 colors: [
-                                  const Color.fromARGB(255, 255, 244, 247),
-                                  const Color.fromARGB(2255, 255, 244, 247),
+                                  Colors.red.shade400,
+                                  Colors.red.shade700,
                                 ],
-                                center: Alignment.topLeft,
-                                radius: 1.0,
                               ),
-                              boxShadow: const [
+                              boxShadow: [
                                 BoxShadow(
-                                  color: Color(0x22000000),
-                                  blurRadius: 18,
-                                  offset: Offset(0, 8),
+                                  color: Colors.red.withValues(alpha: 0.4),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 12),
+                                  spreadRadius: 2,
                                 ),
                               ],
-                              border: Border.all(
-                                color: Colors.grey.shade300,
-                                width: 6,
-                              ),
                             ),
                             child: const Center(
                               child: Text(
                                 'SOS',
                                 style: TextStyle(
                                   fontSize: 48,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.redAccent,
-                                  letterSpacing: 2,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: 3,
                                 ),
                               ),
                             ),
@@ -134,6 +167,62 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                 ),
               ),
               const Spacer(),
+              // Nút Login và Sign Up
+              Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Đăng Nhập',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/signup');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                        side: const BorderSide(color: Colors.redAccent, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Đăng Ký',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
               const Text(
                 'Powered by UTH TEAM',
                 style: TextStyle(fontSize: 12, color: Colors.black54),
