@@ -14,7 +14,7 @@ class SOSApp extends StatelessWidget {
       title: 'SOS App',
       theme: appTheme,
       routes: appRoutes,
-      initialRoute: '/',
+      initialRoute: '/login',
     );
   }
 }

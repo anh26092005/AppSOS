@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(const SOSApp());
-
-class SOSApp extends StatelessWidget {
-  const SOSApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SOS',
-      theme: ThemeData(useMaterial3: true),
-      home: const WelcomeSOSScreen(),
-    );
-  }
-}
-
 class WelcomeSOSScreen extends StatefulWidget {
   const WelcomeSOSScreen({super.key});
 
@@ -63,15 +47,17 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                     Widget ring(double v) {
                       final size = baseSize + v * 120; // 180 -> 300
                       final opacity = (1 - v).clamp(0.0, 1.0);
+                      // Convert fractional opacity to 0-255 alpha for withAlpha
+                      final intAlpha = (opacity * 0.35 * 255)
+                          .clamp(0, 255)
+                          .round();
                       return Container(
                         width: size,
                         height: size,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.blueAccent.withOpacity(
-                              opacity * 0.35,
-                            ),
+                            color: Colors.blueAccent.withAlpha(intAlpha),
                             width: 10 * (1 - v * 0.7),
                           ),
                         ),
@@ -86,9 +72,8 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                         // Nút tròn SOS
                         GestureDetector(
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('SOS pressed')),
-                            );
+                            // Navigate to login screen
+                            Navigator.pushNamed(context, '/login');
                           },
                           child: Container(
                             width: baseSize,
@@ -98,7 +83,8 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                               gradient: RadialGradient(
                                 colors: [
                                   const Color.fromARGB(255, 255, 244, 247),
-                                  const Color.fromARGB(2255, 255, 244, 247),
+                                  // use 225 alpha instead of invalid 2255
+                                  const Color.fromARGB(225, 255, 244, 247),
                                 ],
                                 center: Alignment.topLeft,
                                 radius: 1.0,
