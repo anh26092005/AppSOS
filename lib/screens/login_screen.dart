@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart'; // Nhớ import API của anh
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,21 +10,56 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _emailOrPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _emailOrPhoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement login logic
-      Navigator.pushReplacementNamed(context, '/main');
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final input = _emailOrPhoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    final isPhone = RegExp(r'^[0-9]+$').hasMatch(input);
+
+    try {
+      // loading animation
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final res = await ApiService.login(
+        email: isPhone ? null : input,
+        phone: isPhone ? input : null,
+        password: password,
+      );
+
+      Navigator.pop(context);
+
+      if (res.containsKey('token')) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công ✅')));
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sai thông tin đăng nhập ❌')),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi đăng nhập: $e')));
     }
   }
 
@@ -48,7 +84,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back, color: Colors.black87, size: 20),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Colors.black87,
+              size: 20,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -62,7 +102,6 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                // Logo hoặc icon
                 Center(
                   child: Container(
                     width: 80,
@@ -72,10 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Colors.red.shade400,
-                          Colors.red.shade700,
-                        ],
+                        colors: [Colors.red.shade400, Colors.red.shade700],
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -100,26 +136,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
-                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Đăng nhập để tiếp tục',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 48),
+
+                // INPUT email/phone
                 TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
+                  controller: _emailOrPhoneController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'Nhập email của bạn',
-                    prefixIcon: const Icon(Icons.email_outlined, color: Colors.redAccent),
+                    labelText: 'Email hoặc số điện thoại',
+                    hintText: 'Nhập email hoặc số đt của bạn',
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: Colors.redAccent,
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -128,35 +164,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
+                      borderSide: BorderSide(color: Colors.grey.shade200),
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập email hoặc số điện thoại';
                     }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                    final input = value.trim();
+                    final isPhone = RegExp(r'^[0-9]+$').hasMatch(input);
+
+                    if (!isPhone && !input.contains('@')) {
+                      return 'Nhập email hợp lệ hoặc số điện thoại hợp lệ';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // PASSWORD
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Mật Khẩu',
-                    hintText: 'Nhập mật khẩu của bạn',
-                    prefixIcon: const Icon(Icons.lock_outline, color: Colors.redAccent),
+                    labelText: 'Mật khẩu',
+                    hintText: 'Nhập mật khẩu',
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: Colors.redAccent,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -176,37 +212,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return 'Nhập mật khẩu';
                     }
                     if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                      return 'Mật khẩu ít nhất 6 ký tự';
                     }
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 12),
+
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // TODO: Implement forgot password
-                    },
-                    child: Text(
+                    onPressed: () {},
+                    child: const Text(
                       'Quên mật khẩu?',
                       style: TextStyle(
                         color: Colors.redAccent,
@@ -215,7 +239,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 32),
+
+                // LOGIN BUTTON
                 SizedBox(
                   height: 56,
                   child: ElevatedButton(
@@ -226,19 +253,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      elevation: 2,
                     ),
                     child: const Text(
                       'Đăng Nhập',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -268,4 +295,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

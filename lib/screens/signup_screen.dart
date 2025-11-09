@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -10,25 +11,64 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController(); // ✅ thêm
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose(); // ✅ dispose phone
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleSignup() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement signup logic
-      Navigator.pushReplacementNamed(context, '/main');
+  void _handleSignup() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final fullName = _nameController.text.trim();
+    final phone = _phoneController.text.trim(); // ✅ lấy SĐT
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    try {
+      // loading UI
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final res = await ApiService.register(
+        fullName: fullName,
+        phone: phone, // ✅ gửi đúng phone
+        email: email,
+        password: password,
+      );
+
+      Navigator.pop(context); // close loading
+
+      if (res.containsKey('token')) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công ✅')));
+        Navigator.pushReplacementNamed(context, '/login');
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đăng ký thất bại!')));
+      }
+    } catch (e) {
+      Navigator.pop(context); // close loading
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi đăng ký: $e')));
     }
   }
 
@@ -47,13 +87,17 @@ class _SignupScreenState extends State<SignupScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: const Icon(Icons.arrow_back, color: Colors.black87, size: 20),
+            child: const Icon(
+              Icons.arrow_back,
+              color: Colors.black87,
+              size: 20,
+            ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -76,14 +120,11 @@ class _SignupScreenState extends State<SignupScreen> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Colors.red.shade400,
-                          Colors.red.shade700,
-                        ],
+                        colors: [Colors.red.shade400, Colors.red.shade700],
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withValues(alpha: 0.3),
+                          color: Colors.red.withOpacity(0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -111,89 +152,105 @@ class _SignupScreenState extends State<SignupScreen> {
                 Text(
                   'Đăng ký để bắt đầu',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 48),
+
+                // Họ tên
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
                     labelText: 'Họ và Tên',
-                    hintText: 'Nhập họ và tên của bạn',
-                    prefixIcon: const Icon(Icons.person_outline, color: Colors.redAccent),
+                    prefixIcon: const Icon(
+                      Icons.person_outline,
+                      color: Colors.redAccent,
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Vui lòng nhập họ và tên';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // Số điện thoại ✅
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Số điện thoại',
+                    prefixIcon: const Icon(
+                      Icons.phone,
+                      color: Colors.redAccent,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập số điện thoại';
+                    }
+                    if (value.trim().length < 8) {
+                      return 'Số điện thoại không hợp lệ';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    hintText: 'Nhập email của bạn',
-                    prefixIcon: const Icon(Icons.email_outlined, color: Colors.redAccent),
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: Colors.redAccent,
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return 'Vui lòng nhập email';
                     }
                     if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                      return 'Email không hợp lệ';
                     }
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 16),
+                // Mật khẩu
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Mật Khẩu',
-                    hintText: 'Nhập mật khẩu của bạn',
-                    prefixIcon: const Icon(Icons.lock_outline, color: Colors.redAccent),
+                    labelText: 'Mật khẩu',
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: Colors.redAccent,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -201,49 +258,39 @@ class _SignupScreenState extends State<SignupScreen> {
                             : Icons.visibility,
                         color: Colors.grey.shade600,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                      onPressed: () => setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      }),
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return 'Vui lòng nhập mật khẩu';
                     }
                     if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
+                      return 'Mật khẩu tối thiểu 6 ký tự';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // Xác nhận mật khẩu
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
-                    labelText: 'Xác Nhận Mật Khẩu',
-                    hintText: 'Nhập lại mật khẩu',
-                    prefixIcon: const Icon(Icons.lock_outline, color: Colors.redAccent),
+                    labelText: 'Xác nhận mật khẩu',
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: Colors.redAccent,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
@@ -251,41 +298,26 @@ class _SignupScreenState extends State<SignupScreen> {
                             : Icons.visibility,
                         color: Colors.grey.shade600,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
+                      onPressed: () => setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      }),
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.redAccent, width: 2),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
+                      return 'Vui lòng xác nhận mật khẩu';
                     }
                     if (value != _passwordController.text) {
-                      return 'Passwords do not match';
+                      return 'Mật khẩu không trùng khớp';
                     }
                     return null;
                   },
                 ),
+
                 const SizedBox(height: 32),
                 SizedBox(
                   height: 56,
@@ -310,6 +342,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -339,4 +372,3 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
-
