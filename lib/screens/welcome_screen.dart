@@ -31,10 +31,25 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
+        child: Stack(
+          children: [
+            // Nút debug test permissions (góc trên phải)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.bug_report, color: Colors.grey),
+                tooltip: 'Test Permissions',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/permission-test');
+                },
+              ),
+            ),
+            // Nội dung chính
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                children: [
               const SizedBox(height: 60),
               // Logo và tiêu đề
               Column(
@@ -228,8 +243,10 @@ class _WelcomeSOSScreenState extends State<WelcomeSOSScreen>
                 style: TextStyle(fontSize: 12, color: Colors.black54),
               ),
               const SizedBox(height: 16),
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

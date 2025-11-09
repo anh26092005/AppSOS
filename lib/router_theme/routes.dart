@@ -9,6 +9,7 @@ import '../screens/account_screen.dart';
 import '../screens/tnv_screen.dart';
 import '../screens/info_tnv_screen.dart';
 import '../screens/volunteer_dashboard_screen.dart';
+import '../screens/permission_test_screen.dart';
 
 Map<String, WidgetBuilder> appRoutes = {
   '/': (_) => const WelcomeSOSScreen(),
@@ -24,4 +25,5 @@ Map<String, WidgetBuilder> appRoutes = {
     return InfoTnvScreen(tnvData: args as Map<String, dynamic>?);
   },
   '/volunteer-dashboard': (_) => const VolunteerDashboardScreen(),
+  '/permission-test': (_) => const PermissionTestScreen(),
 };

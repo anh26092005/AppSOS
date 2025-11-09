@@ -52,19 +52,23 @@ class _SignupScreenState extends State<SignupScreen> {
         password: password,
       );
 
+      if (!mounted) return;
       Navigator.pop(context); // close loading
 
       if (res.containsKey('token')) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công ✅')));
         Navigator.pushReplacementNamed(context, '/login');
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Đăng ký thất bại!')));
       }
     } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context); // close loading
       ScaffoldMessenger.of(
         context,
@@ -87,7 +91,7 @@ class _SignupScreenState extends State<SignupScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -124,7 +128,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha: 0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),

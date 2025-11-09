@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart'; // Nhớ import API của anh
+import '../widgets/permission_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,19 +44,32 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
 
+      if (!mounted) return;
       Navigator.pop(context);
 
       if (res.containsKey('token')) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công ✅')));
+
+        // Navigate to main screen
         Navigator.pushReplacementNamed(context, '/main');
+
+        // Hiển thị dialog xin quyền sau khi vào màn hình chính
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (context.mounted) {
+            PermissionDialog.show(context);
+          }
+        });
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sai thông tin đăng nhập ❌')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(
         context,

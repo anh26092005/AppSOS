@@ -8,7 +8,6 @@ class PostService {
   factory PostService() => _instance;
   
   final List<PostModel> _allPosts = [];
-  int _currentPage = 0;
 
   PostService._internal() {
     // Initialize with mock data
@@ -64,9 +63,6 @@ class PostService {
     // Simulate API delay
     await Future.delayed(const Duration(milliseconds: 800));
 
-    if (refresh) {
-      _currentPage = 0;
-    }
 
     final startIndex = page * limit;
     final endIndex = (startIndex + limit).clamp(0, _allPosts.length);

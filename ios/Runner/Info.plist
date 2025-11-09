@@ -49,6 +49,14 @@
 	<string>Ứng dụng cần quyền truy cập vị trí để hiển thị bản đồ và tìm kiếm tình nguyện viên gần nhất.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Ứng dụng cần quyền truy cập vị trí để hiển thị bản đồ và tìm kiếm tình nguyện viên gần nhất.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập camera để chụp ảnh và ghi hình trong trường hợp khẩn cấp.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh minh chứng.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Ứng dụng cần quyền lưu ảnh vào thư viện.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập danh bạ để liên hệ với người thân trong trường hợp khẩn cấp.</string>
 	<key>GMSApiKey</key>
 	<string>YOUR_API_KEY</string>
 </dict>
