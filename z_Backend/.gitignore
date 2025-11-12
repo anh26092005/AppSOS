@@ -28,6 +28,9 @@ tmp/
 .env.*
 .env
 
+# Firebase service account (sensitive)
+config/firebase-service-account.json
+
 # IDE and editor configs
 .vscode/
 .idea/

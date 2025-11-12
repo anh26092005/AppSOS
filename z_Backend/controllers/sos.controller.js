@@ -1,6 +1,7 @@
 const { SosCase, SosResponderQueue, VolunteerProfile, User } = require('../models');
 const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
+const { sendNotificationToUser } = require('../services/fcm.service');
 
 // Helper function: Tìm SOS case theo code hoặc ObjectId
 const findSosCaseByIdOrCode = async (identifier) => {
@@ -131,6 +132,29 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     );
 
     await Promise.all(queuePromises);
+
+    // Gửi FCM notification cho tất cả TNV
+    try {
+      const notificationPromises = volunteers.map(async (volunteer) => {
+        const distance = (volunteer.distance || volunteer.distanceKm || 0).toFixed(1);
+        const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+        const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
+
+        return sendNotificationToUser(volunteer.userId, title, body, {
+          type: 'SOS_CASE',
+          caseId: sosCase._id.toString(),
+          caseCode: sosCase.code,
+          emergencyType: sosCase.emergencyType,
+          distance: distance,
+        });
+      });
+
+      await Promise.all(notificationPromises);
+      console.log(`FCM notifications sent to ${volunteers.length} volunteers`);
+    } catch (fcmError) {
+      // Không throw error để không ảnh hưởng đến flow chính
+      console.error('Error sending FCM notifications:', fcmError);
+    }
 
     return volunteers;
   } catch (error) {

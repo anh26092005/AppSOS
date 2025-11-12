@@ -10,6 +10,7 @@ import '../screens/tnv_screen.dart';
 import '../screens/info_tnv_screen.dart';
 import '../screens/volunteer_dashboard_screen.dart';
 import '../screens/permission_test_screen.dart';
+import '../screens/fcm_token_screen.dart';
 
 Map<String, WidgetBuilder> appRoutes = {
   '/': (_) => const WelcomeSOSScreen(),
@@ -26,4 +27,5 @@ Map<String, WidgetBuilder> appRoutes = {
   },
   '/volunteer-dashboard': (_) => const VolunteerDashboardScreen(),
   '/permission-test': (_) => const PermissionTestScreen(),
+  '/fcm-token': (_) => const FCMTokenScreen(),
 };

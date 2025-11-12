@@ -4,6 +4,7 @@ const articleRoutes = require('./article.routes');
 const sosRoutes = require('./sos.routes');
 const adminRoutes = require('./admin.routes');
 const volunteerRoutes = require('./volunteer.routes');
+const deviceRoutes = require('./device.routes');
 
 const router = express.Router();
 
@@ -12,5 +13,6 @@ router.use('/articles', articleRoutes);
 router.use('/sos', sosRoutes);
 router.use('/admin', adminRoutes);
 router.use('/admin/volunteers', volunteerRoutes);
+router.use('/devices', deviceRoutes);
 
 module.exports = router;

@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const initializeDatabase = require('./config/initializeDatabase');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
+const { initializeFirebase } = require('./services/fcm.service');
 
 const app = express();
 
@@ -57,6 +58,19 @@ const startServer = async () => {
   try {
     await connectDB();
     await initializeDatabase();
+
+    // Khởi tạo Firebase (không throw error nếu thất bại)
+    try {
+      initializeFirebase();
+      // eslint-disable-next-line no-console
+      console.log('Firebase initialized successfully');
+    } catch (firebaseError) {
+      // eslint-disable-next-line no-console
+      console.error('Firebase initialization failed:', firebaseError.message);
+      // eslint-disable-next-line no-console
+      console.log('Server will continue without Firebase push notifications');
+    }
+
     app.listen(PORT, HOST, () => {
       const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
       // eslint-disable-next-line no-console

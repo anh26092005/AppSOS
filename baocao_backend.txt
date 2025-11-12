@@ -1,0 +1,187 @@
+CẤU TRÚC BÁO CÁO BACKEND - SAFE CONNECT SOS APP
+1. PHẦN MỞ ĐẦU
+1.1. Giới thiệu dự án
+Mục đích, ý nghĩa
+Phạm vi và đối tượng sử dụng
+1.2. Mục tiêu báo cáo
+1.3. Cấu trúc báo cáo
+2. TỔNG QUAN HỆ THỐNG
+2.1. Kiến trúc tổng thể
+Sơ đồ kiến trúc (Backend, Database, External Services)
+Luồng dữ liệu cơ bản
+2.2. Công nghệ sử dụng
+Node.js, Express.js
+MongoDB + Mongoose
+JWT Authentication
+AWS S3
+Các thư viện khác (bcryptjs, cors, multer, ...)
+2.3. Môi trường phát triển
+Yêu cầu hệ thống
+Cấu hình môi trường (.env)
+3. KIẾN TRÚC BACKEND
+3.1. Cấu trúc thư mục
+Sơ đồ cây thư mục
+Giải thích từng thư mục:
+config/: Cấu hình DB, S3, khởi tạo database
+controllers/: Logic xử lý API
+middleware/: Authentication, Error Handler
+models/: Mongoose models và schemas
+routes/: Định nghĩa routes
+utils/: Helper functions
+3.2. Mô hình MVC/MVC-like
+Routes → Controllers → Models → Database
+3.3. Luồng xử lý request
+Middleware → Routes → Controllers → Response
+4. CƠ SỞ DỮ LIỆU
+4.1. Tổng quan MongoDB
+Lý do chọn MongoDB
+Cấu hình kết nối
+4.2. Schema Design
+Liệt kê các collections:
+users - Quản lý người dùng
+volunteer_profiles - Hồ sơ tình nguyện viên
+sos_cases - Tình huống khẩn cấp
+sos_channels - Kênh chat
+sos_messages - Tin nhắn
+sos_responder_queue - Hàng đợi phản hồi
+articles - Bài viết
+comments - Bình luận
+notifications - Thông báo
+devices - Thiết bị
+skills_master - Kỹ năng
+media_assets - Tài nguyên media
+moderation_logs - Nhật ký kiểm duyệt
+Mô tả từng schema (fields, types, relationships)
+Sơ đồ ER (Entity Relationship)
+4.3. Indexes
+Indexes đã tạo và mục đích
+GeoIndex cho location queries
+Unique indexes
+4.4. Validation
+JSON Schema validators
+Mongoose validators
+5. XÁC THỰC VÀ BẢO MẬT
+5.1. Authentication
+JWT (JSON Web Token)
+Luồng đăng ký/đăng nhập
+Token generation và verification
+5.2. Authorization
+Role-based access control (USER, TNV_CN, TNV_TC, ADMIN)
+Middleware kiểm tra quyền
+5.3. Bảo mật
+Mã hóa mật khẩu (bcryptjs)
+CORS
+Cookie security
+Input validation
+6. API ENDPOINTS
+6.1. Authentication API (/api/auth)
+POST /api/auth/register - Đăng ký
+POST /api/auth/login - Đăng nhập
+GET /api/auth/me - Lấy thông tin user
+Request/Response examples
+6.2. SOS Case API (/api/sos)
+POST /api/sos - Tạo SOS case
+GET /api/sos - Danh sách cases (filter, pagination)
+GET /api/sos/:caseId - Chi tiết case
+POST /api/sos/:caseId/accept - Chấp nhận case
+POST /api/sos/:caseId/decline - Từ chối case
+POST /api/sos/:caseId/cancel - Hủy case
+GET /api/sos/:caseId/directions - Lấy Google Maps directions
+Request/Response examples
+6.3. Article API (/api/articles)
+GET /api/articles - Danh sách bài viết
+GET /api/articles/:id - Chi tiết bài viết
+POST /api/articles - Tạo bài viết
+PUT /api/articles/:id - Cập nhật
+DELETE /api/articles/:id - Xóa
+POST /api/articles/:id/like - Like/Unlike
+POST /api/articles/upload-image - Upload ảnh lên S3
+Request/Response examples
+6.4. Volunteer API (/api/admin/volunteers)
+Các endpoints quản lý tình nguyện viên
+6.5. Admin API (/api/admin)
+Các endpoints quản trị
+6.6. Health Check
+GET / và GET /health
+7. TÍNH NĂNG NỔI BẬT
+7.1. Geo-location
+GeoJSON
+Tìm tình nguyện viên gần nhất (geoNear)
+Tính khoảng cách
+7.2. Real-time SOS Dispatch
+Luồng tạo case → tìm volunteer → accept → tracking
+Queue management
+7.3. File Upload (AWS S3)
+Cấu hình S3
+Upload ảnh bài viết
+Presigned URLs
+7.4. Google Maps Integration
+Directions API
+Tạo URL chỉ đường
+8. MIDDLEWARE VÀ XỬ LÝ LỖI
+8.1. Authentication Middleware
+JWT verification
+Role checking
+8.2. Error Handler
+Cấu trúc lỗi
+Error response format
+Logging
+9. TESTING
+9.1. Postman Collections
+Các collection đã tạo
+Environment variables
+9.2. Test Cases
+Test flow cơ bản
+Test scenarios
+9.3. Kết quả test
+Screenshots/Results
+10. DEPLOYMENT VÀ CẤU HÌNH
+10.1. Environment Variables
+Danh sách biến môi trường
+Giải thích từng biến
+10.2. Khởi động server
+Scripts
+Database initialization
+10.3. Production considerations
+Security best practices
+Performance optimization
+11. KẾT QUẢ VÀ ĐÁNH GIÁ
+11.1. Kết quả đạt được
+Tính năng đã hoàn thành
+Số lượng API endpoints
+Database collections
+11.2. Đánh giá
+Điểm mạnh
+Hạn chế và hướng cải thiện
+11.3. Bài học kinh nghiệm
+12. KẾT LUẬN
+Tóm tắt
+Hướng phát triển
+PHỤ LỤC
+A. Sơ đồ database chi tiết
+B. Postman Collection exports
+C. Code snippets quan trọng
+D. Tài liệu tham khảo
+LƯU Ý KHI VIẾT BÁO CÁO
+Sơ đồ và hình ảnh:
+Kiến trúc hệ thống
+ER diagram
+Sequence diagrams cho các flow chính
+API flow diagrams
+Code examples:
+Trích dẫn code quan trọng (controllers, models, middleware)
+Giải thích logic
+Screenshots:
+Postman test results
+Database documents mẫu
+API responses
+Số liệu cụ thể:
+Số lượng endpoints
+Số collections
+Số models
+Response times (nếu có)
+So sánh và phân tích:
+So sánh công nghệ đã chọn
+Phân tích thiết kế database
+Giải thích quyết định kiến trúc
+Bạn muốn tôi tạo template chi tiết cho phần nào trước, hoặc cần tôi phân tích sâu hơn phần nào?
