@@ -729,7 +729,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              Navigator.pushNamed(context, '/sos');
+              Navigator.pushNamed(context, '/sos-emergency');
             },
             borderRadius: BorderRadius.circular(35),
             child: const Center(

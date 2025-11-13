@@ -4,6 +4,7 @@ import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/sos_screen.dart';
+import '../screens/sos_emergency_screen.dart';
 import '../screens/sos_found_screen.dart';
 import '../screens/account_screen.dart';
 import '../screens/tnv_screen.dart';
@@ -18,6 +19,7 @@ Map<String, WidgetBuilder> appRoutes = {
   '/signup': (_) => const SignupScreen(),
   '/main': (_) => const MainScreen(),
   '/sos': (_) => const SosScreen(),
+  '/sos-emergency': (_) => const SosEmergencyScreen(),
   '/sos-found': (_) => const SosFoundScreen(),
   '/account': (_) => const AccountScreen(),
   '/tnv': (_) => const TnvScreen(),

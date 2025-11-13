@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SosScreen extends StatefulWidget {
   const SosScreen({super.key});
@@ -7,60 +9,196 @@ class SosScreen extends StatefulWidget {
   State<SosScreen> createState() => _SosScreenState();
 }
 
-class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  bool _sosActive = false;
+class _SosScreenState extends State<SosScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  GoogleMapController? _mapController;
+  Position? _currentPosition;
+  bool _isLoadingLocation = false;
+
+  final CameraPosition _initialPosition = const CameraPosition(
+    target: LatLng(10.8231, 106.6297), // TP.HCM coordinates
+    zoom: 14,
+  );
+
+  final Set<Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
+    _getCurrentLocation();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
-  void _activateSOS() {
+  Future<void> _getCurrentLocation() async {
     setState(() {
-      _sosActive = true;
+      _isLoadingLocation = true;
     });
 
-    // Show confirmation dialog
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vui lòng bật dịch vụ vị trí'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        setState(() {
+          _isLoadingLocation = false;
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Quyền truy cập vị trí bị từ chối'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          setState(() {
+            _isLoadingLocation = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Quyền truy cập vị trí bị từ chối vĩnh viễn'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() {
+          _isLoadingLocation = false;
+        });
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _currentPosition = position;
+        _markers.clear();
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('current_location'),
+            position: LatLng(position.latitude, position.longitude),
+            infoWindow: const InfoWindow(title: 'Vị trí của bạn'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          ),
+        );
+      });
+
+      _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 16,
+          ),
+        ),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã cập nhật vị trí hiện tại'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi lấy vị trí: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoadingLocation = false;
+      });
+    }
+  }
+
+  void _sendSOS() {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập tên của bạn'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng lấy vị trí hiện tại trước'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('SOS Activated!'),
-        content: const Text(
-          'Emergency services have been notified. Your location has been shared with your emergency contacts.',
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
+        title: const Text(
+          'Gửi SOS',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text('Bạn có chắc chắn muốn gửi tín hiệu SOS khẩn cấp?'),
         actions: [
           TextButton(
-            onPressed: () {
-              setState(() {
-                _sosActive = false;
-              });
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context);
+              // TODO: Integrate with backend API to send SOS
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Đã gửi tín hiệu SOS thành công!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              _nameController.clear();
+              _descriptionController.clear();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Confirm'),
+            child: const Text('Gửi ngay'),
           ),
         ],
       ),
@@ -69,111 +207,299 @@ class _SosScreenState extends State<SosScreen> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    const baseSize = 200.0;
-
     return Scaffold(
-      backgroundColor: _sosActive ? Colors.red.shade50 : Colors.white,
-      appBar: AppBar(
-        title: const Text('Emergency SOS'),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  final v1 = _controller.value;
-                  final v2 = (v1 + 0.5) % 1.0;
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Cứu hộ khẩn cấp',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Gửi vị trí, thông tin của bạn. Người cứu hộ sẽ giúp đỡ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
 
-                  Widget ring(double v) {
-                    final size = baseSize + v * 150;
-                    final opacity = (1 - v).clamp(0.0, 1.0);
-                    return Container(
-                      width: size,
-                      height: size,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Map
+                    Container(
+                      height: 200,
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: GoogleMap(
+                          initialCameraPosition: _initialPosition,
+                          onMapCreated: (controller) {
+                            _mapController = controller;
+                          },
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          zoomControlsEnabled: false,
+                          markers: _markers,
+                          mapType: MapType.normal,
+                        ),
+                      ),
+                    ),
+
+                    // Location Button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                        icon: _isLoadingLocation
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.my_location, size: 18),
+                        label: Text(_isLoadingLocation ? 'Đang lấy vị trí...' : 'Lấy vị trí hiện tại'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Form
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          // Name Input
+                          TextField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              hintText: 'Nhập tên của bạn (*)',
+                              hintStyle: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade400,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.redAccent,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Description Input
+                          TextField(
+                            controller: _descriptionController,
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              hintText: 'Nhập nội dung cần hỗ trợ/ Sự cố nếu có (Ghi chú thêm chi tiết)',
+                              hintStyle: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade400,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.redAccent,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // SOS Button
+                    Container(
+                      width: 140,
+                      height: 140,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.redAccent.withValues(alpha: opacity * 0.4),
-                          width: 12 * (1 - v * 0.7),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.red.shade300,
+                            Colors.red.shade600,
+                          ],
                         ),
-                      ),
-                    );
-                  }
-
-                  return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ring(v1),
-                      ring(v2),
-                      GestureDetector(
-                        onTap: _activateSOS,
-                        child: Container(
-                          width: baseSize,
-                          height: baseSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.red.shade300,
-                                Colors.red.shade600,
-                              ],
-                              center: Alignment.topLeft,
-                              radius: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withValues(alpha: 0.4),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
-                          child: const Center(
-                            child: Text(
-                              'SOS',
-                              style: TextStyle(
-                                fontSize: 56,
-                                fontWeight: FontWeight.w900,
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _sendSOS,
+                          borderRadius: BorderRadius.circular(70),
+                          child: Center(
+                            child: Container(
+                              width: 110,
+                              height: 110,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
                                 color: Colors.white,
-                                letterSpacing: 4,
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'SOS',
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 48),
-              const Text(
-                'Press the button to send emergency alert',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
+                    ),
+
+                    const SizedBox(height: 32),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  'Your location will be shared with emergency services and your emergency contacts',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black45,
+            ),
+
+            // Bottom Navigation
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.home_outlined, color: Colors.grey.shade600),
+                    iconSize: 28,
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/main');
+                    },
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.emergency,
+                      color: Colors.redAccent,
+                      size: 28,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.person_outline, color: Colors.grey.shade600),
+                    iconSize: 28,
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/account');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
