@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 class SosEmergencyScreen extends StatefulWidget {
@@ -12,16 +13,13 @@ class SosEmergencyScreen extends StatefulWidget {
 class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoadingLocation = false;
 
-  CameraPosition _initialPosition = const CameraPosition(
-    target: LatLng(10.8231, 106.6297), // TP.HCM coordinates
-    zoom: 14,
-  );
+  LatLng _initialPosition = const LatLng(10.8231, 106.6297); // TP.HCM coordinates
 
-  final Set<Marker> _markers = {};
+  List<Marker> _markers = [];
 
   @override
   void initState() {
@@ -33,7 +31,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _mapController?.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -99,24 +97,44 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
 
       setState(() {
         _currentPosition = position;
-        _markers.clear();
-        _markers.add(
+        _markers = [
           Marker(
-            markerId: const MarkerId('current_location'),
-            position: LatLng(position.latitude, position.longitude),
-            infoWindow: const InfoWindow(title: 'Vị trí của bạn'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            point: LatLng(position.latitude, position.longitude),
+            width: 80,
+            height: 80,
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  color: Colors.red,
+                  size: 40,
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'Vị trí của bạn',
+                    style: TextStyle(fontSize: 10, color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
+        ];
       });
 
-      _mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(position.latitude, position.longitude),
-            zoom: 16,
-          ),
-        ),
+      _mapController.move(
+        LatLng(position.latitude, position.longitude),
+        16.0,
       );
 
       if (mounted) {
@@ -268,16 +286,22 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: GoogleMap(
-                          initialCameraPosition: _initialPosition,
-                          onMapCreated: (controller) {
-                            _mapController = controller;
-                          },
-                          myLocationEnabled: true,
-                          myLocationButtonEnabled: false,
-                          zoomControlsEnabled: false,
-                          markers: _markers,
-                          mapType: MapType.normal,
+                        child: FlutterMap(
+                          mapController: _mapController,
+                          options: MapOptions(
+                            initialCenter: _initialPosition,
+                            initialZoom: 14.0,
+                            minZoom: 3.0,
+                            maxZoom: 18.0,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName: 'com.example.flutter_application_1',
+                              maxZoom: 19,
+                            ),
+                            MarkerLayer(markers: _markers),
+                          ],
                         ),
                       ),
                     ),
