@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../services/api_service.dart';
 
 class SosEmergencyScreen extends StatefulWidget {
   const SosEmergencyScreen({super.key});
@@ -16,10 +17,24 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoadingLocation = false;
+  String _selectedEmergencyType = 'Y tế';
 
   LatLng _initialPosition = const LatLng(10.8231, 106.6297); // TP.HCM coordinates
 
   List<Marker> _markers = [];
+
+  // Map từ giá trị hiển thị (tiếng Việt) sang giá trị API (tiếng Anh)
+  final Map<String, String> _emergencyTypesMap = {
+    'Y tế': 'MEDICAL',
+    'Cháy nổ': 'FIRE',
+    'Tai nạn': 'ACCIDENT',
+    'Trộm cắp': 'CRIME',
+    'Thiên tai': 'NATURAL_DISASTER',
+    'Khác': 'OTHER',
+  };
+
+  // List of emergency types for dropdown
+  List<String> get _emergencyTypes => _emergencyTypesMap.keys.toList();
 
   @override
   void initState() {
@@ -162,7 +177,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     }
   }
 
-  void _sendSOS() {
+  Future<void> _sendSOS() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -183,7 +198,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
       return;
     }
 
-    showDialog(
+    // Show confirmation dialog
+    final shouldSend = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
@@ -196,22 +212,11 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         content: const Text('Bạn có chắc chắn muốn gửi tín hiệu SOS khẩn cấp?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Integrate with backend API to send SOS
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã gửi tín hiệu SOS thành công!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              _nameController.clear();
-              _descriptionController.clear();
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
@@ -221,6 +226,47 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         ],
       ),
     );
+
+    if (shouldSend != true) return;
+
+    // Show loading
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ApiService.sendSOS(
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        emergencyType: _emergencyTypesMap[_selectedEmergencyType] ?? 'OTHER',
+        description: 'Tên: ${_nameController.text}\n${_descriptionController.text}',
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã gửi tín hiệu SOS thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _nameController.clear();
+      _descriptionController.clear();
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi gửi SOS: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -376,6 +422,68 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Emergency Type Dropdown
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedEmergencyType,
+                                isExpanded: true,
+                                hint: const Text('Chọn loại khẩn cấp'),
+                                items: _emergencyTypes.map((String type) {
+                                  IconData icon;
+                                  Color color;
+                                  switch (type) {
+                                    case 'Y tế':
+                                      icon = Icons.local_hospital;
+                                      color = Colors.red;
+                                      break;
+                                    case 'Tai nạn':
+                                      icon = Icons.car_crash;
+                                      color = Colors.orange;
+                                      break;
+                                    case 'Cháy nổ':
+                                      icon = Icons.local_fire_department;
+                                      color = Colors.deepOrange;
+                                      break;
+                                    case 'Trộm cắp':
+                                      icon = Icons.security;
+                                      color = Colors.purple;
+                                      break;
+                                    default:
+                                      icon = Icons.warning;
+                                      color = Colors.grey;
+                                  }
+                                  return DropdownMenuItem<String>(
+                                    value: type,
+                                    child: Row(
+                                      children: [
+                                        Icon(icon, color: color, size: 20),
+                                        const SizedBox(width: 12),
+                                        Text(type),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      _selectedEmergencyType = newValue;
+                                    });
+                                  }
+                                },
                               ),
                             ),
                           ),
