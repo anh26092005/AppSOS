@@ -14,7 +14,7 @@ import '../screens/permission_test_screen.dart';
 import '../screens/fcm_token_screen.dart';
 
 Map<String, WidgetBuilder> appRoutes = {
-  '/': (_) => const WelcomeSOSScreen(),
+  '/welcome': (_) => const WelcomeSOSScreen(),
   '/login': (_) => const LoginScreen(),
   '/signup': (_) => const SignupScreen(),
   '/main': (_) => const MainScreen(),

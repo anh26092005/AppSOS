@@ -14,6 +14,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailOrPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _rememberMe = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRemember();
+  }
+
+  Future<void> _loadRemember() async {
+    final remember = await ApiService.getRememberMe();
+    if (!mounted) return;
+    setState(() {
+      _rememberMe = remember;
+    });
+  }
 
   @override
   void dispose() {
@@ -49,6 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (res.containsKey('token')) {
         if (!mounted) return;
+        await ApiService.setRememberMe(_rememberMe);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công ✅')));
@@ -254,7 +270,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _rememberMe,
+                      onChanged: (value) {
+                        setState(() {
+                          _rememberMe = value ?? false;
+                        });
+                      },
+                      activeColor: Colors.redAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Ghi nho dang nhap',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
 
                 // LOGIN BUTTON
                 SizedBox(
