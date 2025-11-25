@@ -199,6 +199,29 @@ class ApiService {
     throw Exception(data['message'] ?? 'Khong the lay thong tin tai khoan');
   }
 
+  static Future<List<dynamic>> fetchBlogs({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/articles?page=$page&limit=$limit&sortBy=publishedAt&sortOrder=desc',
+    );
+    final headers = await _headers();
+
+    try {
+      final res = await http.get(url, headers: headers);
+      final data = _decode(res);
+
+      if (res.statusCode == 200) {
+        return data['data'] ?? [];
+      }
+      throw Exception(data['message'] ?? 'Không thể tải bản tin');
+    } catch (e) {
+      print('Error fetching blogs: $e');
+      rethrow;
+    }
+  }
+
   static Map<String, dynamic> _decode(http.Response res) {
     try {
       return jsonDecode(res.body) as Map<String, dynamic>;

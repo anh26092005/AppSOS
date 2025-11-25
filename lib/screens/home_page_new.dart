@@ -49,10 +49,7 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Future<void> _loadInitialData() async {
-    await Future.wait([
-      _fetchWeather(),
-      _fetchPosts(refresh: true),
-    ]);
+    await Future.wait([_fetchWeather(), _fetchPosts(refresh: true)]);
   }
 
   Future<void> _fetchWeather() async {
@@ -99,7 +96,7 @@ class _HomePageNewState extends State<HomePageNew> {
             _posts.addAll(newPosts);
           }
           _currentPage++;
-          _hasMorePosts = _postService.hasMorePosts(_currentPage, _pageSize);
+          _hasMorePosts = newPosts.length >= _pageSize;
           _isLoadingPosts = false;
         });
       }
@@ -118,10 +115,7 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Future<void> _handleRefresh() async {
-    await Future.wait([
-      _fetchWeather(),
-      _fetchPosts(refresh: true),
-    ]);
+    await Future.wait([_fetchWeather(), _fetchPosts(refresh: true)]);
   }
 
   Future<void> _handleLike(PostModel post) async {
@@ -262,7 +256,9 @@ class _HomePageNewState extends State<HomePageNew> {
                               height: 50,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: const Color(0xFFF6C343).withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFFF6C343,
+                                ).withValues(alpha: 0.2),
                               ),
                               child: const Icon(
                                 Icons.person,
@@ -289,7 +285,10 @@ class _HomePageNewState extends State<HomePageNew> {
               // Section Title
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: const Text(
                     'Bản tin',
                     style: TextStyle(
@@ -307,30 +306,25 @@ class _HomePageNewState extends State<HomePageNew> {
                   child: Center(
                     child: Text(
                       'Chưa có bài viết nào',
-                      style: TextStyle(
-                        color: Color(0xFF777777),
-                      ),
+                      style: TextStyle(color: Color(0xFF777777)),
                     ),
                   ),
                 )
               else
                 SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      if (index == _posts.length) {
-                        // Loading indicator at bottom
-                        if (_isLoadingPosts) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        return const SizedBox.shrink();
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    if (index == _posts.length) {
+                      // Loading indicator at bottom
+                      if (_isLoadingPosts) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
                       }
-                      return _buildPostCard(_posts[index]);
-                    },
-                    childCount: _posts.length + (_isLoadingPosts ? 1 : 0),
-                  ),
+                      return const SizedBox.shrink();
+                    }
+                    return _buildPostCard(_posts[index]);
+                  }, childCount: _posts.length + (_isLoadingPosts ? 1 : 0)),
                 ),
             ],
           ),
@@ -354,9 +348,7 @@ class _HomePageNewState extends State<HomePageNew> {
             ),
           ],
         ),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -399,10 +391,7 @@ class _HomePageNewState extends State<HomePageNew> {
               children: [
                 const Text(
                   'Thời tiết tại',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF777777),
-                  ),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF777777)),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -426,10 +415,7 @@ class _HomePageNewState extends State<HomePageNew> {
           ),
           Column(
             children: [
-              Text(
-                _weather!.weatherIcon,
-                style: const TextStyle(fontSize: 32),
-              ),
+              Text(_weather!.weatherIcon, style: const TextStyle(fontSize: 32)),
               const SizedBox(height: 4),
               Text(
                 '${_weather!.temperature.toStringAsFixed(0)}°C',
@@ -516,7 +502,9 @@ class _HomePageNewState extends State<HomePageNew> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF6C343).withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFFF6C343,
+                                ).withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -550,14 +538,18 @@ class _HomePageNewState extends State<HomePageNew> {
                         Icon(
                           post.isLiked ? Icons.favorite : Icons.favorite_border,
                           size: 18,
-                          color: post.isLiked ? Colors.red : const Color(0xFF777777),
+                          color: post.isLiked
+                              ? Colors.red
+                              : const Color(0xFF777777),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${post.likeCount}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: post.isLiked ? Colors.red : const Color(0xFF777777),
+                            color: post.isLiked
+                                ? Colors.red
+                                : const Color(0xFF777777),
                           ),
                         ),
                       ],
@@ -604,7 +596,7 @@ class _HomePageNewState extends State<HomePageNew> {
                       child: CircularProgressIndicator(
                         value: loadingProgress.expectedTotalBytes != null
                             ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
+                                  loadingProgress.expectedTotalBytes!
                             : null,
                       ),
                     ),
@@ -646,10 +638,7 @@ class _HomePageNewState extends State<HomePageNew> {
                 ),
                 child: const Text(
                   'Xem bài viết',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -659,4 +648,3 @@ class _HomePageNewState extends State<HomePageNew> {
     );
   }
 }
-

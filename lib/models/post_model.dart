@@ -51,16 +51,18 @@ class PostModel {
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
-      id: json['id'] as String,
-      authorId: json['authorId'] as String,
-      authorType: json['authorType'] as String,
-      authorName: json['authorName'] as String,
-      authorAvatar: json['authorAvatar'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      contentText: json['contentText'] as String,
-      imageUrl: json['imageUrl'] as String?,
-      likeCount: json['likeCount'] as int,
-      isLiked: json['isLiked'] as bool? ?? false,
+      id: json['_id'] ?? '',
+      authorId: json['author']?['_id'] ?? '',
+      authorType:
+          'group', // Mặc định hiển thị icon group cho đẹp, hoặc check logic nếu có
+      authorName:
+          json['authorName'] ?? json['author']?['fullName'] ?? 'Unknown',
+      authorAvatar: json['author']?['avatar'],
+      createdAt: DateTime.tryParse(json['publishedAt'] ?? '') ?? DateTime.now(),
+      contentText: json['title'] ?? '',
+      imageUrl: json['images']?['url'],
+      likeCount: json['likeCount'] ?? 0,
+      isLiked: false, // Cần logic check likedBy với currentUserId
     );
   }
 
@@ -79,4 +81,3 @@ class PostModel {
     };
   }
 }
-

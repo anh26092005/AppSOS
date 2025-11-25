@@ -1,6 +1,173 @@
 import 'package:flutter/material.dart';
 import 'home_page_new.dart';
 import '../services/api_service.dart';
+import '../models/post_model.dart';
+import '../services/post_service.dart';
+
+// ... (MainScreen code remains same)
+
+class BlogPage extends StatefulWidget {
+  const BlogPage({super.key});
+
+  @override
+  State<BlogPage> createState() => _BlogPageState();
+}
+
+class _BlogPageState extends State<BlogPage> {
+  final PostService _postService = PostService();
+  List<PostModel> _posts = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPosts();
+  }
+
+  Future<void> _fetchPosts() async {
+    try {
+      final posts = await _postService.fetchPosts(limit: 20);
+      if (mounted) {
+        setState(() {
+          _posts = posts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text('Blog'),
+        backgroundColor: Colors.redAccent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Lỗi: $_error'),
+                  ElevatedButton(
+                    onPressed: _fetchPosts,
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            )
+          : _posts.isEmpty
+          ? const Center(child: Text('Chưa có bài viết nào'))
+          : RefreshIndicator(
+              onRefresh: _fetchPosts,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _posts.length,
+                itemBuilder: (context, index) {
+                  final post = _posts[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        // TODO: Navigate to blog detail
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                                image: post.imageUrl != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(post.imageUrl!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: post.imageUrl == null
+                                  ? Center(
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    post.contentText, // Using title as contentText based on model mapping
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    post.authorName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -159,504 +326,6 @@ class _MainScreenState extends State<MainScreen>
       ),
       floatingActionButton: _buildSOSButton(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final List<Map<String, dynamic>> _blogPosts = [
-    {
-      'id': 1,
-      'author': 'Nhóm thiện nguyện Hà Tĩnh',
-      'time': '37 phút',
-      'likes': 578,
-      'isLiked': true,
-      'title':
-          'Đồ ăn cứu trợ đồng bào vùng bão lũ: Nên gửi gì và bảo quản thế nào?',
-      'image': 'assets/images/flood_relief.jpg',
-    },
-    {
-      'id': 2,
-      'author': 'Nhóm thiện nguyện Q.9',
-      'time': '37 phút',
-      'likes': 57,
-      'isLiked': true,
-      'title': 'Chú Long quận 9\' và hành trình 15 năm rong ruổi giúp đời',
-      'image': 'assets/images/volunteer_story.jpg',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final hour = now.hour;
-    final greeting = _getGreeting(hour);
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Status Bar (Time)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.signal_cellular_4_bar,
-                            size: 18,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.battery_full,
-                            size: 18,
-                            color: Colors.grey.shade600,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Greeting Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Xin chào, UTH Team',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1976D2), // Blue dark
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              greeting,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Avatar
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.yellow.shade100,
-                        ),
-                        child: Icon(
-                          Icons.emoji_emotions,
-                          color: Colors.yellow.shade700,
-                          size: 30,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Weather Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.yellow.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Thời tiết tại',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'P. Trung Mỹ Tây',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Mưa: 45%, Gió: 8 km/h',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.cloud,
-                                      size: 20,
-                                      color: Colors.blue.shade300,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.water_drop,
-                                      size: 16,
-                                      color: Colors.blue.shade300,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  '29°C',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Blog Posts Section
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: const Text(
-                      'Bản tin',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1976D2), // Blue dark
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _blogPosts.length,
-                      itemBuilder: (context, index) {
-                        final post = _blogPosts[index];
-                        return _buildBlogPostCard(post);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getGreeting(int hour) {
-    if (hour >= 5 && hour < 12) {
-      return 'Chúc bạn sáng vui vẻ';
-    } else if (hour >= 12 && hour < 18) {
-      return 'Chúc bạn chiều vui vẻ';
-    } else {
-      return 'Chúc bạn tối vui vẻ';
-    }
-  }
-
-  Widget _buildBlogPostCard(Map<String, dynamic> post) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Author Info
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.yellow.shade100,
-                  ),
-                  child: Icon(
-                    Icons.emoji_emotions,
-                    color: Colors.yellow.shade700,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post['author'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        post['time'],
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Like Info
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.favorite,
-                  size: 16,
-                  color: post['isLiked'] ? Colors.red : Colors.grey.shade400,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  post['isLiked'] ? 'Đã thích' : 'Thích',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: post['isLiked'] ? Colors.red : Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${post['likes']} lượt thích',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              post['title'],
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Image Placeholder
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Center(
-              child: Icon(Icons.image, size: 60, color: Colors.grey.shade400),
-            ),
-          ),
-          // Action Button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Navigate to blog detail
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.yellow.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Xem bài viết',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class BlogPage extends StatelessWidget {
-  const BlogPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Blog'),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 10,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: InkWell(
-              onTap: () {
-                // TODO: Navigate to blog detail
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Colors.red.shade400, Colors.red.shade700],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Bài viết ${index + 1}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Mô tả bài viết mẫu về an toàn và sức khỏe...',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
