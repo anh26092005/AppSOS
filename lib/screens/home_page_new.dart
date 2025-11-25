@@ -168,7 +168,6 @@ class _HomePageNewState extends State<HomePageNew> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final greeting = _getGreeting();
 
     return Scaffold(
@@ -194,36 +193,6 @@ class _HomePageNewState extends State<HomePageNew> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        // Status Bar (Time)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              DateFormat('HH:mm').format(now),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF333333),
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.signal_cellular_4_bar,
-                                  size: 18,
-                                  color: Colors.grey.shade600,
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.battery_full,
-                                  size: 18,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
                         // Greeting Section
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
