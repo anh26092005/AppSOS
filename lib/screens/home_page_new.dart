@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:math';
 import '../models/post_model.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
@@ -333,9 +332,10 @@ class _HomePageNewState extends State<HomePageNew> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+            spreadRadius: 2,
           ),
         ],
       ),
@@ -565,12 +565,20 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     final titlePaddingLeft = 20.0 * (1 - progress);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFFCEFD8),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCEFD8),
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15), // Màu bóng đen mờ
+            blurRadius: 15, // Độ nhòe của bóng
+            offset: const Offset(0, 8), // Độ lệch xuống dưới
+            spreadRadius: 1, // Độ lan tỏa
+          ),
+        ],
       ),
       child: Stack(
         fit: StackFit.expand,
