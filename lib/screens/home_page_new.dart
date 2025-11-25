@@ -252,6 +252,10 @@ class _HomePageNewState extends State<HomePageNew> {
                     return _buildPostCard(_posts[index]);
                   }, childCount: _posts.length + (_isLoadingPosts ? 1 : 0)),
                 ),
+              // Padding bottom để nội dung không bị che bởi navbar
+              const SliverPadding(
+                padding: EdgeInsets.only(bottom: 100),
+              ),
             ],
           ),
         ),

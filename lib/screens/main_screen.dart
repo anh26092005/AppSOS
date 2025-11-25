@@ -74,7 +74,7 @@ class _BlogPageState extends State<BlogPage> {
           : RefreshIndicator(
               onRefresh: _fetchPosts,
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 itemCount: _posts.length,
                 itemBuilder: (context, index) {
                   final post = _posts[index];
@@ -202,66 +202,62 @@ class _MainScreenState extends State<MainScreen>
     super.dispose();
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   Widget _buildSOSButton(BuildContext context) {
     return AnimatedBuilder(
       animation: _sosPulseController,
       builder: (context, child) {
         final value = _sosPulseController.value;
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Pulse rings
-            ...List.generate(2, (index) {
-              final delay = index * 0.5;
-              final pulseValue = ((value + delay) % 1.0);
-              final size = 70.0 + (pulseValue * 30);
-              final opacity = (1 - pulseValue).clamp(0.0, 0.3);
+        return GestureDetector(
+          onTap: () {
+            Navigator.pushNamed(context, '/sos-emergency');
+          },
+          child: SizedBox(
+            width: 100,
+            height: 70,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                // Pulse rings với glow effect - không ảnh hưởng layout
+                ...List.generate(2, (index) {
+                  final delay = index * 0.5;
+                  final pulseValue = ((value + delay) % 1.0);
+                  final size = 70.0 + (pulseValue * 30);
+                  final opacity = (1 - pulseValue).clamp(0.0, 0.3);
 
-              return Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: opacity),
-                    width: 2,
+                  return Positioned(
+                    left: 50 - size / 2,
+                    top: 35 - size / 2,
+                    child: Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.redAccent.withValues(alpha: opacity),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                // Main button với viền trắng và glow effect
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.redAccent,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.redAccent.withValues(alpha: 0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, 0),
+                        spreadRadius: 3,
+                      ),
+                    ],
                   ),
-                ),
-              );
-            }),
-            // Main button
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.red.shade600, Colors.red.shade800],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.red.withValues(alpha: 0.5),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/sos-emergency');
-                  },
-                  borderRadius: BorderRadius.circular(35),
                   child: const Center(
                     child: Text(
                       'SOS',
@@ -274,9 +270,9 @@ class _MainScreenState extends State<MainScreen>
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -285,47 +281,81 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      body: Stack(
+        children: [
+          // Nội dung chính - có thể cuộn phía sau navbar
+          _pages[_selectedIndex],
+          // Navbar nổi lên trên
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 25,
+                      offset: const Offset(0, 8),
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Home icon - màu xanh khi được chọn
+                    IconButton(
+                      icon: Icon(
+                        Icons.home,
+                        color: _selectedIndex == 0
+                            ? const Color(0xFF1976D2) // Màu xanh khi được chọn
+                            : Colors.grey.shade600,
+                      ),
+                      iconSize: 28,
+                      onPressed: () {
+                        setState(() {
+                          _selectedIndex = 0;
+                        });
+                      },
+                    ),
+                    // SOS button ở giữa - giữ nguyên từ cũ
+                    _buildSOSButton(context),
+                    // Profile icon - màu xám
+                    IconButton(
+                      icon: Icon(
+                        Icons.person,
+                        color: _selectedIndex == 2
+                            ? const Color(0xFF1976D2) // Màu xanh khi được chọn
+                            : Colors.grey.shade600,
+                      ),
+                      iconSize: 28,
+                      onPressed: () {
+                        setState(() {
+                          _selectedIndex = 2;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
           ),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            selectedItemColor: const Color(0xFF1976D2), // Blue dark
-            unselectedItemColor: Colors.grey.shade400,
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.article), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-            ],
-          ),
-        ),
+        ],
       ),
-      floatingActionButton: _buildSOSButton(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
@@ -425,6 +455,7 @@ class _AccountPageState extends State<AccountPage> {
         onRefresh: _refreshProfile,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 100),
           child: Column(
             children: [
               Container(
