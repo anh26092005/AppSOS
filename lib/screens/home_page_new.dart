@@ -5,6 +5,7 @@ import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/post_service.dart';
 import '../widgets/skeleton_post.dart';
+import 'post_detail_screen.dart';
 
 class HomePageNew extends StatefulWidget {
   const HomePageNew({super.key});
@@ -515,9 +516,11 @@ class _HomePageNewState extends State<HomePageNew> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: Navigate to post detail
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Xem bài viết: ${post.id}')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PostDetailScreen(post: post),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
