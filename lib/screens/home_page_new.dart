@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 import '../models/post_model.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
@@ -179,94 +180,12 @@ class _HomePageNewState extends State<HomePageNew> {
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
-              // Header Section
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFCEFD8), // Light cream
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        // Greeting Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Xin chào, UTH Team',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF333333),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    greeting,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF777777),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Avatar
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(
-                                  0xFFF6C343,
-                                ).withValues(alpha: 0.2),
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                color: Color(0xFFF6C343),
-                                size: 30,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Weather Card
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: _buildWeatherCard(),
-                ),
-              ),
-
-              // Section Title
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: const Text(
-                    'Bản tin',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
+              // Animated Header Section
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _HomeHeaderDelegate(
+                  greeting: greeting,
+                  weatherCard: _buildWeatherCard(),
                 ),
               ),
 
@@ -620,5 +539,148 @@ class _HomePageNewState extends State<HomePageNew> {
         ],
       ),
     );
+  }
+}
+
+class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String greeting;
+  final Widget weatherCard;
+
+  _HomeHeaderDelegate({required this.greeting, required this.weatherCard});
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    // 0.0 -> 1.0
+    final progress = shrinkOffset / maxExtent;
+    final contentOpacity = (1 - (progress * 2)).clamp(0.0, 1.0);
+    final titleAlignment = Alignment.lerp(
+      Alignment.bottomLeft,
+      Alignment.bottomCenter,
+      progress,
+    )!;
+    final titlePaddingLeft = 20.0 * (1 - progress);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFFCEFD8),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Content (Greeting + Weather)
+          Positioned(
+            top: 16 - shrinkOffset * 0.5,
+            left: 20,
+            right: 20,
+            bottom: 60,
+            child: Opacity(
+              opacity: contentOpacity,
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Xin chào, UTH Team',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0D47A1),
+                                  height: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                greeting,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF666666),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                            image: const DecorationImage(
+                              image: NetworkImage(
+                                'https://img.freepik.com/premium-vector/cute-duck-avatar-cartoon-style_174639-566.jpg',
+                              ),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    weatherCard,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Title "Bản tin"
+          Align(
+            alignment: titleAlignment,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: titlePaddingLeft,
+                bottom: 16,
+                right: 20 * (1 - progress),
+              ),
+              child: const Text(
+                'Bản tin',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0D47A1),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 300;
+
+  @override
+  double get minExtent => 80;
+
+  @override
+  bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
+    return oldDelegate.greeting != greeting ||
+        oldDelegate.weatherCard != weatherCard;
   }
 }
