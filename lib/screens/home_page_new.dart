@@ -4,6 +4,7 @@ import '../models/post_model.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/post_service.dart';
+import '../widgets/skeleton_post.dart';
 
 class HomePageNew extends StatefulWidget {
   const HomePageNew({super.key});
@@ -301,7 +302,14 @@ class _HomePageNewState extends State<HomePageNew> {
               ),
 
               // Posts Feed
-              if (_posts.isEmpty && !_isLoadingPosts)
+              if (_posts.isEmpty && _isLoadingPosts)
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => const SkeletonPost(),
+                    childCount: 3,
+                  ),
+                )
+              else if (_posts.isEmpty && !_isLoadingPosts)
                 const SliverFillRemaining(
                   child: Center(
                     child: Text(
@@ -316,10 +324,7 @@ class _HomePageNewState extends State<HomePageNew> {
                     if (index == _posts.length) {
                       // Loading indicator at bottom
                       if (_isLoadingPosts) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
+                        return const SkeletonPost();
                       }
                       return const SizedBox.shrink();
                     }
