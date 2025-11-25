@@ -4,6 +4,7 @@ import '../models/post_model.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/post_service.dart';
+import '../services/api_service.dart';
 import '../widgets/skeleton_post.dart';
 import 'post_detail_screen.dart';
 
@@ -28,6 +29,8 @@ class _HomePageNewState extends State<HomePageNew> {
   bool _hasMorePosts = true;
   final int _pageSize = 10;
 
+  String _userName = 'Bạn';
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +54,32 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Future<void> _loadInitialData() async {
-    await Future.wait([_fetchWeather(), _fetchPosts(refresh: true)]);
+    await Future.wait([
+      _loadUserProfile(),
+      _fetchWeather(),
+      _fetchPosts(refresh: true),
+    ]);
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final user = await ApiService.getCachedUser();
+      if (user != null && mounted) {
+        setState(() {
+          _userName = user['fullName'] ?? 'Bạn';
+        });
+      } else {
+        // Nếu chưa có cache, thử fetch mới
+        final newUser = await ApiService.fetchProfile();
+        if (mounted) {
+          setState(() {
+            _userName = newUser['fullName'] ?? 'Bạn';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
   }
 
   Future<void> _fetchWeather() async {
@@ -117,7 +145,11 @@ class _HomePageNewState extends State<HomePageNew> {
   }
 
   Future<void> _handleRefresh() async {
-    await Future.wait([_fetchWeather(), _fetchPosts(refresh: true)]);
+    await Future.wait([
+      _loadUserProfile(),
+      _fetchWeather(),
+      _fetchPosts(refresh: true),
+    ]);
   }
 
   Future<void> _handleLike(PostModel post) async {
@@ -184,6 +216,7 @@ class _HomePageNewState extends State<HomePageNew> {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _HomeHeaderDelegate(
+                  userName: _userName,
                   greeting: greeting,
                   weatherCard: _buildWeatherCard(),
                 ),
@@ -546,10 +579,15 @@ class _HomePageNewState extends State<HomePageNew> {
 }
 
 class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String userName;
   final String greeting;
   final Widget weatherCard;
 
-  _HomeHeaderDelegate({required this.greeting, required this.weatherCard});
+  _HomeHeaderDelegate({
+    required this.userName,
+    required this.greeting,
+    required this.weatherCard,
+  });
 
   @override
   Widget build(
@@ -576,10 +614,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15), // Màu bóng đen mờ
-            blurRadius: 15, // Độ nhòe của bóng
-            offset: const Offset(0, 8), // Độ lệch xuống dưới
-            spreadRadius: 1, // Độ lan tỏa
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+            spreadRadius: 1,
           ),
         ],
       ),
@@ -606,9 +644,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Xin chào, UTH Team',
-                                style: TextStyle(
+                              Text(
+                                'Xin chào, $userName',
+                                style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
                                   color: Color(0xFF0D47A1),
@@ -692,6 +730,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
     return oldDelegate.greeting != greeting ||
-        oldDelegate.weatherCard != weatherCard;
+        oldDelegate.weatherCard != weatherCard ||
+        oldDelegate.userName != userName;
   }
 }
