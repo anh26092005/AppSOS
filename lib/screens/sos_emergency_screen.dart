@@ -606,7 +606,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                     icon: Icon(Icons.home_outlined, color: Colors.grey.shade600),
                     iconSize: 28,
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/home');
+                      Navigator.pushReplacementNamed(context, '/main');
                     },
                   ),
                   Container(

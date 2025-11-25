@@ -207,70 +207,78 @@ class _MainScreenState extends State<MainScreen>
       animation: _sosPulseController,
       builder: (context, child) {
         final value = _sosPulseController.value;
-        return GestureDetector(
-          onTap: () {
-            Navigator.pushNamed(context, '/sos-emergency');
-          },
-          child: SizedBox(
-            width: 100,
-            height: 70,
-            child: Stack(
-              alignment: Alignment.center,
-              clipBehavior: Clip.none,
-              children: [
-                // Pulse rings với glow effect - không ảnh hưởng layout
-                ...List.generate(2, (index) {
-                  final delay = index * 0.5;
-                  final pulseValue = ((value + delay) % 1.0);
-                  final size = 70.0 + (pulseValue * 30);
-                  final opacity = (1 - pulseValue).clamp(0.0, 0.3);
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.pushNamed(context, '/sos-emergency');
+            },
+            borderRadius: BorderRadius.circular(50),
+            child: SizedBox(
+              width: 100,
+              height: 70,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  // Pulse rings với glow effect - không ảnh hưởng layout
+                  ...List.generate(2, (index) {
+                    final delay = index * 0.5;
+                    final pulseValue = ((value + delay) % 1.0);
+                    final size = 70.0 + (pulseValue * 30);
+                    final opacity = (1 - pulseValue).clamp(0.0, 0.3);
 
-                  return Positioned(
-                    left: 50 - size / 2,
-                    top: 35 - size / 2,
-                    child: Container(
-                      width: size,
-                      height: size,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.redAccent.withValues(alpha: opacity),
-                          width: 2,
+                    return Positioned(
+                      left: 50 - size / 2,
+                      top: 35 - size / 2,
+                      child: IgnorePointer(
+                        child: Container(
+                          width: size,
+                          height: size,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.redAccent.withValues(
+                                alpha: opacity,
+                              ),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Main button với viền trắng và glow effect
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.redAccent,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.redAccent.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 0),
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'SOS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
                         ),
                       ),
                     ),
-                  );
-                }),
-                // Main button với viền trắng và glow effect
-                Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.redAccent,
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.redAccent.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        offset: const Offset(0, 0),
-                        spreadRadius: 3,
-                      ),
-                    ],
                   ),
-                  child: const Center(
-                    child: Text(
-                      'SOS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
