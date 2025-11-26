@@ -6,6 +6,7 @@ import 'services/fcm_service.dart';
 import 'services/api_service.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/main_screen.dart';
+import 'utils/navigation_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +36,7 @@ class SOSApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: NavigationService.navigatorKey, // Thêm dòng này
+      navigatorKey: NavigationService.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'SOS App',
       theme: appTheme,
@@ -70,6 +71,15 @@ class _AppEntryState extends State<_AppEntry> {
       if (token != null) {
         _registerTokenWithBackend(token);
       }
+    }
+  }
+
+  Future<void> _registerTokenWithBackend(String token) async {
+    try {
+      await ApiService.registerDeviceToken(token);
+      print('✅ Device token registered with backend');
+    } catch (e) {
+      print('❌ Failed to register device token: $e');
     }
   }
 
