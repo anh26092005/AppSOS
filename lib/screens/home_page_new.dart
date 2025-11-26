@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/post_model.dart';
 import '../models/weather_model.dart';
@@ -286,59 +287,107 @@ class _HomePageNewState extends State<HomePageNew> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF1976D2).withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Left Side: Location
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Thời tiết tại',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF777777)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _weather!.locationName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Thời tiết tại',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Độ ẩm: ${_weather!.humidity}%, Gió: ${_weather!.windSpeed.toStringAsFixed(1)} km/h',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF777777),
+                  _weather!.locationName,
+                  style: GoogleFonts.balooBhaina2(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+          // Right Side: Details & Temp
           Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(_weather!.weatherIcon, style: const TextStyle(fontSize: 32)),
-              const SizedBox(height: 4),
               Text(
-                '${_weather!.temperature.toStringAsFixed(0)}°C',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
+                'Mưa: ${_weather!.humidity}%, Gió: ${_weather!.windSpeed.toStringAsFixed(0)} km/h',
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '${_weather!.temperature.toStringAsFixed(0)}°C',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _weather!.weatherIcon,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                ],
               ),
             ],
           ),
@@ -596,7 +645,14 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFCEFD8),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFFF8E1), // Light beige
+            Color(0xFFFFECB3), // Slightly deeper beige
+          ],
+        ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
@@ -635,20 +691,20 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                             children: [
                               Text(
                                 'Xin chào, $userName',
-                                style: const TextStyle(
+                                style: GoogleFonts.montserrat(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0D47A1),
+                                  color: const Color(0xFF0D47A1),
                                   height: 1.2,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 greeting,
-                                style: const TextStyle(
+                                style: GoogleFonts.montserrat(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF666666),
+                                  color: const Color(0xFF666666),
                                 ),
                               ),
                             ],
@@ -694,12 +750,12 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 bottom: 16,
                 right: 20 * (1 - progress),
               ),
-              child: const Text(
+              child: Text(
                 'Bản tin',
-                style: TextStyle(
+                style: GoogleFonts.montserrat(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF0D47A1),
+                  color: const Color.fromARGB(255, 6, 82, 158),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -711,7 +767,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 300;
+  double get maxExtent => 250; // Reduced from 300 to decrease gap
 
   @override
   double get minExtent => 80;
