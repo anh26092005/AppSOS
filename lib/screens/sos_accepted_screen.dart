@@ -22,16 +22,29 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
   @override
   void initState() {
     super.initState();
+
+    print('═══════════════════════════════════════');
+    print('📱 SosAcceptedScreen initState');
+    print('sosData keys: ${widget.sosData.keys}');
+    print('sosData: ${widget.sosData}');
+    print('═══════════════════════════════════════');
+
     _case = widget.sosData['case'];
+    print('Case: $_case');
+
     _reporterInfo = _case['reporterId'];
+    print('Reporter info: $_reporterInfo');
 
     // Lấy tọa độ reporter
     final reporterLoc = _case['location']['coordinates'];
     _reporterPosition = LatLng(reporterLoc[1], reporterLoc[0]);
+    print('Reporter position: $_reporterPosition');
 
     // Lấy tọa độ volunteer
     final volunteerLoc = _case['responderLocation']['coordinates'];
     _volunteerPosition = LatLng(volunteerLoc[1], volunteerLoc[0]);
+    print('Volunteer position: $_volunteerPosition');
+    print('═══════════════════════════════════════');
   }
 
   Future<void> _openDirections() async {

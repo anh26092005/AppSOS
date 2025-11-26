@@ -64,9 +64,12 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
       });
 
       final status = caseData['status'];
+      print('📡 Polling - Case status: $status');
 
       if (status == 'ACCEPTED') {
         // Volunteer đã chấp nhận, navigate to found screen
+        print('✅ Status ACCEPTED - Navigating to SosFoundScreen');
+        print('Case data: $caseData');
         _pollingTimer?.cancel();
         if (mounted) {
           Navigator.pushReplacement(
@@ -79,6 +82,7 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
         }
       } else if (status == 'CANCELLED') {
         // Case đã bị hủy
+        print('⚠️ Status CANCELLED');
         _pollingTimer?.cancel();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +96,7 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
       }
       // Nếu status == 'SEARCHING', tiếp tục polling
     } catch (e) {
-      print('Error checking case status: $e');
+      print('❌ Error checking case status: $e');
       // Vẫn tiếp tục polling nếu có lỗi
     }
   }
@@ -131,7 +135,13 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
     });
 
     try {
-      await ApiService.cancelSosCase(widget.caseId, 'Người dùng hủy yêu cầu');
+      print('🔄 Cancelling SOS case: ${widget.caseId}');
+      final response = await ApiService.cancelSosCase(
+        widget.caseId,
+        'Người dùng hủy yêu cầu',
+      );
+
+      print('✅ Cancel response: $response');
 
       if (!mounted) return;
 
@@ -142,17 +152,36 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
         ),
       );
 
+      print('🔄 Navigating back after cancel');
       Navigator.pop(context);
     } catch (e) {
+      print('❌ Error cancelling SOS: $e');
       if (!mounted) return;
 
       setState(() {
         _isCancelling = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi hủy: $e'), backgroundColor: Colors.red),
-      );
+      // Check if error is 401 Unauthorized
+      final errorMessage = e.toString();
+      if (errorMessage.contains('401') ||
+          errorMessage.contains('Unauthorized')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        // Navigate to login instead of just popping
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi hủy: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

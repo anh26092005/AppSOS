@@ -37,16 +37,23 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
         );
         latitude = position.latitude;
         longitude = position.longitude;
+        print('✅ Got location: $latitude, $longitude');
       } catch (e) {
-        print('Error getting location: $e');
+        print('❌ Error getting location: $e');
         // Continue without location if there's an error
       }
 
+      print('🔄 Calling acceptSosCase API...');
       final response = await ApiService.acceptSosCase(
         widget.caseId,
         latitude: latitude,
         longitude: longitude,
       );
+
+      print('═══════════════════════════════════════');
+      print('✅ Accept SOS Response:');
+      print('Data: ${response['data']}');
+      print('═══════════════════════════════════════');
 
       if (!mounted) return;
 
@@ -56,6 +63,7 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
       Navigator.of(context).pop();
 
       // Chuyển đến màn hình chi tiết với thông tin người cần cứu
+      print('🔄 Navigating to /sos-accepted...');
       Navigator.pushNamed(
         context,
         '/sos-accepted',
@@ -69,6 +77,7 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
         ),
       );
     } catch (e) {
+      print('❌ Error in _handleAccept: $e');
       if (!mounted) return;
 
       setState(() => _isLoading = false);

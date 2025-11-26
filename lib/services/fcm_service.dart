@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../utils/navigation_service.dart';
 import '../widgets/sos_alert_dialog.dart';
+import '../screens/sos_notification_dialog.dart';
 import '../widgets/sos_accepted_dialog.dart';
 
 class FCMService {
@@ -128,8 +129,22 @@ class FCMService {
                   body: message.notification?.body ?? 'Có trường hợp khẩn cấp!',
                   data: message.data,
                   onAccept: () {
-                    Navigator.of(context).pop(); // Đóng dialog
-                    print('User accepted SOS case: ${message.data['caseId']}');
+                    Navigator.of(context).pop(); // Đóng alert dialog
+                    print('User accepted SOS alert: ${message.data['caseId']}');
+
+                    // Mở dialog chấp nhận chi tiết
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => SosNotificationDialog(
+                        caseId: message.data['caseId'],
+                        caseCode:
+                            'SOS-${message.data['caseId'].toString().substring(0, 4)}', // Fallback code
+                        emergencyType:
+                            message.data['emergencyType'] ?? 'EMERGENCY',
+                        distance: message.data['distance'] ?? 'Unknown',
+                      ),
+                    );
                   },
                   onDecline: () {
                     Navigator.of(context).pop(); // Đóng dialog
