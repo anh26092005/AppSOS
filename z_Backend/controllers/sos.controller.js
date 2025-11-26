@@ -400,9 +400,15 @@ const cancelSosCase = async (req, res, next) => {
       throw new AppError('SOS case has been cancelled', 400);
     }
 
+    // Populate reporterId để có thể compare
+    if (!sosCase.populated('reporterId')) {
+      await sosCase.populate('reporterId', '_id');
+    }
+
     // Xác định vai trò và quyền
     const isAdmin = userRoles.includes('ADMIN');
-    const isReporter = sosCase.reporterId.toString() === userId.toString();
+    const reporterIdStr = sosCase.reporterId?._id ? sosCase.reporterId._id.toString() : sosCase.reporterId.toString();
+    const isReporter = reporterIdStr === userId.toString();
     const isVolunteer = sosCase.acceptedBy && sosCase.acceptedBy.toString() === userId.toString();
 
     let cancelledByRole = null;

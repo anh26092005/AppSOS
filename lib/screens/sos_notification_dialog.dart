@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 
 class SosNotificationDialog extends StatefulWidget {
@@ -26,7 +27,26 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ApiService.acceptSosCase(widget.caseId);
+      // Get current location before accepting
+      double? latitude;
+      double? longitude;
+
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        latitude = position.latitude;
+        longitude = position.longitude;
+      } catch (e) {
+        print('Error getting location: $e');
+        // Continue without location if there's an error
+      }
+
+      final response = await ApiService.acceptSosCase(
+        widget.caseId,
+        latitude: latitude,
+        longitude: longitude,
+      );
 
       if (!mounted) return;
 
