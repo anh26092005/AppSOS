@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
+import '../widgets/skeleton_widgets.dart';
 
 class BlogPage extends StatefulWidget {
   const BlogPage({super.key});
@@ -51,7 +52,11 @@ class _BlogPageState extends State<BlogPage> {
         elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              itemCount: 5,
+              itemBuilder: (context, index) => const SkeletonBlogPost(),
+            )
           : _error != null
           ? Center(
               child: Column(

@@ -5,6 +5,7 @@ import '../models/weather_model.dart';
 import '../services/weather_service.dart';
 import '../services/post_service.dart';
 import '../services/api_service.dart';
+import '../widgets/skeleton_widgets.dart';
 import '../widgets/skeleton_post.dart';
 import 'post_detail_screen.dart';
 
@@ -253,9 +254,7 @@ class _HomePageNewState extends State<HomePageNew> {
                   }, childCount: _posts.length + (_isLoadingPosts ? 1 : 0)),
                 ),
               // Padding bottom để nội dung không bị che bởi navbar
-              const SliverPadding(
-                padding: EdgeInsets.only(bottom: 100),
-              ),
+              const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
           ),
         ),
@@ -265,21 +264,7 @@ class _HomePageNewState extends State<HomePageNew> {
 
   Widget _buildWeatherCard() {
     if (_isLoadingWeather) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: const Center(child: CircularProgressIndicator()),
-      );
+      return const SkeletonWeather();
     }
 
     if (_weather == null) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import '../services/api_service.dart';
 
 class AccountPage extends StatefulWidget {
@@ -156,12 +157,16 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                     if (_isLoading) ...[
                       const SizedBox(height: 8),
-                      const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+                      Shimmer.fromColors(
+                        baseColor: Colors.white.withValues(alpha: 0.3),
+                        highlightColor: Colors.white.withValues(alpha: 0.7),
+                        child: Container(
+                          width: 100,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
                     ],
