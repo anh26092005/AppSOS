@@ -203,8 +203,15 @@ class _AccountPageState extends State<AccountPage> {
                     // Volunteer Menu Item
                     Builder(
                       builder: (context) {
-                        final role = _user?['role'] ?? 'user';
-                        final isTNV = role == 'tnv_cn' || role == 'tnv_tc';
+                        final roles = _user?['roles'];
+                        bool isTNV = false;
+                        if (roles is List) {
+                          isTNV =
+                              roles.contains('TNV_CN') ||
+                              roles.contains('TNV_TC');
+                        } else if (roles is String) {
+                          isTNV = roles == 'TNV_CN' || roles == 'TNV_TC';
+                        }
                         final volunteerStatus =
                             _user?['volunteerStatus']; // PENDING, APPROVED, REJECTED
 
