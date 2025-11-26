@@ -1,0 +1,41 @@
+[33m27bec83[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m sửa lỗi tình nguyện viện đã nhận yêu cầu user
+[33m02dbfc8[m Merge branch 'main' of https://github.com/anh26092005/AppSOS
+[33m9072e0f[m fix loi log out user ,va ben tnv
+[33m927cdec[m account page
+[33md9bd0f6[m Merge branch 'main' of https://github.com/anh26092005/AppSOS
+[33m7f01525[m da them chuc nang goi sos va them man hinh dang goi cho cuu ho
+[33ma13fea7[m feat: Thêm các widget dialog, màn hình đăng nhập và các dịch vụ FCM, quản lý quyền.
+[33mdb7abf1[m feat: Khởi tạo ứng dụng Flutter với Firebase, FCM và kiểm tra phiên đăng nhập.
+[33mdf4485f[m deps: Cập nhật phiên bản của các gói `meta` và `test_api` trong `pubspec.lock`.
+[33mb27d027[m Merge branch 'main' of https://github.com/anh26092005/AppSOS
+[33me655c62[m feat: Triển khai tính năng SOS bao gồm dịch vụ FCM cho thông báo đẩy, các hộp thoại cảnh báo và bộ điều khiển backend.
+[33ma97f79b[m feat: Hoàn thiện tính năng thông báo SOS và luồng tình nguyện viên
+[33m13f9ee2[m tnv
+[33m2ca5472[m loađing
+[33m0c3c5f0[m tách main srceen và clean code, xoá sos screen không cần thiết, đồng bộ navbar
+[33m1c8aeb0[m sos to home
+[33m4c9ce33[m nav
+[33mff4c0ed[m tên user
+[33m5f7e09a[m blog detail
+[33mf7af6f8[m shadow
+[33m53e2b71[m header amimation
+[33ma2a293b[m xoá pin
+[33m170b541[m loading
+[33maa9c96a[m sửa home page
+[33m13f8a8b[m hien thi thong tin cua nguoi dung khi dang nhap
+[33m276c9de[m them map va gui ve admin
+[33m3aaa0e9[m them map
+[33me438c20[m lam lai sos
+[33mbb13bb8[m lam lai sos
+[33m5348c20[m lam lai sos
+[33ma845dcb[m fcmfcm
+[33med10203[m xin tat ca quyen
+[33m487fb2d[m fixlogin va signup se tra ve admin
+[33mbb099a9[m map
+[33mbe00fcd[m man hinh login
+[33m29ac49e[m backend
+[33m8fdd01b[m nutvaoapp
+[33m9f2a53e[m readme
+[33mcdb2b9a[m cautructhumuc
+[33m3878a12[m update giao dien SOS
+[33mf500ff6[m  first commit for AppSOS
