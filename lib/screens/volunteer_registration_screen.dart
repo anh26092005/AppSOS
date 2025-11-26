@@ -239,7 +239,9 @@ class _VolunteerRegistrationScreenState
                               }
                             });
                           },
-                          selectedColor: Colors.redAccent.withOpacity(0.2),
+                          selectedColor: Colors.redAccent.withValues(
+                            alpha: 0.2,
+                          ),
                           checkmarkColor: Colors.redAccent,
                         );
                       }).toList(),

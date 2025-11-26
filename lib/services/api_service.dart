@@ -181,7 +181,7 @@ class ApiService {
   static Future<Map<String, dynamic>> fetchProfile() async {
     final token = await getToken();
     if (token == null) {
-      throw Exception('Vui long dang nhap de xem tai khoan');
+      throw Exception('Vui lòng đăng nhập để xem tài khoản');
     }
 
     final url = Uri.parse('$baseUrl/auth/me');
@@ -198,7 +198,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(data['message'] ?? 'Khong the lay thong tin tai khoan');
+    throw Exception(data['message'] ?? 'Không thể lấy thông tin tài khoản');
   }
 
   static Future<List<dynamic>> fetchBlogs({
