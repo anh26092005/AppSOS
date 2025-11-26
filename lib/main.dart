@@ -9,24 +9,48 @@ import 'screens/main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Khởi tạo Firebase
   await Firebase.initializeApp();
-  
-  // Lấy FCM token và in ra console
-  await FCMService.getFCMToken();
-  
+
+  // Lấy FCM token và đăng ký với backend
+  final token = await FCMService.getFCMToken();
+  if (token != null) {
+    _registerTokenWithBackend(token);
+  }
+
   // Setup notification handlers
   FCMService.setupNotificationHandlers();
   FCMService.checkInitialMessage();
-  
+
   // Setup token refresh listener
   FCMService.setupTokenRefreshListener((newToken) {
     print('🔄 Token mới: $newToken');
-    // TODO: Gửi token mới lên backend
+    _registerTokenWithBackend(newToken);
   });
-  
+
   runApp(const SOSApp());
+}
+
+// Helper function để đăng ký token với backend
+Future<void> _registerTokenWithBackend(String token) async {
+  try {
+    // Chờ một chút để đảm bảo user đã đăng nhập
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Kiểm tra xem đã đăng nhập chưa
+    final hasSession = await ApiService.hasActiveSession();
+    if (!hasSession) {
+      print('⏳ Chưa đăng nhập, sẽ đăng ký token sau khi đăng nhập');
+      return;
+    }
+
+    await ApiService.registerDeviceToken(token);
+    print('✅ Đã đăng ký FCM token với backend');
+  } catch (e) {
+    print('❌ Lỗi đăng ký FCM token: $e');
+    // Không throw error để không crash app
+  }
 }
 
 class SOSApp extends StatelessWidget {
@@ -39,10 +63,7 @@ class SOSApp extends StatelessWidget {
       title: 'SOS App',
       theme: appTheme,
       initialRoute: '/',
-      routes: {
-        '/': (_) => const _AppEntry(),
-        ...appRoutes,
-      },
+      routes: {'/': (_) => const _AppEntry(), ...appRoutes},
     );
   }
 }
@@ -61,6 +82,18 @@ class _AppEntryState extends State<_AppEntry> {
   void initState() {
     super.initState();
     _sessionFuture = ApiService.hasActiveSession();
+    _registerTokenIfLoggedIn();
+  }
+
+  // Đăng ký FCM token nếu đã đăng nhập
+  Future<void> _registerTokenIfLoggedIn() async {
+    final hasSession = await ApiService.hasActiveSession();
+    if (hasSession) {
+      final token = FCMService.currentToken;
+      if (token != null) {
+        _registerTokenWithBackend(token);
+      }
+    }
   }
 
   @override

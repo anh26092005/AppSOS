@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart'; // Nhớ import API của anh
+import '../services/api_service.dart';
+import '../services/fcm_service.dart';
 import '../widgets/permission_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -63,13 +64,27 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pop(context);
 
       if (res.containsKey('token')) {
+        // Đăng ký FCM token sau khi đăng nhập thành công
+        final token = FCMService.currentToken;
+        if (token != null) {
+          try {
+            await ApiService.registerDeviceToken(token);
+            print('✅ Đã đăng ký FCM token với backend');
+          } catch (e) {
+            print('❌ Lỗi đăng ký FCM token: $e');
+          }
+        }
+
         if (!mounted) return;
         await ApiService.setRememberMe(_rememberMe);
+
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công ✅')));
 
         // Navigate to main screen
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/main');
 
         // Hiển thị dialog xin quyền sau khi vào màn hình chính
@@ -283,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      'Ghi nho dang nhap',
+                      'Ghi nhớ đăng nhập',
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -297,14 +312,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _handleLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
+                      elevation: 2,
                     ),
                     child: const Text(
-                      'Đăng Nhập',
+                      'Đăng nhập',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -327,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.pushReplacementNamed(context, '/signup');
                       },
                       child: const Text(
-                        'Đăng Ký',
+                        'Đăng ký ngay',
                         style: TextStyle(
                           color: Colors.redAccent,
                           fontWeight: FontWeight.bold,

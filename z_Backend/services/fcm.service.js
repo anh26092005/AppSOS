@@ -212,10 +212,15 @@ const sendMulticastNotification = async (pushTokens, title, body, data = {}) => 
 const sendNotificationToUser = async (userId, title, body, data = {}) => {
   try {
     // Lấy tất cả device của user
+    console.log(`🔍 Finding devices for userId: ${userId}`);
     const devices = await Device.find({ userId });
+    console.log(`📱 Found ${devices.length} devices for user ${userId}`);
 
     if (devices.length === 0) {
-      console.log(`No devices found for user: ${userId}`);
+      console.log(`❌ No devices found for user: ${userId}`);
+      // Thử tìm tất cả device để debug
+      const allDevices = await Device.find({}).limit(5);
+      console.log('DEBUG: First 5 devices in DB:', JSON.stringify(allDevices));
       return { success: false, error: 'No devices found for user' };
     }
 

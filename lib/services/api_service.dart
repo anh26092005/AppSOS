@@ -222,6 +222,97 @@ class ApiService {
     }
   }
 
+  /// Chấp nhận SOS case (cho tình nguyện viên)
+  static Future<Map<String, dynamic>> acceptSosCase(
+    String caseId, {
+    double? latitude,
+    double? longitude,
+  }) async {
+    final url = Uri.parse('$baseUrl/sos/$caseId/accept');
+    final headers = await _headers();
+
+    final body = <String, dynamic>{};
+    if (latitude != null) body['latitude'] = latitude;
+    if (longitude != null) body['longitude'] = longitude;
+
+    final res = await http.post(url, headers: headers, body: jsonEncode(body));
+
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể chấp nhận SOS case');
+  }
+
+  /// Từ chối SOS case (cho tình nguyện viên)
+  static Future<Map<String, dynamic>> declineSosCase(
+    String caseId,
+    String declineReason,
+  ) async {
+    final url = Uri.parse('$baseUrl/sos/$caseId/decline');
+    final headers = await _headers();
+
+    final res = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode({'declineReason': declineReason}),
+    );
+
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể từ chối SOS case');
+  }
+
+  /// Lấy chi tiết SOS case
+  static Future<Map<String, dynamic>> getSosCaseDetails(String caseId) async {
+    final url = Uri.parse('$baseUrl/sos/$caseId');
+    final headers = await _headers();
+
+    final res = await http.get(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể lấy thông tin SOS case');
+  }
+
+  /// Đăng ký FCM device token với backend
+  static Future<Map<String, dynamic>> registerDeviceToken(
+    String pushToken, {
+    String platform = 'ANDROID',
+    double? latitude,
+    double? longitude,
+  }) async {
+    final url = Uri.parse('$baseUrl/devices/register');
+    final headers = await _headers();
+
+    final body = <String, dynamic>{
+      'pushToken': pushToken,
+      'platform': platform,
+    };
+
+    if (latitude != null) body['latitude'] = latitude;
+    if (longitude != null) body['longitude'] = longitude;
+
+    final res = await http.post(url, headers: headers, body: jsonEncode(body));
+
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể đăng ký device token');
+  }
+
   static Map<String, dynamic> _decode(http.Response res) {
     try {
       return jsonDecode(res.body) as Map<String, dynamic>;
