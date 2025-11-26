@@ -19,7 +19,10 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   bool _isLoadingLocation = false;
   String _selectedEmergencyType = 'Y tế';
 
-  LatLng _initialPosition = const LatLng(10.8231, 106.6297); // TP.HCM coordinates
+  LatLng _initialPosition = const LatLng(
+    10.8231,
+    106.6297,
+  ); // TP.HCM coordinates
 
   List<Marker> _markers = [];
 
@@ -119,21 +122,14 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
             height: 80,
             child: Column(
               children: [
-                const Icon(
-                  Icons.location_on,
-                  color: Colors.red,
-                  size: 40,
-                ),
+                const Icon(Icons.location_on, color: Colors.red, size: 40),
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 4,
-                      ),
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
                     ],
                   ),
                   child: const Text(
@@ -147,10 +143,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         ];
       });
 
-      _mapController.move(
-        LatLng(position.latitude, position.longitude),
-        16.0,
-      );
+      _mapController.move(LatLng(position.latitude, position.longitude), 16.0);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -202,9 +195,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     final shouldSend = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Gửi SOS',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -242,7 +233,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
         emergencyType: _emergencyTypesMap[_selectedEmergencyType] ?? 'OTHER',
-        description: 'Tên: ${_nameController.text}\n${_descriptionController.text}',
+        description:
+            'Tên: ${_nameController.text}\n${_descriptionController.text}',
       );
 
       if (!mounted) return;
@@ -261,10 +253,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
       Navigator.pop(context); // Close loading
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi gửi SOS: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Lỗi gửi SOS: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -302,10 +291,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Gửi vị trí, thông tin của bạn. Người cứu hộ sẽ giúp đỡ',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -342,8 +328,10 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                           ),
                           children: [
                             TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.example.flutter_application_1',
+                              urlTemplate:
+                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              userAgentPackageName:
+                                  'com.example.flutter_application_1',
                               maxZoom: 19,
                             ),
                             MarkerLayer(markers: _markers),
@@ -356,7 +344,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: ElevatedButton.icon(
-                        onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                        onPressed: _isLoadingLocation
+                            ? null
+                            : _getCurrentLocation,
                         icon: _isLoadingLocation
                             ? const SizedBox(
                                 width: 18,
@@ -367,7 +357,11 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                                 ),
                               )
                             : const Icon(Icons.my_location, size: 18),
-                        label: Text(_isLoadingLocation ? 'Đang lấy vị trí...' : 'Lấy vị trí hiện tại'),
+                        label: Text(
+                          _isLoadingLocation
+                              ? 'Đang lấy vị trí...'
+                              : 'Lấy vị trí hiện tại',
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
@@ -432,9 +426,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                             decoration: BoxDecoration(
                               color: Colors.grey.shade50,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.shade300,
-                              ),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: DropdownButtonHideUnderline(
@@ -494,7 +486,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                             controller: _descriptionController,
                             maxLines: 4,
                             decoration: InputDecoration(
-                              hintText: 'Nhập nội dung cần hỗ trợ/ Sự cố nếu có (Ghi chú thêm chi tiết)',
+                              hintText:
+                                  'Nhập nội dung cần hỗ trợ/ Sự cố nếu có (Ghi chú thêm chi tiết)',
                               hintStyle: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade400,
@@ -538,10 +531,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Colors.red.shade300,
-                            Colors.red.shade600,
-                          ],
+                          colors: [Colors.red.shade300, Colors.red.shade600],
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -580,55 +570,10 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    // Padding bottom để nội dung không bị che bởi navbar từ MainScreen
+                    const SizedBox(height: 100),
                   ],
                 ),
-              ),
-            ),
-
-            // Bottom Navigation
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.home_outlined, color: Colors.grey.shade600),
-                    iconSize: 28,
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/main');
-                    },
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.emergency,
-                      color: Colors.redAccent,
-                      size: 28,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.person_outline, color: Colors.grey.shade600),
-                    iconSize: 28,
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/account');
-                    },
-                  ),
-                ],
               ),
             ),
           ],
@@ -637,4 +582,3 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     );
   }
 }
-
