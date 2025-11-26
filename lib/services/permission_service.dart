@@ -127,8 +127,30 @@ class PermissionService {
     return false;
   }
 
+  // Xin quyền thông báo
+  static Future<bool> requestNotificationPermission() async {
+    var status = await Permission.notification.status;
+
+    if (status.isGranted) {
+      return true;
+    }
+
+    if (status.isDenied) {
+      var result = await Permission.notification.request();
+      return result.isGranted;
+    }
+
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+      return false;
+    }
+
+    return false;
+  }
+
   // Xin tất cả quyền cơ bản cùng lúc
-  static Future<Map<Permission, PermissionStatus>> requestAllBasicPermissions() async {
+  static Future<Map<Permission, PermissionStatus>>
+  requestAllBasicPermissions() async {
     Map<Permission, PermissionStatus> statuses = await [
       Permission.location,
       Permission.camera,
@@ -150,4 +172,3 @@ class PermissionService {
     await openAppSettings();
   }
 }
-
