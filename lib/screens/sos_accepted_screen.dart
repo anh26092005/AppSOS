@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/api_service.dart';
 
 class SosAcceptedScreen extends StatefulWidget {
   final Map<String, dynamic> sosData;
@@ -70,6 +71,99 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
         return '🌪️';
       default:
         return '⚠️';
+    }
+  }
+
+  Future<void> _completeRescue() async {
+    final shouldComplete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Xác nhận hoàn thành',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn đã hoàn thành ứng cứu? Hành động này không thể hoàn tác.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Chưa'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Hoàn thành'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldComplete != true) return;
+
+    // Show loading
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final caseId = _case['_id'];
+      await ApiService.completeSosCase(caseId);
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      // Show success dialog
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 32),
+              const SizedBox(width: 12),
+              const Text(
+                'Thành công',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text('Đã hoàn thành ứng cứu thành công!'),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Về trang chủ'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi hoàn thành: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -280,6 +374,41 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 12),
+
+                  // Nút hoàn thành ứng cứu
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _completeRescue,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 3,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle, size: 24),
+                          SizedBox(width: 12),
+                          Text(
+                            'Hoàn thành ứng cứu',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

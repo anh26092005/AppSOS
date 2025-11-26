@@ -11,13 +11,13 @@ const findSosCaseByIdOrCode = async (identifier) => {
 
   // Kiểm tra xem có phải là ObjectId hợp lệ (24 hex characters)
   const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(identifier));
-  
+
   // Luôn thử tìm theo code trước (vì code có thể có format giống ObjectId)
   const caseByCode = await SosCase.findOne({ code: String(identifier) });
   if (caseByCode) {
     return caseByCode;
   }
-  
+
   // Nếu là ObjectId hợp lệ và không tìm thấy theo code, thử tìm theo ObjectId
   if (isObjectId) {
     try {
@@ -30,7 +30,7 @@ const findSosCaseByIdOrCode = async (identifier) => {
       return null;
     }
   }
-  
+
   return null;
 };
 
@@ -358,7 +358,7 @@ const acceptSosCase = async (req, res, next) => {
       });
 
       // Gửi FCM
-      sendNotificationToUser(reporterId, title, body, notificationData).catch(err => 
+      sendNotificationToUser(reporterId, title, body, notificationData).catch(err =>
         console.error('Error sending notification to reporter:', err)
       );
     } catch (notifyError) {
@@ -631,6 +631,87 @@ const getSosCases = async (req, res, next) => {
   }
 };
 
+// Hoàn thành SOS case (TNV)
+const completeSosCase = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+    const volunteerId = req.user._id;
+
+    const sosCase = await findSosCaseByIdOrCode(caseId);
+    if (!sosCase) {
+      throw new AppError('SOS case not found', 404);
+    }
+
+    // Verify: chỉ volunteer đã accept mới được complete
+    if (!sosCase.acceptedBy || sosCase.acceptedBy.toString() !== volunteerId.toString()) {
+      throw new AppError('Only the volunteer who accepted this case can complete it', 403);
+    }
+
+    // Verify: case phải ở trạng thái ACCEPTED hoặc IN_PROGRESS
+    if (!['ACCEPTED', 'IN_PROGRESS'].includes(sosCase.status)) {
+      throw new AppError('Cannot complete case in current status', 400);
+    }
+
+    // Update case status to RESOLVED
+    sosCase.status = 'RESOLVED';
+    sosCase.resolvedAt = new Date();
+    await sosCase.save();
+
+    // Update queue status
+    await SosResponderQueue.findOneAndUpdate(
+      { sosId: sosCase._id, volunteerId },
+      { status: 'COMPLETED', respondedAt: new Date() }
+    );
+
+    // Get volunteer info
+    const volunteer = await User.findById(volunteerId);
+
+    // Populate thông tin
+    await sosCase.populate('reporterId', 'fullName phone avatar');
+    await sosCase.populate('acceptedBy', 'fullName phone avatar');
+
+    // Send notification to reporter
+    try {
+      const reporterId = sosCase.reporterId._id || sosCase.reporterId;
+      const title = '✅ Ứng cứu đã hoàn thành';
+      const body = `TNV ${volunteer?.fullName || 'Tình nguyện viên'} đã hoàn thành ứng cứu. Cảm ơn bạn đã sử dụng dịch vụ!`;
+      const notificationData = {
+        type: 'SOS_COMPLETED',
+        caseId: sosCase._id.toString(),
+        volunteerId: volunteerId.toString(),
+        completedAt: sosCase.resolvedAt.toISOString(),
+      };
+
+      // Lưu in-app notification
+      await Notification.create({
+        userId: reporterId,
+        type: 'SOS_COMPLETED',
+        title,
+        body,
+        data: notificationData,
+        deliveredAt: new Date(),
+      });
+
+      // Gửi FCM
+      sendNotificationToUser(reporterId, title, body, notificationData).catch(err =>
+        console.error('Error sending completion notification to reporter:', err)
+      );
+    } catch (notifyError) {
+      console.error('Error notifying reporter about completion:', notifyError);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        case: sosCase,
+        message: 'SOS case completed successfully',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Lấy Google Maps directions URL
 const getDirections = async (req, res, next) => {
   try {
@@ -672,6 +753,7 @@ module.exports = {
   acceptSosCase,
   cancelSosCase,
   declineSosCase,
+  completeSosCase,
   getSosCaseDetails,
   getSosCases,
   getDirections,

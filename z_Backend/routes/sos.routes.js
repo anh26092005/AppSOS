@@ -4,6 +4,7 @@ const {
   acceptSosCase,
   cancelSosCase,
   declineSosCase,
+  completeSosCase,
   getSosCaseDetails,
   getSosCases,
   getDirections,
@@ -32,6 +33,9 @@ router.post('/:caseId/cancel', cancelSosCase);
 
 // TNV từ chối case
 router.post('/:caseId/decline', declineSosCase);
+
+// TNV hoàn thành case
+router.post('/:caseId/complete', completeSosCase);
 
 // Lấy chi tiết case (đặt cuối cùng vì match với mọi thứ)
 router.get('/:caseId', getSosCaseDetails);

@@ -229,7 +229,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     );
 
     try {
-      await ApiService.sendSOS(
+      final response = await ApiService.sendSOS(
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
         emergencyType: _emergencyTypesMap[_selectedEmergencyType] ?? 'OTHER',
@@ -240,12 +240,27 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
       if (!mounted) return;
       Navigator.pop(context); // Close loading
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã gửi tín hiệu SOS thành công!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // Get caseId from response
+      final caseData = response['data']?['case'];
+      final caseId = caseData?['_id'];
+
+      if (caseId != null) {
+        // Navigate to searching screen
+        Navigator.pushReplacementNamed(
+          context,
+          '/sos-searching',
+          arguments: {'caseId': caseId, 'caseData': caseData},
+        );
+      } else {
+        // Fallback: just show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã gửi tín hiệu SOS thành công!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
       _nameController.clear();
       _descriptionController.clear();
     } catch (e) {

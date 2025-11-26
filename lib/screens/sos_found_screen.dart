@@ -1,393 +1,427 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../services/api_service.dart';
 
 class SosFoundScreen extends StatefulWidget {
-  const SosFoundScreen({super.key});
+  final String caseId;
+  final Map<String, dynamic>? caseData;
+
+  const SosFoundScreen({super.key, required this.caseId, this.caseData});
 
   @override
   State<SosFoundScreen> createState() => _SosFoundScreenState();
 }
 
 class _SosFoundScreenState extends State<SosFoundScreen> {
-  final List<Map<String, dynamic>> _sosList = [
-    {
-      'id': 1,
-      'name': 'Nguyễn Văn A',
-      'location': '123 Đường ABC, Quận 1, TP.HCM',
-      'time': '2 phút trước',
-      'status': 'active',
-      'description': 'Cần hỗ trợ khẩn cấp',
-      'distance': '1.2 km',
-    },
-    {
-      'id': 2,
-      'name': 'Trần Thị B',
-      'location': '456 Đường XYZ, Quận 3, TP.HCM',
-      'time': '5 phút trước',
-      'status': 'active',
-      'description': 'Tai nạn giao thông',
-      'distance': '0.8 km',
-    },
-    {
-      'id': 3,
-      'name': 'Lê Văn C',
-      'location': '789 Đường DEF, Quận 5, TP.HCM',
-      'time': '10 phút trước',
-      'status': 'resolved',
-      'description': 'Đã được hỗ trợ',
-      'distance': '2.5 km',
-    },
-  ];
+  Timer? _pollingTimer;
+  Map<String, dynamic>? _currentCaseData;
+  bool _isLoading = true;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('SOS Đã Tìm Thấy'),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // TODO: Refresh SOS list
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Filter bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.white,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _buildFilterChip('Tất cả', true, () {}),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildFilterChip('Đang hoạt động', false, () {}),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildFilterChip('Đã xử lý', false, () {}),
+  void initState() {
+    super.initState();
+    _currentCaseData = widget.caseData;
+
+    // If we don't have initial data, fetch it
+    if (_currentCaseData == null) {
+      _fetchCaseDetails();
+    } else {
+      _isLoading = false;
+    }
+
+    // Start polling every 5 seconds
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchCaseDetails();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchCaseDetails() async {
+    try {
+      final response = await ApiService.getSosCaseDetails(widget.caseId);
+      final caseData = response['data']['case'];
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentCaseData = caseData;
+        _isLoading = false;
+      });
+
+      final status = caseData['status'];
+
+      // Check if volunteer cancelled
+      if (status == 'SEARCHING') {
+        _pollingTimer?.cancel();
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Tình nguyện viên đã hủy',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Tình nguyện viên đã hủy. Hệ thống đang tìm người khác hỗ trợ bạn...',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Đồng ý'),
                 ),
               ],
             ),
-          ),
-          // SOS List
-          Expanded(
-            child: _sosList.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _sosList.length,
-                    itemBuilder: (context, index) {
-                      final sos = _sosList[index];
-                      return _buildSosCard(sos);
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
+          );
+        }
+      }
+
+      // Check if completed
+      if (status == 'RESOLVED') {
+        _pollingTimer?.cancel();
+        if (mounted) {
+          _showCompletionDialog();
+        }
+      }
+    } catch (e) {
+      print('Error fetching case details: $e');
+    }
   }
 
-  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.redAccent : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 12,
+  void _showCompletionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 32),
+            const SizedBox(width: 12),
+            const Text(
+              'Ứng cứu hoàn thành',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-          ),
+          ],
         ),
+        content: const Text(
+          'Ứng cứu đã hoàn thành! Cảm ơn bạn đã sử dụng dịch vụ Safe Connect.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Về trang chủ'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSosCard(Map<String, dynamic> sos) {
-    final isActive = sos['status'] == 'active';
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isActive ? Colors.redAccent : Colors.grey.shade300,
-          width: isActive ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể gọi điện thoại'),
+            backgroundColor: Colors.red,
           ),
-        ],
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading || _currentCaseData == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text('Thông tin tình nguyện viên'),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final responderInfo = _currentCaseData!['responderInfo'] ?? {};
+    final volunteerName = responderInfo['volunteerName'] ?? 'Tình nguyện viên';
+    final volunteerPhone = responderInfo['volunteerPhone'];
+    final acceptedAt = responderInfo['acceptedAt'];
+
+    // Format time
+    String acceptedTime = '';
+    if (acceptedAt != null) {
+      try {
+        final dt = DateTime.parse(acceptedAt);
+        acceptedTime = '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        print('Error parsing acceptedAt: $e');
+      }
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'Đã tìm thấy hỗ trợ',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
       ),
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to SOS detail
-        },
-        borderRadius: BorderRadius.circular(16),
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.red.shade400,
-                          Colors.red.shade700,
-                        ],
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+              // Success icon
+              Center(
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.green.shade100,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 60,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Title
+              const Text(
+                'Đã tìm thấy tình nguyện viên!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                'Tình nguyện viên đang trên đường đến bạn',
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 32),
+
+              // Volunteer info card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.green.shade300, width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Avatar and name
+                    Row(
                       children: [
-                        Text(
-                          sos['name'],
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.green.shade400,
+                                Colors.green.shade700,
+                              ],
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 32,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                volunteerName,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade700,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'Tình nguyện viên',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Phone number
+                    if (volunteerPhone != null)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
                           children: [
                             Icon(
-                              Icons.access_time,
-                              size: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              sos['time'],
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
+                              Icons.phone,
+                              color: Colors.green.shade700,
+                              size: 24,
                             ),
                             const SizedBox(width: 12),
-                            Icon(
-                              Icons.location_on,
-                              size: 14,
-                              color: Colors.grey.shade600,
+                            Expanded(
+                              child: Text(
+                                volunteerPhone,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              sos['distance'],
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                            IconButton(
+                              onPressed: () => _makePhoneCall(volunteerPhone),
+                              icon: Icon(
+                                Icons.call,
+                                color: Colors.green.shade700,
+                              ),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.green.shade100,
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.redAccent.withValues(alpha: 0.1)
-                          : Colors.green.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isActive ? 'Đang hoạt động' : 'Đã xử lý',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isActive ? Colors.redAccent : Colors.green,
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.description_outlined,
-                      size: 16,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        sos['description'],
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
+
+                    const SizedBox(height: 12),
+
+                    // Accepted time
+                    if (acceptedTime.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              color: Colors.green.shade700,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Đã chấp nhận lúc $acceptedTime',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      sos['location'],
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              if (isActive) ...[
-                const SizedBox(height: 12),
+
+              const Spacer(),
+
+              // Call button
+              if (volunteerPhone != null)
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Accept SOS request
-                      _showAcceptDialog(sos);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _makePhoneCall(volunteerPhone),
+                    icon: const Icon(Icons.call, size: 24),
+                    label: const Text(
+                      'Gọi điện cho tình nguyện viên',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: const Text(
-                      'Nhận Hỗ Trợ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
                 ),
-              ],
+
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
     );
   }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 80,
-            color: Colors.grey.shade300,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Không có SOS nào được tìm thấy',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hãy thử lại sau',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAcceptDialog(Map<String, dynamic> sos) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text('Xác nhận hỗ trợ'),
-        content: Text(
-          'Bạn có chắc chắn muốn nhận hỗ trợ ${sos['name']}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đã nhận hỗ trợ ${sos['name']}'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      ),
-    );
-  }
 }
-

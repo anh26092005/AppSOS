@@ -284,6 +284,44 @@ class ApiService {
     throw Exception(data['message'] ?? 'Không thể lấy thông tin SOS case');
   }
 
+  /// Hủy SOS case (cho reporter hoặc volunteer)
+  static Future<Map<String, dynamic>> cancelSosCase(
+    String caseId,
+    String cancelReason,
+  ) async {
+    final url = Uri.parse('$baseUrl/sos/$caseId/cancel');
+    final headers = await _headers();
+
+    final res = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode({'cancelReason': cancelReason}),
+    );
+
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể hủy SOS case');
+  }
+
+  /// Hoàn thành SOS case (cho tình nguyện viên)
+  static Future<Map<String, dynamic>> completeSosCase(String caseId) async {
+    final url = Uri.parse('$baseUrl/sos/$caseId/complete');
+    final headers = await _headers();
+
+    final res = await http.post(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể hoàn thành SOS case');
+  }
+
   /// Đăng ký FCM device token với backend
   static Future<Map<String, dynamic>> registerDeviceToken(
     String pushToken, {
