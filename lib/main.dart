@@ -6,9 +6,28 @@ import 'services/fcm_service.dart';
 import 'services/api_service.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/main_screen.dart';
-import 'utils/navigation_service.dart';
 
-// ... (giữ nguyên imports khác)
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Khởi tạo Firebase
+  await Firebase.initializeApp();
+
+  // Lấy FCM token và in ra console
+  await FCMService.getFCMToken();
+
+  // Setup notification handlers
+  FCMService.setupNotificationHandlers();
+  FCMService.checkInitialMessage();
+
+  // Setup token refresh listener
+  FCMService.setupTokenRefreshListener((newToken) {
+    print('🔄 Token mới: $newToken');
+    // TODO: Gửi token mới lên backend
+  });
+
+  runApp(const SOSApp());
+}
 
 class SOSApp extends StatelessWidget {
   const SOSApp({super.key});
@@ -40,6 +59,18 @@ class _AppEntryState extends State<_AppEntry> {
   void initState() {
     super.initState();
     _sessionFuture = ApiService.hasActiveSession();
+    _registerTokenIfLoggedIn();
+  }
+
+  // Đăng ký FCM token nếu đã đăng nhập
+  Future<void> _registerTokenIfLoggedIn() async {
+    final hasSession = await ApiService.hasActiveSession();
+    if (hasSession) {
+      final token = FCMService.currentToken;
+      if (token != null) {
+        _registerTokenWithBackend(token);
+      }
+    }
   }
 
   @override
