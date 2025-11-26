@@ -276,37 +276,57 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
               decoration: BoxDecoration(
                 color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'Cứu hộ khẩn cấp',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.redAccent,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.redAccent,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Cứu hộ khẩn cấp',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFD32F2F),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
-                    'Gửi vị trí, thông tin của bạn. Người cứu hộ sẽ giúp đỡ',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    'Gửi vị trí và thông tin sự cố ngay lập tức.\nĐội cứu hộ sẽ hỗ trợ bạn.',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF757575),
+                      height: 1.4,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -315,170 +335,180 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
 
             Expanded(
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    // Map
+                    const SizedBox(height: 20),
+                    // Map Section
                     Container(
-                      height: 200,
-                      margin: const EdgeInsets.all(16),
+                      height: 220,
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: FlutterMap(
-                          mapController: _mapController,
-                          options: MapOptions(
-                            initialCenter: _initialPosition,
-                            initialZoom: 14.0,
-                            minZoom: 3.0,
-                            maxZoom: 18.0,
-                          ),
+                        borderRadius: BorderRadius.circular(24),
+                        child: Stack(
                           children: [
-                            TileLayer(
-                              urlTemplate:
-                                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.example.app_sos',
-                              maxZoom: 19,
+                            FlutterMap(
+                              mapController: _mapController,
+                              options: MapOptions(
+                                initialCenter: _initialPosition,
+                                initialZoom: 15.0,
+                                minZoom: 3.0,
+                                maxZoom: 18.0,
+                              ),
+                              children: [
+                                TileLayer(
+                                  urlTemplate:
+                                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                  userAgentPackageName: 'com.example.app_sos',
+                                  maxZoom: 19,
+                                ),
+                                MarkerLayer(markers: _markers),
+                              ],
                             ),
-                            MarkerLayer(markers: _markers),
+                            // Location Button Overlay
+                            Positioned(
+                              bottom: 16,
+                              right: 16,
+                              child: FloatingActionButton.small(
+                                onPressed: _isLoadingLocation
+                                    ? null
+                                    : _getCurrentLocation,
+                                backgroundColor: Colors.white,
+                                elevation: 4,
+                                child: _isLoadingLocation
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.orange,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.my_location,
+                                        color: Colors.orange,
+                                      ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
 
-                    // Location Button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoadingLocation
-                            ? null
-                            : _getCurrentLocation,
-                        icon: _isLoadingLocation
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.my_location, size: 18),
-                        label: Text(
-                          _isLoadingLocation
-                              ? 'Đang lấy vị trí...'
-                              : 'Lấy vị trí hiện tại',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 24),
 
-                    const SizedBox(height: 16),
-
-                    // Form
+                    // Form Section
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Name Input
-                          TextField(
-                            controller: _nameController,
-                            decoration: InputDecoration(
-                              hintText: 'Nhập tên của bạn (*)',
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade400,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Colors.redAccent,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
+                          Text(
+                            'Thông tin chi tiết',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF333333),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
+
+                          // Name Input
+                          _buildTextField(
+                            controller: _nameController,
+                            hintText: 'Họ và tên của bạn (*)',
+                            icon: Icons.person_outline,
+                          ),
+                          const SizedBox(height: 16),
 
                           // Emergency Type Dropdown
                           Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade300),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey.shade200),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedEmergencyType,
                                 isExpanded: true,
-                                hint: const Text('Chọn loại khẩn cấp'),
+                                icon: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: Colors.grey,
+                                ),
                                 items: _emergencyTypes.map((String type) {
                                   IconData icon;
                                   Color color;
                                   switch (type) {
                                     case 'Y tế':
-                                      icon = Icons.local_hospital;
+                                      icon = Icons.medical_services_outlined;
                                       color = Colors.red;
                                       break;
                                     case 'Tai nạn':
-                                      icon = Icons.car_crash;
+                                      icon = Icons.car_crash_outlined;
                                       color = Colors.orange;
                                       break;
                                     case 'Cháy nổ':
-                                      icon = Icons.local_fire_department;
+                                      icon =
+                                          Icons.local_fire_department_outlined;
                                       color = Colors.deepOrange;
                                       break;
                                     case 'Trộm cắp':
-                                      icon = Icons.security;
+                                      icon = Icons.security_outlined;
                                       color = Colors.purple;
                                       break;
                                     default:
-                                      icon = Icons.warning;
+                                      icon = Icons.warning_amber_rounded;
                                       color = Colors.grey;
                                   }
                                   return DropdownMenuItem<String>(
                                     value: type,
                                     child: Row(
                                       children: [
-                                        Icon(icon, color: color, size: 20),
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: color.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            icon,
+                                            color: color,
+                                            size: 20,
+                                          ),
+                                        ),
                                         const SizedBox(width: 12),
-                                        Text(type),
+                                        Text(
+                                          type,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF333333),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   );
@@ -493,104 +523,142 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
 
                           // Description Input
-                          TextField(
+                          _buildTextField(
                             controller: _descriptionController,
-                            maxLines: 4,
-                            decoration: InputDecoration(
-                              hintText:
-                                  'Nhập nội dung cần hỗ trợ/ Sự cố nếu có (Ghi chú thêm chi tiết)',
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade400,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Colors.redAccent,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.all(16),
-                            ),
+                            hintText: 'Mô tả sự cố / Ghi chú thêm...',
+                            icon: Icons.notes_rounded,
+                            maxLines: 3,
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 40),
 
                     // SOS Button
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Colors.red.shade300, Colors.red.shade600],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _sendSOS,
-                          borderRadius: BorderRadius.circular(70),
-                          child: Center(
-                            child: Container(
-                              width: 110,
-                              height: 110,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
+                    Center(
+                      child: GestureDetector(
+                        onTap: _sendSOS,
+                        child: Container(
+                          width: 160,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFFFF5252), Color(0xFFD32F2F)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFFF5252,
+                                ).withValues(alpha: 0.4),
+                                blurRadius: 30,
+                                spreadRadius: 10,
+                                offset: const Offset(0, 10),
                               ),
-                              child: const Center(
-                                child: Text(
-                                  'SOS',
-                                  style: TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.redAccent,
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFD32F2F,
+                                ).withValues(alpha: 0.4),
+                                blurRadius: 60,
+                                spreadRadius: 5,
+                                offset: const Offset(0, 20),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Inner ring
+                              Container(
+                                width: 130,
+                                height: 130,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    width: 2,
                                   ),
                                 ),
                               ),
-                            ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.sos_rounded,
+                                    size: 48,
+                                    color: Colors.white,
+                                  ),
+                                  Text(
+                                    'GỬI NGAY',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
 
-                    // Padding bottom để nội dung không bị che bởi navbar từ MainScreen
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 120),
                   ],
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF333333),
+        ),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade400),
+          prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 22),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.all(16),
         ),
       ),
     );

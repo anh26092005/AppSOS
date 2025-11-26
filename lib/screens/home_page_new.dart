@@ -398,219 +398,253 @@ class _HomePageNewState extends State<HomePageNew> {
 
   Widget _buildPostCard(PostModel post) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 7,
+            offset: const Offset(0, 0),
             spreadRadius: 2,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Author Info
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFFF6C343).withValues(alpha: 0.2),
-                  ),
-                  child: post.authorAvatar != null
-                      ? ClipOval(
-                          child: Image.network(
-                            post.authorAvatar!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PostDetailScreen(post: post),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Author Info
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Avatar
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFFF6C343).withValues(alpha: 0.2),
+                      ),
+                      child: post.authorAvatar != null
+                          ? ClipOval(
+                              child: Image.network(
+                                post.authorAvatar!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.person,
+                                  color: Color(0xFFF6C343),
+                                ),
+                              ),
+                            )
+                          : const Icon(
                               Icons.person,
                               color: Color(0xFFF6C343),
+                              size: 24,
                             ),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.person,
-                          color: Color(0xFFF6C343),
-                          size: 24,
-                        ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              Text(
+                                post.authorName,
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF333333),
+                                ),
+                              ),
+                              if (post.authorType == 'group') ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFF6C343,
+                                    ).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.group,
+                                    size: 12,
+                                    color: Color(0xFFF6C343),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                           Text(
-                            post.authorName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF333333),
+                            _formatTimeAgo(post.createdAt),
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF999999),
                             ),
                           ),
-                          if (post.authorType == 'group') ...[
+                        ],
+                      ),
+                    ),
+                    // Like Button
+                    InkWell(
+                      onTap: () => _handleLike(post),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: post.isLiked
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : Colors.grey.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              post.isLiked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 18,
+                              color: post.isLiked
+                                  ? Colors.red
+                                  : const Color(0xFF777777),
+                            ),
                             const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFF6C343,
-                                ).withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.group,
-                                size: 12,
-                                color: Color(0xFFF6C343),
+                            Text(
+                              '${post.likeCount}',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: post.isLiked
+                                    ? Colors.red
+                                    : const Color(0xFF777777),
                               ),
                             ),
                           ],
-                        ],
-                      ),
-                      Text(
-                        _formatTimeAgo(post.createdAt),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF777777),
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content Text
+              if (post.contentText.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    post.contentText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF333333),
+                      height: 1.5,
+                    ),
                   ),
                 ),
-                // Like Button
-                InkWell(
-                  onTap: () => _handleLike(post),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          post.isLiked ? Icons.favorite : Icons.favorite_border,
-                          size: 18,
-                          color: post.isLiked
-                              ? Colors.red
-                              : const Color(0xFF777777),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${post.likeCount}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: post.isLiked
-                                ? Colors.red
-                                : const Color(0xFF777777),
+
+              // Image
+              if (post.imageUrl != null) ...[
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      post.imageUrl!,
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 200,
+                          color: Colors.grey.shade100,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
                           ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 200,
+                        color: Colors.grey.shade100,
+                        child: const Icon(
+                          Icons.broken_image,
+                          size: 40,
+                          color: Colors.grey,
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
 
-          // Content Text
-          if (post.contentText.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                post.contentText,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF333333),
-                  height: 1.5,
-                ),
-              ),
-            ),
-
-          // Image
-          if (post.imageUrl != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-              child: Image.network(
-                post.imageUrl!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    height: 200,
-                    color: Colors.grey.shade200,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                            : null,
+              // Footer (Read More Button)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PostDetailScreen(post: post),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF6C343),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Xem chi tiết',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => Container(
-                  height: 200,
-                  color: Colors.grey.shade200,
-                  child: const Icon(
-                    Icons.broken_image,
-                    size: 60,
-                    color: Colors.grey,
                   ),
                 ),
               ),
-            ),
-          ],
-
-          // View Post Button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PostDetailScreen(post: post),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF6C343),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Xem bài viết',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -654,14 +688,14 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
           ],
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
             spreadRadius: 1,
           ),
         ],
@@ -704,7 +738,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: const Color(0xFF666666),
+                                  color: Colors.black,
                                 ),
                               ),
                             ],
