@@ -345,8 +345,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
                             TileLayer(
                               urlTemplate:
                                   'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName:
-                                  'com.example.flutter_application_1',
+                              userAgentPackageName: 'com.example.app_sos',
                               maxZoom: 19,
                             ),
                             MarkerLayer(markers: _markers),

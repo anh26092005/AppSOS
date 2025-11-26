@@ -3,17 +3,20 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../services/api_service.dart';
+import '../services/fcm_service.dart';
 
 class VolunteerDashboardScreen extends StatefulWidget {
   const VolunteerDashboardScreen({super.key});
 
   @override
-  State<VolunteerDashboardScreen> createState() => _VolunteerDashboardScreenState();
+  State<VolunteerDashboardScreen> createState() =>
+      _VolunteerDashboardScreenState();
 }
 
 class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   GoogleMapController? _mapController;
-  
+
   // Sample SOS incident data
   final Map<String, dynamic> _currentIncident = {
     'id': 'SOS-303',
@@ -35,7 +38,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   LatLng? _victimLocation;
   bool _isLocationLoaded = false;
   Set<Marker> _markers = {};
-  
+
   // Check if Google Maps is supported on current platform
   // Google Maps Flutter only supports Android, iOS, and Web
   // For desktop (Windows/Linux/macOS), we show fallback map
@@ -62,7 +65,8 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
       // Try to detect if we're on desktop
       // Since dart:io doesn't work on web, we'll use a different approach
       // For now, assume mobile platforms support it, desktop will show error/fallback
-      _isGoogleMapsSupported = true; // Will be caught by error handling if not supported
+      _isGoogleMapsSupported =
+          true; // Will be caught by error handling if not supported
     }
   }
 
@@ -96,11 +100,28 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
         _updateMarkers();
         // Move camera to show both locations
         _mapController?.animateCamera(
-          CameraUpdate.newLatLngBounds(
-            _getBounds(),
-            100.0,
-          ),
+          CameraUpdate.newLatLngBounds(_getBounds(), 100.0),
         );
+
+        // Update location to backend
+        final token = FCMService.currentToken;
+        if (token != null) {
+          ApiService.registerDeviceToken(
+                token,
+                latitude: position.latitude,
+                longitude: position.longitude,
+              )
+              .then((_) {
+                print(
+                  '✅ Location updated to backend: ${position.latitude}, ${position.longitude}',
+                );
+              })
+              .catchError((e) {
+                print('❌ Failed to update location: $e');
+              });
+        } else {
+          print('⚠️ FCM Token is null, cannot update location');
+        }
       });
     } catch (e) {
       // If location fails, use default
@@ -116,15 +137,23 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     if (_victimLocation != null) {
       locations.add(_victimLocation!);
     }
-    
+
     double? minLat, maxLat, minLng, maxLng;
     for (var loc in locations) {
-      minLat = minLat == null ? loc.latitude : (loc.latitude < minLat ? loc.latitude : minLat);
-      maxLat = maxLat == null ? loc.latitude : (loc.latitude > maxLat ? loc.latitude : maxLat);
-      minLng = minLng == null ? loc.longitude : (loc.longitude < minLng ? loc.longitude : minLng);
-      maxLng = maxLng == null ? loc.longitude : (loc.longitude > maxLng ? loc.longitude : maxLng);
+      minLat = minLat == null
+          ? loc.latitude
+          : (loc.latitude < minLat ? loc.latitude : minLat);
+      maxLat = maxLat == null
+          ? loc.latitude
+          : (loc.latitude > maxLat ? loc.latitude : maxLat);
+      minLng = minLng == null
+          ? loc.longitude
+          : (loc.longitude < minLng ? loc.longitude : minLng);
+      maxLng = maxLng == null
+          ? loc.longitude
+          : (loc.longitude > maxLng ? loc.longitude : maxLng);
     }
-    
+
     return LatLngBounds(
       southwest: LatLng(minLat!, minLng!),
       northeast: LatLng(maxLat!, maxLng!),
@@ -149,7 +178,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
           Marker(
             markerId: const MarkerId('victim_location'),
             position: _victimLocation!,
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueRed,
+            ),
             infoWindow: InfoWindow(
               title: 'Vị trí nạn nhân',
               snippet: _currentIncident['victimName'],
@@ -169,11 +200,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.map,
-                  size: 60,
-                  color: Colors.grey.shade400,
-                ),
+                Icon(Icons.map, size: 60, color: Colors.grey.shade400),
                 const SizedBox(height: 16),
                 Text(
                   'Bản đồ (Chỉ hỗ trợ Android/iOS/Web)',
@@ -186,10 +213,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Vui lòng chạy trên thiết bị di động',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
               ],
             ),
@@ -211,7 +235,10 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                 ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue,
                     borderRadius: BorderRadius.circular(12),
@@ -246,7 +273,10 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(12),
@@ -275,7 +305,8 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     final now = DateTime.now();
     final hour = now.hour;
     final minute = now.minute;
-    final timeString = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+    final timeString =
+        '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -301,9 +332,17 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.signal_cellular_4_bar, size: 18, color: Colors.grey.shade600),
+                          Icon(
+                            Icons.signal_cellular_4_bar,
+                            size: 18,
+                            color: Colors.grey.shade600,
+                          ),
                           const SizedBox(width: 8),
-                          Icon(Icons.battery_full, size: 18, color: Colors.grey.shade600),
+                          Icon(
+                            Icons.battery_full,
+                            size: 18,
+                            color: Colors.grey.shade600,
+                          ),
                         ],
                       ),
                     ],
@@ -329,10 +368,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                       Expanded(
                         child: Text(
                           'Hãy là một tình nguyện viên từ tâm nhé!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.black54),
                         ),
                       ),
                     ],
@@ -366,16 +402,19 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                                 onMapCreated: (GoogleMapController controller) {
                                   _mapController = controller;
                                   // Adjust camera to show both locations
-                                  Future.delayed(const Duration(milliseconds: 500), () {
-                                    if (_victimLocation != null) {
-                                      _mapController?.animateCamera(
-                                        CameraUpdate.newLatLngBounds(
-                                          _getBounds(),
-                                          100.0,
-                                        ),
-                                      );
-                                    }
-                                  });
+                                  Future.delayed(
+                                    const Duration(milliseconds: 500),
+                                    () {
+                                      if (_victimLocation != null) {
+                                        _mapController?.animateCamera(
+                                          CameraUpdate.newLatLngBounds(
+                                            _getBounds(),
+                                            100.0,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  );
                                 },
                                 markers: _markers,
                                 myLocationEnabled: true,
@@ -531,15 +570,30 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                             ),
                             const SizedBox(height: 12),
                             // Victim Info
-                            _buildInfoRow('Họ và tên Nạn nhân:', _currentIncident['victimName']),
+                            _buildInfoRow(
+                              'Họ và tên Nạn nhân:',
+                              _currentIncident['victimName'],
+                            ),
                             const SizedBox(height: 8),
-                            _buildInfoRow('Giới tính:', _currentIncident['gender']),
+                            _buildInfoRow(
+                              'Giới tính:',
+                              _currentIncident['gender'],
+                            ),
                             const SizedBox(height: 8),
-                            _buildInfoRow('Năm sinh:', _currentIncident['birthYear'].toString()),
+                            _buildInfoRow(
+                              'Năm sinh:',
+                              _currentIncident['birthYear'].toString(),
+                            ),
                             const SizedBox(height: 8),
-                            _buildInfoRow('SĐT cá nhân:', _currentIncident['personalPhone']),
+                            _buildInfoRow(
+                              'SĐT cá nhân:',
+                              _currentIncident['personalPhone'],
+                            ),
                             const SizedBox(height: 8),
-                            _buildInfoRow('SĐT người thân:', _currentIncident['relativePhone']),
+                            _buildInfoRow(
+                              'SĐT người thân:',
+                              _currentIncident['relativePhone'],
+                            ),
                             const SizedBox(height: 12),
                             // Rescue Content
                             const Text(
@@ -566,7 +620,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.orange.shade50,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.orange.shade200),
+                                  border: Border.all(
+                                    color: Colors.orange.shade200,
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -613,10 +669,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                           height: 120,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.orange,
-                              width: 3,
-                            ),
+                            border: Border.all(color: Colors.orange, width: 3),
                             color: Colors.white,
                           ),
                           child: Material(
@@ -687,18 +740,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
             showSelectedLabels: false,
             showUnselectedLabels: false,
             items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.article),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: '',
-              ),
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.article), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
             ],
           ),
         ),
@@ -711,10 +755,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.red.shade600,
-              Colors.red.shade800,
-            ],
+            colors: [Colors.red.shade600, Colors.red.shade800],
           ),
           boxShadow: [
             BoxShadow(
@@ -816,10 +857,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
           ),
         ),
       ],
@@ -831,7 +869,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận ứng cứu'),
-        content: const Text('Bạn có chắc chắn muốn ứng cứu cho trường hợp này không?'),
+        content: const Text(
+          'Bạn có chắc chắn muốn ứng cứu cho trường hợp này không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -859,4 +899,3 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     );
   }
 }
-

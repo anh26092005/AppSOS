@@ -5,6 +5,7 @@ import '../utils/navigation_service.dart';
 import '../widgets/sos_alert_dialog.dart';
 import '../screens/sos_notification_dialog.dart';
 import '../widgets/sos_accepted_dialog.dart';
+import '../services/api_service.dart';
 
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -163,37 +164,53 @@ class FCMService {
 
       // Hiển thị SOS Accepted Dialog nếu TNV chấp nhận case
       if (message.data['type'] == 'SOS_ACCEPTED') {
-        final context = NavigationService.context;
-        if (context != null) {
-          try {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (BuildContext context) {
-                return SOSAcceptedDialog(
-                  title: message.notification?.title ?? 'TNV đã nhận!',
-                  body:
-                      message.notification?.body ?? 'TNV đang đến hỗ trợ bạn.',
-                  data: message.data,
-                  onAction: () {
-                    Navigator.of(context).pop(); // Đóng dialog
-                    print(
-                      'User view volunteer location: ${message.data['volunteerId']}',
-                    );
-                  },
-                  onClose: () {
-                    Navigator.of(context).pop(); // Đóng dialog
-                  },
-                );
-              },
-            );
-            print('✅ SOS Accepted Dialog shown');
-          } catch (e) {
-            print('❌ Error showing SOS Accepted Dialog: $e');
+        ApiService.getCachedUser().then((user) {
+          print('🔍 Checking user role for SOS_ACCEPTED dialog');
+          print('User: $user');
+          print('Roles: ${user?['roles']}');
+
+          // Check if user has volunteer role (TNV_CN or VOLUNTEER)
+          if (user != null && user['roles'] != null) {
+            final roles = user['roles'] as List;
+            if (roles.contains('TNV_CN') || roles.contains('VOLUNTEER')) {
+              print('🚫 Skipping SOS Accepted Dialog for Volunteer');
+              return;
+            }
           }
-        } else {
-          print('❌ Cannot show dialog: Context is null');
-        }
+
+          final context = NavigationService.context;
+          if (context != null) {
+            try {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  return SOSAcceptedDialog(
+                    title: message.notification?.title ?? 'TNV đã nhận!',
+                    body:
+                        message.notification?.body ??
+                        'TNV đang đến hỗ trợ bạn.',
+                    data: message.data,
+                    onAction: () {
+                      Navigator.of(context).pop(); // Đóng dialog
+                      print(
+                        'User view volunteer location: ${message.data['volunteerId']}',
+                      );
+                    },
+                    onClose: () {
+                      Navigator.of(context).pop(); // Đóng dialog
+                    },
+                  );
+                },
+              );
+              print('✅ SOS Accepted Dialog shown');
+            } catch (e) {
+              print('❌ Error showing SOS Accepted Dialog: $e');
+            }
+          } else {
+            print('❌ Cannot show dialog: Context is null');
+          }
+        });
       }
     });
 
