@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
@@ -357,5 +359,69 @@ class ApiService {
     } catch (_) {
       return {'raw': res.body};
     }
+  }
+
+  /// Upload hình ảnh (dùng chung API upload của article)
+  static Future<Map<String, dynamic>> uploadImage(File imageFile) async {
+    final url = Uri.parse('$baseUrl/articles/upload-image');
+    final token = await getToken();
+
+    final request = http.MultipartRequest('POST', url);
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    // Xác định mime type dựa trên extension
+    final extension = imageFile.path.split('.').last.toLowerCase();
+    String mimeType = 'image/jpeg'; // Default
+    if (extension == 'png') {
+      mimeType = 'image/png';
+    } else if (extension == 'jpg' || extension == 'jpeg') {
+      mimeType = 'image/jpeg';
+    } else if (extension == 'gif') {
+      mimeType = 'image/gif';
+    } else if (extension == 'webp') {
+      mimeType = 'image/webp';
+    }
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'image',
+        imageFile.path,
+        contentType: MediaType.parse(mimeType),
+      ),
+    );
+
+    final streamedRes = await request.send();
+    final res = await http.Response.fromStream(streamedRes);
+    final data = _decode(res);
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      // API trả về data: { data: { bucket: "...", key: "...", url: "..." } }
+      if (data['data'] != null) {
+        return data['data'];
+      }
+    }
+
+    throw Exception(data['message'] ?? 'Upload ảnh thất bại');
+  }
+
+  /// Đăng ký làm tình nguyện viên
+  static Future<Map<String, dynamic>> registerVolunteer(
+    Map<String, dynamic> body,
+  ) async {
+    final url = Uri.parse('$baseUrl/volunteers');
+    final headers = await _headers();
+
+    final res = await http.post(url, headers: headers, body: jsonEncode(body));
+
+    final data = _decode(res);
+
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Đăng ký TNV thất bại');
   }
 }

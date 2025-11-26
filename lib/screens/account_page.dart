@@ -199,6 +199,101 @@ class _AccountPageState extends State<AccountPage> {
                       },
                     ),
                     const SizedBox(height: 12),
+
+                    // Volunteer Menu Item
+                    Builder(
+                      builder: (context) {
+                        final roles = _user?['roles'];
+                        bool isTNV = false;
+                        if (roles is List) {
+                          isTNV =
+                              roles.contains('TNV_CN') ||
+                              roles.contains('TNV_TC');
+                        } else if (roles is String) {
+                          isTNV = roles == 'TNV_CN' || roles == 'TNV_TC';
+                        }
+                        final volunteerStatus =
+                            _user?['volunteerStatus']; // PENDING, APPROVED, REJECTED
+
+                        // 1. Đã là TNV (APPROVED)
+                        if (isTNV) {
+                          return _buildAccountTile(
+                            context,
+                            icon: Icons.badge_outlined,
+                            title: 'Xem hồ sơ tình nguyện viên',
+                            subtitle: 'Quản lý hồ sơ TNV của bạn',
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/info-tnv',
+                                arguments: _user,
+                              );
+                            },
+                          );
+                        }
+
+                        // 2. Đang chờ duyệt (PENDING)
+                        if (volunteerStatus == 'PENDING') {
+                          return _buildAccountTile(
+                            context,
+                            icon: Icons.hourglass_empty,
+                            title: 'Hồ sơ đang chờ duyệt',
+                            subtitle: 'Vui lòng chờ quản trị viên xác nhận',
+                            // iconColor: Colors.orange, // Helper chưa hỗ trợ iconColor, cần sửa helper hoặc bỏ qua
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Đang xét duyệt'),
+                                  content: const Text(
+                                    'Hồ sơ đăng ký tình nguyện viên của bạn đang được ban quản trị xem xét. Chúng tôi sẽ thông báo khi có kết quả.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Đóng'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }
+
+                        // 3. Bị từ chối (REJECTED)
+                        if (volunteerStatus == 'REJECTED') {
+                          return _buildAccountTile(
+                            context,
+                            icon: Icons.error_outline,
+                            title: 'Đăng ký bị từ chối',
+                            subtitle: 'Nhấn để đăng ký lại',
+                            // iconColor: Colors.red,
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/volunteer-registration',
+                              );
+                            },
+                          );
+                        }
+
+                        // 4. Chưa đăng ký (hoặc user thường)
+                        return _buildAccountTile(
+                          context,
+                          icon: Icons.volunteer_activism,
+                          title: 'Đăng ký làm tình nguyện viên',
+                          subtitle: 'Tham gia cứu hộ cộng đồng',
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/volunteer-registration',
+                            );
+                          },
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
                     _buildAccountTile(
                       context,
                       icon: Icons.settings_outlined,

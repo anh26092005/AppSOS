@@ -8,27 +8,37 @@ class InfoTnvScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Default data if not provided
-    final tnv = tnvData ?? {
+    // Default data if not provided or missing fields
+    final Map<String, dynamic> defaults = {
       'id': 1,
-      'name': 'Nguyễn Thị D',
+      'name': 'Tình nguyện viên',
       'avatar': '',
-      'rating': 4.8,
-      'reviews': 125,
-      'specialties': ['Y tế', 'Cứu hộ'],
-      'distance': '0.5 km',
-      'status': 'online',
-      'completedCases': 45,
-      'phone': '0123456789',
-      'email': 'tnv@example.com',
-      'experience': '5 năm',
-      'description':
-          'Tình nguyện viên có nhiều kinh nghiệm trong lĩnh vực y tế và cứu hộ. Sẵn sàng hỗ trợ 24/7.',
-      'certifications': [
-        'Chứng chỉ Y tế',
-        'Chứng chỉ Cứu hộ',
-        'Chứng chỉ Sơ cấp cứu',
-      ],
+      'rating': 5.0,
+      'reviews': 0,
+      'specialties': ['Cứu hộ'],
+      'distance': 'Unknown',
+      'status': 'offline',
+      'completedCases': 0,
+      'phone': 'N/A',
+      'email': 'N/A',
+      'experience': 'Chưa cập nhật',
+      'description': 'Chưa có mô tả.',
+      'certifications': [],
     };
+
+    final Map<String, dynamic> tnv = {};
+    if (tnvData != null) {
+      tnv.addAll(defaults); // Start with defaults
+      tnv.addAll(tnvData!); // Override with provided data
+
+      // Map specific fields from user profile if present
+      if (tnvData!['fullName'] != null) tnv['name'] = tnvData!['fullName'];
+      // Ensure lists are actually lists
+      if (tnv['specialties'] == null) tnv['specialties'] = [];
+      if (tnv['certifications'] == null) tnv['certifications'] = [];
+    } else {
+      tnv.addAll(defaults);
+    }
 
     final isOnline = tnv['status'] == 'online';
 
@@ -55,10 +65,7 @@ class InfoTnvScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.red.shade400,
-                      Colors.red.shade700,
-                    ],
+                    colors: [Colors.red.shade400, Colors.red.shade700],
                   ),
                 ),
                 child: Stack(
@@ -77,7 +84,9 @@ class InfoTnvScreen extends StatelessWidget {
                                   color: Colors.white,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       blurRadius: 15,
                                       offset: const Offset(0, 5),
                                     ),
@@ -99,7 +108,10 @@ class InfoTnvScreen extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       color: Colors.green,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 3),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
                                     ),
                                     child: const Icon(
                                       Icons.check,
@@ -114,11 +126,7 @@ class InfoTnvScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.star,
-                                size: 20,
-                                color: Colors.amber,
-                              ),
+                              Icon(Icons.star, size: 20, color: Colors.amber),
                               const SizedBox(width: 4),
                               Text(
                                 '${tnv['rating']}',
@@ -212,28 +220,30 @@ class InfoTnvScreen extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: (tnv['specialties'] as List)
-                        .map<Widget>((specialty) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                        .map<Widget>(
+                          (specialty) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.redAccent,
+                                width: 1,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.redAccent,
-                                  width: 1,
-                                ),
+                            ),
+                            child: Text(
+                              specialty,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w600,
                               ),
-                              child: Text(
-                                specialty,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.redAccent,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ))
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                   const SizedBox(height: 24),
@@ -274,42 +284,44 @@ class InfoTnvScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...(tnv['certifications'] as List? ?? []).map((cert) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.verified,
-                                color: Colors.green,
-                                size: 20,
+                  ...(tnv['certifications'] as List? ?? []).map(
+                    (cert) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.verified,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              cert,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                cert,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   // Contact Info
                   const Text(
@@ -361,7 +373,9 @@ class InfoTnvScreen extends StatelessWidget {
                           // TODO: Contact TNV
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Đã gửi yêu cầu đến ${tnv['name']}'),
+                              content: Text(
+                                'Đã gửi yêu cầu đến ${tnv['name']}',
+                              ),
                               backgroundColor: Colors.green,
                             ),
                           );
@@ -393,7 +407,10 @@ class InfoTnvScreen extends StatelessWidget {
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.redAccent,
-                          side: const BorderSide(color: Colors.redAccent, width: 2),
+                          side: const BorderSide(
+                            color: Colors.redAccent,
+                            width: 2,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -433,10 +450,7 @@ class InfoTnvScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
       ],
@@ -468,10 +482,7 @@ class InfoTnvScreen extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -496,4 +507,3 @@ class InfoTnvScreen extends StatelessWidget {
     );
   }
 }
-

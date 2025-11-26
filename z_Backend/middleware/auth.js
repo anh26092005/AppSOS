@@ -21,7 +21,9 @@ const authenticate = async (req, res, next) => {
     }
 
     const payload = verifyToken(token);
-    const userId = payload.sub || payload.id;
+    console.log('Auth Debug - Payload:', payload);
+    const userId = payload.sub || payload.id || payload._id;
+    console.log('Auth Debug - UserId:', userId);
     const user = await User.findById(userId).lean();
 
     if (!user) {
