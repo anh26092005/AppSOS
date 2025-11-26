@@ -334,6 +334,37 @@ const acceptSosCase = async (req, res, next) => {
     // Tạo Google Maps directions URL
     const directionsUrl = getDirectionsUrl(sosCase.location, sosCase.responderLocation);
 
+    // Gửi thông báo cho reporter
+    try {
+      const reporterId = sosCase.reporterId._id || sosCase.reporterId;
+      const title = '✅ Đã có TNV nhận hỗ trợ!';
+      const body = `TNV ${volunteer.fullName} đang đến vị trí của bạn.`;
+      const notificationData = {
+        type: 'SOS_ACCEPTED',
+        caseId: sosCase._id.toString(),
+        volunteerId: volunteerId.toString(),
+        volunteerName: volunteer.fullName,
+        volunteerPhone: volunteer.phone,
+      };
+
+      // Lưu in-app notification
+      await Notification.create({
+        userId: reporterId,
+        type: 'SOS_ACCEPTED',
+        title,
+        body,
+        data: notificationData,
+        deliveredAt: new Date(),
+      });
+
+      // Gửi FCM
+      sendNotificationToUser(reporterId, title, body, notificationData).catch(err => 
+        console.error('Error sending notification to reporter:', err)
+      );
+    } catch (notifyError) {
+      console.error('Error notifying reporter:', notifyError);
+    }
+
     res.json({
       success: true,
       data: {

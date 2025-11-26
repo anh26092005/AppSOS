@@ -1,5 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import '../utils/navigation_service.dart';
+import '../widgets/sos_alert_dialog.dart';
+import '../widgets/sos_accepted_dialog.dart';
 
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -19,22 +23,27 @@ class FCMService {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         // Lấy token
         _fcmToken = await _messaging.getToken();
-        
+
         if (kDebugMode) {
-          print('═══════════════════════════════════════════════════════════════');
+          print(
+            '═══════════════════════════════════════════════════════════════',
+          );
           print('✅ FCM Token obtained:');
           print(_fcmToken);
-          print('═══════════════════════════════════════════════════════════════');
+          print(
+            '═══════════════════════════════════════════════════════════════',
+          );
         }
-        
+
         return _fcmToken;
-      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+      } else if (settings.authorizationStatus ==
+          AuthorizationStatus.provisional) {
         _fcmToken = await _messaging.getToken();
-        
+
         if (kDebugMode) {
           print('✅ FCM Token (provisional): $_fcmToken');
         }
-        
+
         return _fcmToken;
       } else {
         if (kDebugMode) {
@@ -89,8 +98,60 @@ class FCMService {
         print('Body: ${message.notification?.body}');
         print('Data: ${message.data}');
       }
-      
-      // TODO: Hiển thị notification hoặc xử lý data
+
+      // Hiển thị SOS Alert Dialog nếu là tin nhắn SOS
+      if (message.data['type'] == 'SOS_CASE') {
+        final context = NavigationService.context;
+        if (context != null) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return SOSAlertDialog(
+                title: message.notification?.title ?? 'SOS Alert',
+                body: message.notification?.body ?? 'Có trường hợp khẩn cấp!',
+                data: message.data,
+                onAccept: () {
+                  Navigator.of(context).pop(); // Đóng dialog
+                  // Navigate to SOS details screen
+                  // TODO: Implement navigation logic based on caseId
+                  print('User accepted SOS case: ${message.data['caseId']}');
+                },
+                onDecline: () {
+                  Navigator.of(context).pop(); // Đóng dialog
+                },
+              );
+            },
+          );
+        }
+      }
+
+      // Hiển thị SOS Accepted Dialog nếu TNV chấp nhận case
+      if (message.data['type'] == 'SOS_ACCEPTED') {
+        final context = NavigationService.context;
+        if (context != null) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return SOSAcceptedDialog(
+                title: message.notification?.title ?? 'TNV đã nhận!',
+                body: message.notification?.body ?? 'TNV đang đến hỗ trợ bạn.',
+                data: message.data,
+                onAction: () {
+                  Navigator.of(context).pop(); // Đóng dialog
+                  // Navigate to map screen to track volunteer
+                  // TODO: Implement navigation logic
+                  print(
+                    'User view volunteer location: ${message.data['volunteerId']}',
+                  );
+                },
+                onClose: () {
+                  Navigator.of(context).pop(); // Đóng dialog
+                },
+              );
+            },
+          );
+        }
+      }
     });
 
     // Xử lý khi user tap vào notification (app đang background)
@@ -99,24 +160,23 @@ class FCMService {
         print('📨 Notification tapped (background):');
         print('Data: ${message.data}');
       }
-      
+
       // TODO: Navigate to specific screen based on notification data
     });
   }
 
   /// Kiểm tra notification đã được tap khi app terminated
   static Future<void> checkInitialMessage() async {
-    RemoteMessage? initialMessage = 
-        await FirebaseMessaging.instance.getInitialMessage();
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance
+        .getInitialMessage();
 
     if (initialMessage != null) {
       if (kDebugMode) {
         print('📨 App opened from notification (terminated):');
         print('Data: ${initialMessage.data}');
       }
-      
+
       // TODO: Navigate to specific screen based on notification data
     }
   }
 }
-
