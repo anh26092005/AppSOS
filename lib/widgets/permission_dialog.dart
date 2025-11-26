@@ -47,6 +47,13 @@ class _PermissionDialogContentState extends State<_PermissionDialogContent> {
 
   final List<Map<String, dynamic>> _permissions = [
     {
+      'icon': Icons.notifications,
+      'color': Colors.purple,
+      'title': 'Thông báo',
+      'description': 'Để nhận cảnh báo SOS và cập nhật trạng thái',
+      'status': 'pending',
+    },
+    {
       'icon': Icons.location_on,
       'color': Colors.blue,
       'title': 'Vị trí',
@@ -264,11 +271,20 @@ class _PermissionDialogContentState extends State<_PermissionDialogContent> {
       _isRequesting = true;
     });
 
+    // Xin quyền thông báo
+    bool notificationGranted =
+        await PermissionService.requestNotificationPermission();
+    setState(() {
+      _permissions[0]['status'] = notificationGranted ? 'granted' : 'denied';
+    });
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
     // Xin quyền vị trí
     bool locationGranted =
         await PermissionService.requestFineLocationPermission();
     setState(() {
-      _permissions[0]['status'] = locationGranted ? 'granted' : 'denied';
+      _permissions[1]['status'] = locationGranted ? 'granted' : 'denied';
     });
 
     await Future.delayed(const Duration(milliseconds: 300));
@@ -276,7 +292,7 @@ class _PermissionDialogContentState extends State<_PermissionDialogContent> {
     // Xin quyền camera
     bool cameraGranted = await PermissionService.requestCameraPermission();
     setState(() {
-      _permissions[1]['status'] = cameraGranted ? 'granted' : 'denied';
+      _permissions[2]['status'] = cameraGranted ? 'granted' : 'denied';
     });
 
     await Future.delayed(const Duration(milliseconds: 300));
@@ -284,7 +300,7 @@ class _PermissionDialogContentState extends State<_PermissionDialogContent> {
     // Xin quyền ảnh
     bool photosGranted = await PermissionService.requestPhotosPermission();
     setState(() {
-      _permissions[2]['status'] = photosGranted ? 'granted' : 'denied';
+      _permissions[3]['status'] = photosGranted ? 'granted' : 'denied';
     });
 
     await Future.delayed(const Duration(milliseconds: 300));
@@ -292,7 +308,7 @@ class _PermissionDialogContentState extends State<_PermissionDialogContent> {
     // Xin quyền danh bạ
     bool contactsGranted = await PermissionService.requestContactsPermission();
     setState(() {
-      _permissions[3]['status'] = contactsGranted ? 'granted' : 'denied';
+      _permissions[4]['status'] = contactsGranted ? 'granted' : 'denied';
     });
 
     setState(() {

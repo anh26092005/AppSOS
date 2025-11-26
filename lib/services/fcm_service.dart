@@ -1,5 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import '../utils/navigation_service.dart';
+import '../widgets/sos_alert_dialog.dart';
+import '../widgets/sos_accepted_dialog.dart';
 
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -17,6 +21,13 @@ class FCMService {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Cấu hình để hiện thông báo hệ thống ngay cả khi app đang foreground (iOS/Android 13+)
+        await _messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
         // Lấy token
         _fcmToken = await _messaging.getToken();
 
@@ -89,13 +100,86 @@ class FCMService {
     // Xử lý notification khi app đang foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (kDebugMode) {
+        print(
+          '═══════════════════════════════════════════════════════════════',
+        );
         print('📨 Notification received (foreground):');
         print('Title: ${message.notification?.title}');
         print('Body: ${message.notification?.body}');
         print('Data: ${message.data}');
+        print('Type: ${message.data['type']}');
+        print('Context available: ${NavigationService.context != null}');
+        print(
+          '═══════════════════════════════════════════════════════════════',
+        );
       }
 
-      // TODO: Hiển thị notification hoặc xử lý data
+      // Hiển thị SOS Alert Dialog nếu là tin nhắn SOS
+      if (message.data['type'] == 'SOS_CASE') {
+        final context = NavigationService.context;
+        if (context != null) {
+          try {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return SOSAlertDialog(
+                  title: message.notification?.title ?? 'SOS Alert',
+                  body: message.notification?.body ?? 'Có trường hợp khẩn cấp!',
+                  data: message.data,
+                  onAccept: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                    print('User accepted SOS case: ${message.data['caseId']}');
+                  },
+                  onDecline: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                  },
+                );
+              },
+            );
+            print('✅ SOS Alert Dialog shown');
+          } catch (e) {
+            print('❌ Error showing SOS Alert Dialog: $e');
+          }
+        } else {
+          print('❌ Cannot show dialog: Context is null');
+        }
+      }
+
+      // Hiển thị SOS Accepted Dialog nếu TNV chấp nhận case
+      if (message.data['type'] == 'SOS_ACCEPTED') {
+        final context = NavigationService.context;
+        if (context != null) {
+          try {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return SOSAcceptedDialog(
+                  title: message.notification?.title ?? 'TNV đã nhận!',
+                  body:
+                      message.notification?.body ?? 'TNV đang đến hỗ trợ bạn.',
+                  data: message.data,
+                  onAction: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                    print(
+                      'User view volunteer location: ${message.data['volunteerId']}',
+                    );
+                  },
+                  onClose: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                  },
+                );
+              },
+            );
+            print('✅ SOS Accepted Dialog shown');
+          } catch (e) {
+            print('❌ Error showing SOS Accepted Dialog: $e');
+          }
+        } else {
+          print('❌ Cannot show dialog: Context is null');
+        }
+      }
     });
 
     // Xử lý khi user tap vào notification (app đang background)

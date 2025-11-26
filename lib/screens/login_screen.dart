@@ -65,11 +65,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (res.containsKey('token')) {
         // Đăng ký FCM token sau khi đăng nhập thành công
-        final token = FCMService.currentToken;
+        final token = await FCMService.getFCMToken();
         if (token != null) {
           try {
             await ApiService.registerDeviceToken(token);
-            print('✅ Đã đăng ký FCM token với backend');
+            print('✅ Đã đăng ký FCM token với backend: $token');
           } catch (e) {
             print('❌ Lỗi đăng ký FCM token: $e');
           }
