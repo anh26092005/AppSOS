@@ -13,6 +13,7 @@ router.use('/articles', articleRoutes);
 router.use('/sos', sosRoutes);
 router.use('/admin', adminRoutes);
 router.use('/admin/volunteers', volunteerRoutes);
+router.use('/volunteers', volunteerRoutes);
 router.use('/devices', deviceRoutes);
 
 module.exports = router;

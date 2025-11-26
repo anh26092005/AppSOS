@@ -1,4 +1,4 @@
-const { SosCase, SosResponderQueue, VolunteerProfile, User } = require('../models');
+const { SosCase, SosResponderQueue, VolunteerProfile, User, Notification } = require('../models');
 const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
 const { sendNotificationToUser } = require('../services/fcm.service');
@@ -140,13 +140,28 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
         const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
-        return sendNotificationToUser(volunteer.userId, title, body, {
+        // Tạo in-app notification
+        const notificationData = {
           type: 'SOS_CASE',
           caseId: sosCase._id.toString(),
           caseCode: sosCase.code,
           emergencyType: sosCase.emergencyType,
           distance: distance,
+        };
+
+        const notificationPromise = Notification.create({
+          userId: volunteer.userId,
+          type: 'SOS_CASE',
+          title,
+          body,
+          data: notificationData,
+          deliveredAt: new Date(),
         });
+
+        // Gửi FCM
+        const fcmPromise = sendNotificationToUser(volunteer.userId, title, body, notificationData);
+
+        return Promise.all([notificationPromise, fcmPromise]);
       });
 
       await Promise.all(notificationPromises);

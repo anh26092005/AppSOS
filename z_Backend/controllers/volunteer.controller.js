@@ -1,6 +1,82 @@
 const { VolunteerProfile, User } = require('../models');
 const AppError = require('../utils/appError');
 
+// Tạo volunteer profile mới
+const createVolunteerProfile = async (req, res, next) => {
+  try {
+    const {
+      userId,
+      type,
+      skills,
+      homeBase,
+      organization,
+      idCardFront,
+      idCardBack,
+    } = req.body;
+
+    // Validate required fields
+    if (!userId) {
+      throw new AppError('User ID is required', 400);
+    }
+
+    if (!type || !['CN', 'TC'].includes(type)) {
+      throw new AppError('Type is required and must be CN or TC', 400);
+    }
+
+    if (!homeBase || !homeBase.location || !homeBase.location.coordinates) {
+      throw new AppError('Home base location is required', 400);
+    }
+
+    // Validate coordinates
+    const [longitude, latitude] = homeBase.location.coordinates;
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      throw new AppError('Invalid coordinates', 400);
+    }
+
+    // Kiểm tra user tồn tại
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Kiểm tra đã có volunteer profile chưa
+    const existingProfile = await VolunteerProfile.findOne({ userId });
+    if (existingProfile) {
+      throw new AppError('Volunteer profile already exists for this user', 400);
+    }
+
+    // Tạo volunteer profile
+    const volunteerProfile = await VolunteerProfile.create({
+      userId,
+      type,
+      skills: skills || [],
+      homeBase: {
+        location: {
+          type: 'Point',
+          coordinates: [parseFloat(longitude), parseFloat(latitude)],
+        },
+        radiusKm: homeBase.radiusKm || 5,
+      },
+      organization: organization || null,
+      idCardFront: idCardFront || null,
+      idCardBack: idCardBack || null,
+      status: 'PENDING',
+      ready: false,
+    });
+
+    // Populate user info
+    await volunteerProfile.populate('userId', 'fullName phone email avatar roles isActive');
+
+    res.status(201).json({
+      success: true,
+      data: volunteerProfile,
+      message: 'Volunteer profile created successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Lấy danh sách volunteers
 const getVolunteers = async (req, res, next) => {
   try {
@@ -200,6 +276,7 @@ const updateVolunteer = async (req, res, next) => {
 };
 
 module.exports = {
+  createVolunteerProfile,
   getVolunteers,
   getVolunteerById,
   approveVolunteer,

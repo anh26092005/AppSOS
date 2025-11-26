@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  createVolunteerProfile,
   getVolunteers,
   getVolunteerById,
   approveVolunteer,
@@ -10,7 +11,10 @@ const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Tất cả routes cần authentication và admin authorization
+// Tạo volunteer profile (cần authentication nhưng không cần admin)
+router.post('/', authenticate, createVolunteerProfile);
+
+// Các routes còn lại cần authentication và admin authorization
 router.use(authenticate);
 router.use(authorize('ADMIN'));
 

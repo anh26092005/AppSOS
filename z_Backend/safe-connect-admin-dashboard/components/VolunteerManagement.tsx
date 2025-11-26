@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { VolunteerApplication, ApprovalStatus, VolunteerType } from '../types';
 import { EyeIcon, CheckCircleIcon, XCircleIcon } from './icons';
 import { volunteerService } from '../services/volunteerService';
+import { userService } from '../services/userService';
 import { mapBackendVolunteerToFrontend } from '../utils/volunteerMapper';
 
 const statusColorMap: { [key in ApprovalStatus]: string } = {
@@ -148,11 +149,194 @@ const VolunteerTable: React.FC<{applications: VolunteerApplication[], onSelectAp
     </div>
 );
 
+const CreateVolunteerModal: React.FC<{ onClose: () => void; onCreate: () => void }> = ({ onClose, onCreate }) => {
+    const [formData, setFormData] = useState({
+        userId: '',
+        type: 'CN' as 'CN' | 'TC',
+        longitude: '106.660172',
+        latitude: '10.762622',
+        radiusKm: 10,
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [users, setUsers] = useState<any[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            setLoadingUsers(true);
+            const response = await userService.getUsers({ limit: 100 });
+            setUsers(response.data || []);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        
+        if (!formData.userId) {
+            setError('Vui lòng chọn người dùng');
+            return;
+        }
+
+        const lat = parseFloat(formData.latitude);
+        const lng = parseFloat(formData.longitude);
+
+        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            setError('Tọa độ không hợp lệ');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await volunteerService.createVolunteerProfile({
+                userId: formData.userId,
+                type: formData.type,
+                homeBase: {
+                    location: {
+                        coordinates: [lng, lat],
+                    },
+                    radiusKm: formData.radiusKm,
+                },
+            });
+            onCreate();
+            onClose();
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Có lỗi xảy ra khi tạo volunteer profile');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-8 m-4">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-white">Tạo Volunteer Profile Mới</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white text-3xl">&times;</button>
+                </div>
+
+                {error && (
+                    <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-red-400 text-sm">
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Người dùng *</label>
+                        <select
+                            value={formData.userId}
+                            onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                            required
+                            disabled={loadingUsers}
+                        >
+                            <option value="">-- Chọn người dùng --</option>
+                            {users.map((user) => (
+                                <option key={user._id} value={user._id}>
+                                    {user.fullName} ({user.phone})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Loại TNV *</label>
+                        <select
+                            value={formData.type}
+                            onChange={(e) => setFormData({ ...formData, type: e.target.value as 'CN' | 'TC' })}
+                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        >
+                            <option value="CN">Cá nhân (CN)</option>
+                            <option value="TC">Tổ chức (TC)</option>
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Kinh độ (Longitude) *</label>
+                            <input
+                                type="text"
+                                value={formData.longitude}
+                                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="106.660172"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Vĩ độ (Latitude) *</label>
+                            <input
+                                type="text"
+                                value={formData.latitude}
+                                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="10.762622"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Bán kính hoạt động (km)</label>
+                        <input
+                            type="number"
+                            value={formData.radiusKm}
+                            onChange={(e) => setFormData({ ...formData, radiusKm: parseInt(e.target.value) || 10 })}
+                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:ring-blue-500 focus:border-blue-500"
+                            min="1"
+                            max="50"
+                        />
+                    </div>
+
+                    <div className="text-xs text-gray-400 bg-gray-700/50 p-3 rounded">
+                        <p className="font-semibold mb-1">Lưu ý:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            <li>Profile sẽ có status PENDING sau khi tạo</li>
+                            <li>Cần approve để TNV nhận được thông báo SOS</li>
+                            <li>Tọa độ mặc định: TP.HCM</li>
+                        </ul>
+                    </div>
+
+                    <div className="flex justify-end gap-4 mt-6">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-500 transition-colors"
+                            disabled={loading}
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            disabled={loading}
+                        >
+                            {loading ? 'Đang tạo...' : 'Tạo Profile'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 const VolunteerManagement: React.FC = () => {
     const [applications, setApplications] = useState<VolunteerApplication[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
     const [selectedApp, setSelectedApp] = useState<VolunteerApplication | null>(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     useEffect(() => {
         fetchVolunteers();
@@ -200,7 +384,15 @@ const VolunteerManagement: React.FC = () => {
 
     return (
         <div className="p-8">
-            <h1 className="text-3xl font-bold text-white mb-8">Quản lý Tình nguyện viên</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold text-white">Quản lý Tình nguyện viên</h1>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                    + Tạo TNV mới
+                </button>
+            </div>
             <div className="mb-6 border-b border-gray-700">
                 <nav className="flex space-x-4">
                     <button onClick={() => setActiveTab('pending')} className={`py-2 px-4 text-sm font-medium ${activeTab === 'pending' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}>
@@ -221,6 +413,15 @@ const VolunteerManagement: React.FC = () => {
             </div>
             
             {selectedApp && <ApplicationDetailModal app={selectedApp} onClose={() => setSelectedApp(null)} onUpdate={handleUpdateApplication} />}
+            {showCreateModal && (
+                <CreateVolunteerModal
+                    onClose={() => setShowCreateModal(false)}
+                    onCreate={() => {
+                        fetchVolunteers();
+                        setShowCreateModal(false);
+                    }}
+                />
+            )}
         </div>
     );
 };

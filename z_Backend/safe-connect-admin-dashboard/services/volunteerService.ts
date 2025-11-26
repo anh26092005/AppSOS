@@ -8,6 +8,22 @@ export interface VolunteerFilters {
 }
 
 export const volunteerService = {
+  async createVolunteerProfile(data: {
+    userId: string;
+    type: 'CN' | 'TC';
+    homeBase: {
+      location: {
+        coordinates: [number, number];
+      };
+      radiusKm?: number;
+    };
+    skills?: string[];
+    organization?: any;
+  }) {
+    const response = await api.post('/volunteers', data);
+    return response.data;
+  },
+
   async getVolunteers(filters: VolunteerFilters = {}) {
     const response = await api.get('/admin/volunteers', { params: filters });
     return response.data;
