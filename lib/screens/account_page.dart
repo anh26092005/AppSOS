@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import '../services/api_service.dart';
 
 class AccountPage extends StatefulWidget {
@@ -11,8 +10,6 @@ class AccountPage extends StatefulWidget {
 
 class _AccountPageState extends State<AccountPage> {
   Map<String, dynamic>? _user;
-  bool _isLoading = true;
-  String? _error;
 
   @override
   void initState() {
@@ -31,23 +28,14 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> _refreshProfile() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
     try {
       final user = await ApiService.fetchProfile();
       if (!mounted) return;
       setState(() {
         _user = user;
-        _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      print('Error loading profile: $e');
     }
   }
 
@@ -69,14 +57,6 @@ class _AccountPageState extends State<AccountPage> {
     return 'User';
   }
 
-  String _displayEmail() {
-    final email = _stringValue(_user?['email']).trim();
-    if (email.isNotEmpty) return email;
-    final phone = _stringValue(_user?['phone']).trim();
-    if (phone.isNotEmpty) return phone;
-    return 'Email chưa cập nhật';
-  }
-
   String _initial() {
     final name = _displayName();
     if (name.isEmpty) return '?';
@@ -86,101 +66,125 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Tài Khoản'),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      backgroundColor: Colors.white,
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 100),
           child: Column(
             children: [
+              // HEADER SECTION (New Design)
               Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.red.shade400, Colors.red.shade700],
+                width: double.infinity,
+                padding: const EdgeInsets.only(
+                  top: 60, // Space for status bar
+                  bottom: 30,
+                  left: 20,
+                  right: 20,
+                ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF8E1), // Beige background
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(30),
                   ),
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          _initial(),
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    // Name
                     Text(
                       _displayName(),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0D47A1), // Dark Blue
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Birth Year (Placeholder logic)
+                    const Text(
+                      "2004", // TODO: Get from user profile
+                      style: TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _displayEmail(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                    if (_isLoading) ...[
-                      const SizedBox(height: 8),
-                      Shimmer.fromColors(
-                        baseColor: Colors.white.withValues(alpha: 0.3),
-                        highlightColor: Colors.white.withValues(alpha: 0.7),
-                        child: Container(
-                          width: 100,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
+                    // Bio
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Mờ cương tớiiiiii", // TODO: Get from user profile
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey,
                           ),
                         ),
-                      ),
-                    ],
-                    if (_error != null && !_isLoading) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'Không tải được thông tin: $_error',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Icon(Icons.edit, size: 16, color: Colors.grey.shade600),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Avatar
+                    Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.grey.shade200,
+                            backgroundImage: const AssetImage(
+                              'assets/images/default_avatar.png',
+                            ), // Fallback
+                            // foregroundImage: NetworkImage(_user?['avatar'] ?? ''), // Uncomment when ready
+                            child: Text(
+                              _initial(),
+                              style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Edit Avatar Button
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.edit, size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Đổi ảnh đại diện",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
+
+              // BODY SECTION (Original Design restored)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(

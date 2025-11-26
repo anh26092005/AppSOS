@@ -131,7 +131,9 @@ class _AccountScreenState extends State<AccountScreen> {
         onRefresh: _refreshProfile,
         child: _isLoading && _user == null
             ? _buildLoading()
-            : (_error != null && _user == null ? _buildError() : _buildContent()),
+            : (_error != null && _user == null
+                  ? _buildError()
+                  : _buildContent()),
       ),
     );
   }
@@ -186,29 +188,20 @@ class _AccountScreenState extends State<AccountScreen> {
         Text(
           name,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           email.isNotEmpty ? email : 'Email chua cap nhat',
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.black54,
-          ),
+          style: const TextStyle(fontSize: 16, color: Colors.black54),
         ),
         if (phone.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
             phone,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
-            ),
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
           ),
         ],
         const SizedBox(height: 32),
@@ -216,10 +209,7 @@ class _AccountScreenState extends State<AccountScreen> {
         const SizedBox(height: 16),
         const Text(
           'Personal Information',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ListTile(
@@ -266,10 +256,7 @@ class _AccountScreenState extends State<AccountScreen> {
         const SizedBox(height: 16),
         const Text(
           'Security',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ListTile(
