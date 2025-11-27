@@ -133,10 +133,11 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
 
     await Promise.all(queuePromises);
 
-    // Gửi FCM notification cho tất cả TNV
+    // Gửi FCM notification CHỈ cho TNV đầu tiên (gần nhất)
     try {
-      const notificationPromises = volunteers.map(async (volunteer) => {
-        const distance = (volunteer.distance || volunteer.distanceKm || 0).toFixed(1);
+      if (volunteers.length > 0) {
+        const firstVolunteer = volunteers[0];
+        const distance = (firstVolunteer.distance || firstVolunteer.distanceKm || 0).toFixed(1);
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
         const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
@@ -149,8 +150,9 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           distance: distance,
         };
 
-        const notificationPromise = Notification.create({
-          userId: volunteer.userId,
+        // Lưu notification
+        await Notification.create({
+          userId: firstVolunteer.userId,
           type: 'SOS_CASE',
           title,
           body,
@@ -159,16 +161,16 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
         });
 
         // Gửi FCM
-        const fcmPromise = sendNotificationToUser(volunteer.userId, title, body, notificationData);
+        await sendNotificationToUser(firstVolunteer.userId, title, body, notificationData);
 
-        return Promise.all([notificationPromise, fcmPromise]);
-      });
-
-      await Promise.all(notificationPromises);
-      console.log(`FCM notifications sent to ${volunteers.length} volunteers`);
+        console.log(`✅ Notification sent to FIRST volunteer only (${distance}km away)`);
+        console.log(`📋 ${volunteers.length - 1} other volunteers in queue as backup`);
+      } else {
+        console.log('⚠️ No volunteers found in range');
+      }
     } catch (fcmError) {
       // Không throw error để không ảnh hưởng đến flow chính
-      console.error('Error sending FCM notifications:', fcmError);
+      console.error('Error sending FCM notification to first volunteer:', fcmError);
     }
 
     return volunteers;
@@ -577,9 +579,40 @@ const declineSosCase = async (req, res, next) => {
       status: 'NOTIFIED',
     }).sort({ distanceKm: 1 });
 
-    if (!nextQueueItem && sosCase.status === 'SEARCHING') {
-      // Không còn TNV, thông báo cho reporter
-      // Có thể thêm logic thông báo ở đây
+    if (nextQueueItem && sosCase.status === 'SEARCHING') {
+      // Gửi notification cho TNV tiếp theo
+      try {
+        const distance = nextQueueItem.distanceKm.toFixed(1);
+        const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+        const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
+        const notificationData = {
+          type: 'SOS_CASE',
+          caseId: sosCase._id.toString(),
+          caseCode: sosCase.code,
+          emergencyType: sosCase.emergencyType,
+          distance: distance,
+        };
+
+        // Lưu in-app notification
+        await Notification.create({
+          userId: nextQueueItem.volunteerId,
+          type: 'SOS_CASE',
+          title,
+          body,
+          data: notificationData,
+          deliveredAt: new Date(),
+        });
+
+        // Gửi FCM
+        await sendNotificationToUser(nextQueueItem.volunteerId, title, body, notificationData);
+
+        console.log(`✅ Notified NEXT volunteer after decline (${distance}km away)`);
+      } catch (notifyError) {
+        console.error('Error notifying next volunteer:', notifyError);
+      }
+    } else if (!nextQueueItem && sosCase.status === 'SEARCHING') {
+      console.log('⚠️ No more volunteers in queue - all declined');
+      // Có thể thông báo cho reporter: "Không tìm thấy TNV"
     }
 
     res.json({

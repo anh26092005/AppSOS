@@ -152,8 +152,8 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
         ),
       );
 
-      print('🔄 Navigating back after cancel');
-      Navigator.pop(context);
+      print('🔄 Navigating to main screen after cancel');
+      Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
     } catch (e) {
       print('❌ Error cancelling SOS: $e');
       if (!mounted) return;

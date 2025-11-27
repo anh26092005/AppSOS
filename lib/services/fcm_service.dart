@@ -246,7 +246,13 @@ class FCMService {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Đóng dialog
+                        // Navigate về trang chủ
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/main', (route) => false);
+                      },
                       child: Text(
                         'Đóng',
                         style: TextStyle(
