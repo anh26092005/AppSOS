@@ -11,10 +11,12 @@ class SosEmergencyScreen extends StatefulWidget {
   State<SosEmergencyScreen> createState() => _SosEmergencyScreenState();
 }
 
-class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
+class _SosEmergencyScreenState extends State<SosEmergencyScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final MapController _mapController = MapController();
+  late AnimationController _holdController;
   Position? _currentPosition;
   bool _isLoadingLocation = false;
   String _selectedEmergencyType = 'Y tế';
@@ -43,6 +45,22 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _holdController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    );
+    _holdController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        // Schedule the SOS action to avoid blocking the animation listener
+        // or triggering state changes during the notification phase.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _sendSOS();
+            _holdController.reset();
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -50,6 +68,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     _nameController.dispose();
     _descriptionController.dispose();
     _mapController.dispose();
+    _holdController.dispose();
     super.dispose();
   }
 
@@ -170,7 +189,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
     }
   }
 
-  Future<void> _sendSOS() async {
+  bool _validateInputs() {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -178,7 +197,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
           backgroundColor: Colors.red,
         ),
       );
-      return;
+      return false;
     }
 
     if (_currentPosition == null) {
@@ -188,37 +207,14 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
           backgroundColor: Colors.orange,
         ),
       );
-      return;
+      return false;
     }
+    return true;
+  }
 
-    // Show confirmation dialog
-    final shouldSend = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Gửi SOS',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text('Bạn có chắc chắn muốn gửi tín hiệu SOS khẩn cấp?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Gửi ngay'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldSend != true) return;
+  Future<void> _sendSOS() async {
+    // Inputs are validated before animation starts, but double check doesn't hurt
+    if (!_validateInputs()) return;
 
     // Show loading
     if (!mounted) return;
@@ -276,347 +272,421 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.redAccent,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Cứu hộ khẩn cấp',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFFD32F2F),
-                        ),
-                      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFF8E1), // Light beige
+              Color(0xFFFFFFFF), // White
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFFB74D), // Orange
+                      Color(0xFFFF6F00), // Deep Orange
+                      Color(0xFFD84315), // Red Orange
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Gửi vị trí và thông tin sự cố ngay lập tức.\nĐội cứu hộ sẽ hỗ trợ bạn.',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF757575),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
                   ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD84315).withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
                 child: Column(
                   children: [
-                    const SizedBox(height: 20),
-                    // Map Section
-                    Container(
-                      height: 220,
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Cứu hộ khẩn cấp',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Gửi vị trí và thông tin sự cố ngay lập tức.\nĐội cứu hộ sẽ hỗ trợ bạn.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                        height: 1.4,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Stack(
-                          children: [
-                            FlutterMap(
-                              mapController: _mapController,
-                              options: MapOptions(
-                                initialCenter: _initialPosition,
-                                initialZoom: 15.0,
-                                minZoom: 3.0,
-                                maxZoom: 18.0,
-                              ),
-                              children: [
-                                TileLayer(
-                                  urlTemplate:
-                                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                  userAgentPackageName: 'com.example.app_sos',
-                                  maxZoom: 19,
-                                ),
-                                MarkerLayer(markers: _markers),
-                              ],
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      // Map Section
+                      Container(
+                        height: 220,
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
                             ),
-                            // Location Button Overlay
-                            Positioned(
-                              bottom: 16,
-                              right: 16,
-                              child: FloatingActionButton.small(
-                                onPressed: _isLoadingLocation
-                                    ? null
-                                    : _getCurrentLocation,
-                                backgroundColor: Colors.white,
-                                elevation: 4,
-                                child: _isLoadingLocation
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Stack(
+                            children: [
+                              FlutterMap(
+                                mapController: _mapController,
+                                options: MapOptions(
+                                  initialCenter: _initialPosition,
+                                  initialZoom: 15.0,
+                                  minZoom: 3.0,
+                                  maxZoom: 18.0,
+                                ),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate:
+                                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    userAgentPackageName: 'com.example.app_sos',
+                                    maxZoom: 19,
+                                  ),
+                                  MarkerLayer(markers: _markers),
+                                ],
+                              ),
+                              // Location Button Overlay
+                              Positioned(
+                                bottom: 16,
+                                right: 16,
+                                child: FloatingActionButton.small(
+                                  onPressed: _isLoadingLocation
+                                      ? null
+                                      : _getCurrentLocation,
+                                  backgroundColor: Colors.white,
+                                  elevation: 4,
+                                  child: _isLoadingLocation
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.orange,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.my_location,
                                           color: Colors.orange,
                                         ),
-                                      )
-                                    : const Icon(
-                                        Icons.my_location,
-                                        color: Colors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Form Section
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Thông tin chi tiết',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF333333),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Name Input
+                            _buildTextField(
+                              controller: _nameController,
+                              hintText: 'Họ và tên của bạn (*)',
+                              icon: Icons.person_outline,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Emergency Type Dropdown
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _selectedEmergencyType,
+                                  isExpanded: true,
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: Colors.grey,
+                                  ),
+                                  items: _emergencyTypes.map((String type) {
+                                    IconData icon;
+                                    Color color;
+                                    switch (type) {
+                                      case 'Y tế':
+                                        icon = Icons.medical_services_outlined;
+                                        color = Colors.red;
+                                        break;
+                                      case 'Tai nạn':
+                                        icon = Icons.car_crash_outlined;
+                                        color = Colors.orange;
+                                        break;
+                                      case 'Cháy nổ':
+                                        icon = Icons
+                                            .local_fire_department_outlined;
+                                        color = Colors.deepOrange;
+                                        break;
+                                      case 'Trộm cắp':
+                                        icon = Icons.security_outlined;
+                                        color = Colors.purple;
+                                        break;
+                                      default:
+                                        icon = Icons.warning_amber_rounded;
+                                        color = Colors.grey;
+                                    }
+                                    return DropdownMenuItem<String>(
+                                      value: type,
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: color.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(
+                                              icon,
+                                              color: color,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            type,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF333333),
+                                            ),
+                                          ),
+                                        ],
                                       ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        _selectedEmergencyType = newValue;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Description Input
+                            _buildTextField(
+                              controller: _descriptionController,
+                              hintText: 'Mô tả sự cố / Ghi chú thêm...',
+                              icon: Icons.notes_rounded,
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // SOS Button
+                      Center(
+                        child: Column(
+                          children: [
+                            GestureDetector(
+                              onTapDown: (_) {
+                                if (_validateInputs()) {
+                                  _holdController.forward();
+                                }
+                              },
+                              onTapUp: (_) {
+                                if (_holdController.isAnimating) {
+                                  _holdController.reset();
+                                }
+                              },
+                              onTapCancel: () {
+                                _holdController.reset();
+                              },
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Progress Indicator
+                                  SizedBox(
+                                    width: 180,
+                                    height: 180,
+                                    child: AnimatedBuilder(
+                                      animation: _holdController,
+                                      builder: (context, child) {
+                                        return CircularProgressIndicator(
+                                          value: _holdController.value,
+                                          strokeWidth: 8,
+                                          valueColor:
+                                              const AlwaysStoppedAnimation<
+                                                Color
+                                              >(Colors.redAccent),
+                                          backgroundColor: Colors.grey.shade200,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  // Button
+                                  Container(
+                                    width: 160,
+                                    height: 160,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color(0xFFFF6F00), // Deep Orange
+                                          Color(0xFFD84315), // Red Orange
+                                        ],
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(
+                                            0xFFFF6F00,
+                                          ).withValues(alpha: 0.4),
+                                          blurRadius: 30,
+                                          spreadRadius: 10,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                        BoxShadow(
+                                          color: const Color(
+                                            0xFFD84315,
+                                          ).withValues(alpha: 0.4),
+                                          blurRadius: 60,
+                                          spreadRadius: 5,
+                                          offset: const Offset(0, 20),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // Inner ring
+                                        Container(
+                                          width: 130,
+                                          height: 130,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.2,
+                                              ),
+                                              width: 2,
+                                            ),
+                                          ),
+                                        ),
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                              Icons.sos_rounded,
+                                              size: 48,
+                                              color: Colors.white,
+                                            ),
+                                            const Text(
+                                              'GỬI NGAY',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w900,
+                                                color: Colors.white,
+                                                letterSpacing: 1,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Giữ 3 giây để gửi',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
-
-                    // Form Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Thông tin chi tiết',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF333333),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Name Input
-                          _buildTextField(
-                            controller: _nameController,
-                            hintText: 'Họ và tên của bạn (*)',
-                            icon: Icons.person_outline,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Emergency Type Dropdown
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.grey.shade200),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.03),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedEmergencyType,
-                                isExpanded: true,
-                                icon: const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.grey,
-                                ),
-                                items: _emergencyTypes.map((String type) {
-                                  IconData icon;
-                                  Color color;
-                                  switch (type) {
-                                    case 'Y tế':
-                                      icon = Icons.medical_services_outlined;
-                                      color = Colors.red;
-                                      break;
-                                    case 'Tai nạn':
-                                      icon = Icons.car_crash_outlined;
-                                      color = Colors.orange;
-                                      break;
-                                    case 'Cháy nổ':
-                                      icon =
-                                          Icons.local_fire_department_outlined;
-                                      color = Colors.deepOrange;
-                                      break;
-                                    case 'Trộm cắp':
-                                      icon = Icons.security_outlined;
-                                      color = Colors.purple;
-                                      break;
-                                    default:
-                                      icon = Icons.warning_amber_rounded;
-                                      color = Colors.grey;
-                                  }
-                                  return DropdownMenuItem<String>(
-                                    value: type,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: color.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            icon,
-                                            color: color,
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          type,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF333333),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  if (newValue != null) {
-                                    setState(() {
-                                      _selectedEmergencyType = newValue;
-                                    });
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Description Input
-                          _buildTextField(
-                            controller: _descriptionController,
-                            hintText: 'Mô tả sự cố / Ghi chú thêm...',
-                            icon: Icons.notes_rounded,
-                            maxLines: 3,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // SOS Button
-                    Center(
-                      child: GestureDetector(
-                        onTap: _sendSOS,
-                        child: Container(
-                          width: 160,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFFFF5252), Color(0xFFD32F2F)],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFFFF5252,
-                                ).withValues(alpha: 0.4),
-                                blurRadius: 30,
-                                spreadRadius: 10,
-                                offset: const Offset(0, 10),
-                              ),
-                              BoxShadow(
-                                color: const Color(
-                                  0xFFD32F2F,
-                                ).withValues(alpha: 0.4),
-                                blurRadius: 60,
-                                spreadRadius: 5,
-                                offset: const Offset(0, 20),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Inner ring
-                              Container(
-                                width: 130,
-                                height: 130,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.sos_rounded,
-                                    size: 48,
-                                    color: Colors.white,
-                                  ),
-                                  Text(
-                                    'GỬI NGAY',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 120),
-                  ],
+                      const SizedBox(height: 120),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -634,9 +704,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -651,7 +721,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen> {
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-          prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 22),
+          prefixIcon: Icon(icon, color: const Color(0xFFFF6F00), size: 22),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,

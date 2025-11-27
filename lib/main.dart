@@ -4,7 +4,7 @@ import 'router_theme/routes.dart';
 import 'router_theme/theme.dart';
 import 'services/fcm_service.dart';
 import 'services/api_service.dart';
-import 'screens/welcome_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/navigation_service.dart';
 
@@ -94,7 +94,7 @@ class _AppEntryState extends State<_AppEntry> {
           );
         }
         final hasSession = snapshot.data ?? false;
-        return hasSession ? const MainScreen() : const WelcomeSOSScreen();
+        return hasSession ? const MainScreen() : const LoginScreen();
       },
     );
   }

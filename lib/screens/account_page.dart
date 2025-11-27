@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 
 class AccountPage extends StatefulWidget {
@@ -66,7 +67,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 243, 243, 243),
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
         child: SingleChildScrollView(
@@ -82,11 +83,27 @@ class _AccountPageState extends State<AccountPage> {
                   left: 20,
                   right: 20,
                 ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFF8E1), // Beige background
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(30),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFFFF8E1), // Light beige
+                      Color(0xFFFFECB3), // Slightly deeper beige
+                    ],
                   ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -94,10 +111,10 @@ class _AccountPageState extends State<AccountPage> {
                     Text(
                       _displayName(),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: GoogleFonts.montserrat(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0D47A1), // Dark Blue
+                        color: const Color(0xFF0D47A1), // Dark Blue
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -173,8 +190,9 @@ class _AccountPageState extends State<AccountPage> {
                         const SizedBox(width: 4),
                         Text(
                           "Đổi ảnh đại diện",
-                          style: TextStyle(
+                          style: GoogleFonts.montserrat(
                             fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -323,33 +341,6 @@ class _AccountPageState extends State<AccountPage> {
                         // TODO: Navigate to about
                       },
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await ApiService.clearSession();
-                          if (context.mounted) {
-                            Navigator.pushReplacementNamed(context, '/welcome');
-                          }
-                        },
-                        icon: const Icon(Icons.logout, color: Colors.red),
-                        label: const Text(
-                          'Đăng xuất',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red, width: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -370,39 +361,52 @@ class _AccountPageState extends State<AccountPage> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: Colors.black.withValues(alpha: 0.00),
+        //     blurRadius: 10,
+        //     offset: const Offset(0, 4),
+        //   ),
+        // ],
       ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.redAccent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFFFF8E1), // Light beige bg
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: Colors.redAccent),
+          child: Icon(
+            icon,
+            color: const Color(0xFFF57F17),
+            size: 24,
+          ), // Gold/Orange icon
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+          style: GoogleFonts.montserrat(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
           ),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            subtitle,
+            style: GoogleFonts.montserrat(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade500,
+            ),
+          ),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
+        trailing: Icon(
+          Icons.arrow_forward_ios_rounded,
+          size: 18,
+          color: Colors.grey.shade400,
         ),
         onTap: onTap,
       ),

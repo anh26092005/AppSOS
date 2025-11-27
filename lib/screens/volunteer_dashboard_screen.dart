@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
 
@@ -190,116 +191,6 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     }
   }
 
-  Widget _buildFallbackMap() {
-    return Container(
-      color: Colors.grey.shade200,
-      child: Stack(
-        children: [
-          // Map placeholder with markers
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.map, size: 60, color: Colors.grey.shade400),
-                const SizedBox(height: 16),
-                Text(
-                  'Bản đồ (Chỉ hỗ trợ Android/iOS/Web)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Vui lòng chạy trên thiết bị di động',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                ),
-              ],
-            ),
-          ),
-          // Current location indicator
-          Positioned(
-            left: MediaQuery.of(context).size.width * 0.3,
-            top: MediaQuery.of(context).size.height * 0.2,
-            child: Column(
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Vị trí hiện tại',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Victim location indicator
-          if (_victimLocation != null)
-            Positioned(
-              right: MediaQuery.of(context).size.width * 0.3,
-              bottom: MediaQuery.of(context).size.height * 0.2,
-              child: Column(
-                children: [
-                  Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _currentIncident['victimName'] ?? 'Nạn nhân',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -309,485 +200,580 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
         '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Time display
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        timeString,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+      backgroundColor: Colors.grey.shade50,
+      body: Column(
+        children: [
+          // Header Section
+          Container(
+            padding: const EdgeInsets.only(
+              top: 50,
+              left: 20,
+              right: 20,
+              bottom: 24,
+            ),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFF8E1), // Light beige
+                  Color(0xFFFFECB3), // Slightly deeper beige
+                ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Top Bar (Time & Status)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      timeString,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF333333),
                       ),
-                      Row(
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.signal_cellular_4_bar,
+                          size: 18,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.battery_full,
+                          size: 18,
+                          color: Colors.grey.shade600,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Title & Subtitle
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.signal_cellular_4_bar,
-                            size: 18,
-                            color: Colors.grey.shade600,
+                          Text(
+                            'Tình Nguyện Viên',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFD84315), // Deep Orange
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.battery_full,
-                            size: 18,
-                            color: Colors.grey.shade600,
+                          const SizedBox(height: 4),
+                          Text(
+                            'Hãy là một tình nguyện viên từ tâm nhé!',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Title
-                  const Row(
-                    children: [
-                      Text(
-                        'Tình Nguyện Viên',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1976D2), // Blue
-                        ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Subtitle
-                  const Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Hãy là một tình nguyện viên từ tâm nhé!',
-                          style: TextStyle(fontSize: 14, color: Colors.black54),
-                        ),
+                      child: const Icon(
+                        Icons.volunteer_activism,
+                        color: Color(0xFFD84315),
+                        size: 28,
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Map Section
+          Expanded(
+            flex: 2,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-            ),
-            // Map Section
-            Expanded(
-              flex: 2,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Stack(
-                    children: [
-                      // Google Map (only for Android, iOS, and Web)
-                      if (_isLocationLoaded && _isGoogleMapsSupported)
-                        Builder(
-                          builder: (context) {
-                            try {
-                              return GoogleMap(
-                                initialCameraPosition: CameraPosition(
-                                  target: _currentLocation,
-                                  zoom: 14.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Stack(
+                  children: [
+                    if (_isLocationLoaded && _isGoogleMapsSupported)
+                      GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: _currentLocation,
+                          zoom: 14.0,
+                        ),
+                        onMapCreated: (GoogleMapController controller) {
+                          _mapController = controller;
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (_victimLocation != null) {
+                              _mapController?.animateCamera(
+                                CameraUpdate.newLatLngBounds(
+                                  _getBounds(),
+                                  100.0,
                                 ),
-                                onMapCreated: (GoogleMapController controller) {
-                                  _mapController = controller;
-                                  // Adjust camera to show both locations
-                                  Future.delayed(
-                                    const Duration(milliseconds: 500),
-                                    () {
-                                      if (_victimLocation != null) {
-                                        _mapController?.animateCamera(
-                                          CameraUpdate.newLatLngBounds(
-                                            _getBounds(),
-                                            100.0,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  );
-                                },
-                                markers: _markers,
-                                myLocationEnabled: true,
-                                myLocationButtonEnabled: false,
-                                mapType: MapType.normal,
-                                zoomControlsEnabled: false,
-                                compassEnabled: true,
                               );
-                            } catch (e) {
-                              // If Google Maps is not supported (e.g., on desktop)
-                              return _buildFallbackMap();
                             }
-                          },
-                        )
-                      else if (!_isLocationLoaded)
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Đang tải bản đồ...',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        // Fallback map for Windows/Linux/Mac desktop
-                        _buildFallbackMap(),
-                      // Location buttons overlay
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        right: 16,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          });
+                        },
+                        markers: _markers,
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: false,
+                        mapType: MapType.normal,
+                        zoomControlsEnabled: false,
+                        compassEnabled: true,
+                      )
+                    else if (!_isLocationLoaded)
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _buildLocationButton(
-                              'Vị trí hiện tại',
-                              Colors.blue,
-                              Icons.my_location,
-                              onTap: () {
+                            const CircularProgressIndicator(
+                              color: Color(0xFFF57F17),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Đang tải bản đồ...',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      _buildFallbackMap(),
+
+                    // Location Controls
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildLocationButton(
+                            'Vị trí của bạn',
+                            const Color(0xFF1976D2),
+                            Icons.my_location,
+                            onTap: () {
+                              _mapController?.animateCamera(
+                                CameraUpdate.newCameraPosition(
+                                  CameraPosition(
+                                    target: _currentLocation,
+                                    zoom: 15.0,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildLocationButton(
+                            'Cách ${_currentIncident['distance']}',
+                            const Color(0xFF43A047),
+                            Icons.directions_run,
+                            onTap: () {
+                              if (_victimLocation != null) {
+                                _mapController?.animateCamera(
+                                  CameraUpdate.newLatLngBounds(
+                                    _getBounds(),
+                                    100.0,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          _buildLocationButton(
+                            'Nạn nhân',
+                            const Color(0xFFD32F2F),
+                            Icons.location_on,
+                            onTap: () {
+                              if (_victimLocation != null) {
                                 _mapController?.animateCamera(
                                   CameraUpdate.newCameraPosition(
                                     CameraPosition(
-                                      target: _currentLocation,
+                                      target: _victimLocation!,
                                       zoom: 15.0,
                                     ),
                                   ),
                                 );
-                              },
-                            ),
-                            _buildLocationButton(
-                              'Cách bạn ${_currentIncident['distance']}',
-                              Colors.green,
-                              Icons.location_on,
-                              onTap: () {
-                                // Show both locations
-                                if (_victimLocation != null) {
-                                  _mapController?.animateCamera(
-                                    CameraUpdate.newLatLngBounds(
-                                      _getBounds(),
-                                      100.0,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                            _buildLocationButton(
-                              'Vị trí nạn nhân',
-                              Colors.red,
-                              Icons.location_searching,
-                              onTap: () {
-                                if (_victimLocation != null) {
-                                  _mapController?.animateCamera(
-                                    CameraUpdate.newCameraPosition(
-                                      CameraPosition(
-                                        target: _victimLocation!,
-                                        zoom: 15.0,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Activity Details Section
-            Expanded(
-              flex: 3,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
                     ),
                   ],
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Activity Header
-                      const Text(
-                        'Hoạt động',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+              ),
+            ),
+          ),
+
+          // Activity Details Section
+          Expanded(
+            flex: 3,
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Hoạt động',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF333333),
+                          ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF8E1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Đang chờ xử lý',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFF57F17),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Incident Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
                       ),
-                      const SizedBox(height: 16),
-                      // Incident Details Card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // SOS Code
-                            Text(
-                              _currentIncident['id'],
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1976D2),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Victim Info
-                            _buildInfoRow(
-                              'Họ và tên Nạn nhân:',
-                              _currentIncident['victimName'],
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                              'Giới tính:',
-                              _currentIncident['gender'],
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                              'Năm sinh:',
-                              _currentIncident['birthYear'].toString(),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                              'SĐT cá nhân:',
-                              _currentIncident['personalPhone'],
-                            ),
-                            const SizedBox(height: 8),
-                            _buildInfoRow(
-                              'SĐT người thân:',
-                              _currentIncident['relativePhone'],
-                            ),
-                            const SizedBox(height: 12),
-                            // Rescue Content
-                            const Text(
-                              'Nội dung ứng cứu:',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _currentIncident['rescueContent'],
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Verification Warning
-                            if (!_currentIncident['isVerified'])
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
                               Container(
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.orange.shade50,
+                                  color: const Color(0xFFE3F2FD),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.orange.shade200,
-                                  ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.warning_amber_rounded,
-                                      color: Colors.orange.shade700,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Chưa xác thực CCCD, TNV nên cẩn thận',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.orange.shade900,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                child: const Icon(
+                                  Icons.sos,
+                                  color: Color(0xFF1976D2),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                _currentIncident['id'],
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1976D2),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildInfoRow(
+                            'Nạn nhân',
+                            _currentIncident['victimName'],
+                            Icons.person_outline,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            'Thông tin',
+                            '${_currentIncident['gender']} • ${_currentIncident['birthYear']}',
+                            Icons.info_outline,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildInfoRow(
+                            'Liên hệ',
+                            _currentIncident['personalPhone'],
+                            Icons.phone_outlined,
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Nội dung ứng cứu:',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF333333),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _currentIncident['rescueContent'],
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (!_currentIncident['isVerified'])
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF3E0),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFFFCC80),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Color(0xFFF57F17),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Chưa xác thực CCCD, vui lòng cẩn thận',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 12,
+                                        color: const Color(0xFFE65100),
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Swipe Instructions
-                      Center(
-                        child: Text(
-                          'Kéo sang phải để ứng cứu, kéo sang trái để bỏ qua',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Rescue Button
-                      Center(
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.orange, width: 3),
-                            color: Colors.white,
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                _handleRescue();
-                              },
-                              borderRadius: BorderRadius.circular(60),
-                              child: const Center(
-                                child: Text(
-                                  'Ứng Cứu',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.orange,
                                   ),
-                                ),
+                                ],
                               ),
                             ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Action Button
+                    Center(
+                      child: GestureDetector(
+                        onTap: _handleRescue,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF6F00), Color(0xFFD84315)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFD84315,
+                                ).withValues(alpha: 0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.health_and_safety,
+                            color: Colors.white,
+                            size: 36,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'ỨNG CỨU NGAY',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFD84315),
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      // Bottom Navigation Bar (similar to main screen)
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-          child: BottomNavigationBar(
-            currentIndex: 1, // Volunteer screen is active
-            onTap: (index) {
-              if (index == 0) {
-                Navigator.pushReplacementNamed(context, '/main');
-              } else if (index == 2) {
-                Navigator.pushNamed(context, '/account');
-              }
-            },
-            selectedItemColor: const Color(0xFF1976D2),
-            unselectedItemColor: Colors.grey.shade400,
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            showSelectedLabels: false,
-            showUnselectedLabels: false,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.article), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-            ],
-          ),
+        child: BottomNavigationBar(
+          currentIndex: 1,
+          onTap: (index) {
+            if (index == 0) {
+              Navigator.pushReplacementNamed(context, '/main');
+            } else if (index == 2) {
+              Navigator.pushNamed(context, '/account');
+            }
+          },
+          selectedItemColor: const Color(0xFFF57F17),
+          unselectedItemColor: Colors.grey.shade400,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.volunteer_activism_outlined),
+              activeIcon: Icon(Icons.volunteer_activism),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: '',
+            ),
+          ],
         ),
       ),
-      floatingActionButton: Container(
-        width: 70,
-        height: 70,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.red.shade600, Colors.red.shade800],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.red.withValues(alpha: 0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              Navigator.pushNamed(context, '/sos-emergency');
-            },
-            borderRadius: BorderRadius.circular(35),
-            child: const Center(
-              child: Text(
-                'SOS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+    );
+  }
+
+  Widget _buildFallbackMap() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.map_outlined, size: 60, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                Text(
+                  'Chế độ xem bản đồ',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Đang mô phỏng vị trí trên Desktop',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Markers simulation
+          if (_victimLocation != null)
+            Positioned(
+              right: 100,
+              bottom: 150,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Nạn nhân',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Icon(Icons.location_on, color: Colors.red, size: 32),
+                ],
               ),
             ),
-          ),
-        ),
+        ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -801,16 +787,17 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(20),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
             boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 8,
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -818,18 +805,14 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Colors.white, size: 16),
+              Icon(icon, color: color, size: 16),
               const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                label,
+                style: GoogleFonts.montserrat(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -839,17 +822,19 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, IconData icon) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Icon(icon, size: 16, color: Colors.grey.shade400),
+        const SizedBox(width: 8),
         SizedBox(
-          width: 140,
+          width: 80,
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
+            style: GoogleFonts.montserrat(
+              fontSize: 13,
+              color: Colors.grey.shade600,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -857,7 +842,11 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
+            style: GoogleFonts.montserrat(
+              fontSize: 13,
+              color: const Color(0xFF333333),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -868,31 +857,51 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận ứng cứu'),
-        content: const Text(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Xác nhận ứng cứu',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
           'Bạn có chắc chắn muốn ứng cứu cho trường hợp này không?',
+          style: GoogleFonts.montserrat(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: Text(
+              'Hủy',
+              style: GoogleFonts.montserrat(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã gửi yêu cầu ứng cứu thành công!'),
+                SnackBar(
+                  content: Text(
+                    'Đã gửi yêu cầu ứng cứu thành công!',
+                    style: GoogleFonts.montserrat(),
+                  ),
                   backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               );
-              // TODO: Navigate to rescue details or update status
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: const Color(0xFFF57F17),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: const Text('Xác nhận'),
+            child: Text(
+              'Xác nhận',
+              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

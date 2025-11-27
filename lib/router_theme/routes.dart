@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../screens/welcome_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/main_screen.dart';
@@ -16,7 +15,6 @@ import '../screens/sos_accepted_screen.dart';
 import '../screens/volunteer_registration_screen.dart';
 
 Map<String, WidgetBuilder> appRoutes = {
-  '/welcome': (_) => const WelcomeSOSScreen(),
   '/login': (_) => const LoginScreen(),
   '/signup': (_) => const SignupScreen(),
   '/main': (_) => const MainScreen(),

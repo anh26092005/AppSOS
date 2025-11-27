@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 
 class VolunteerRegistrationScreen extends StatefulWidget {
@@ -160,162 +161,366 @@ class _VolunteerRegistrationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Đăng ký Tình nguyện viên'),
-        backgroundColor: Colors.redAccent,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.grey.shade50,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Thông tin cơ bản',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.redAccent,
-                      ),
+              child: Column(
+                children: [
+                  // Header
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.only(
+                      top: 60,
+                      bottom: 24,
+                      left: 20,
+                      right: 20,
                     ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _type,
-                      decoration: const InputDecoration(
-                        labelText: 'Loại hình tham gia',
-                        border: OutlineInputBorder(),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFFFFF8E1), // Light beige
+                          Color(0xFFFFECB3), // Slightly deeper beige
+                        ],
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'CN', child: Text('Cá nhân')),
-                        DropdownMenuItem(value: 'TC', child: Text('Tổ chức')),
-                      ],
-                      onChanged: (val) {
-                        setState(() => _type = val!);
-                      },
-                    ),
-                    if (_type == 'TC') ...[
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _orgNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Tên tổ chức',
-                          border: OutlineInputBorder(),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
                         ),
-                        validator: (val) {
-                          if (_type == 'TC' && (val == null || val.isEmpty)) {
-                            return 'Vui lòng nhập tên tổ chức';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Kỹ năng hỗ trợ',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.redAccent,
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: _availableSkills.map((skill) {
-                        final isSelected = _selectedSkills.contains(skill);
-                        return FilterChip(
-                          label: Text(skill),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedSkills.add(skill);
-                              } else {
-                                _selectedSkills.remove(skill);
-                              }
-                            });
-                          },
-                          selectedColor: Colors.redAccent.withOpacity(0.2),
-                          checkmarkColor: Colors.redAccent,
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Xác minh danh tính',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.redAccent,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Vui lòng tải lên ảnh CCCD/CMND hoặc giấy tờ liên quan',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: _buildImageUpload(
-                            'Mặt trước',
-                            _idCardFront,
-                            () => _pickImage(true),
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.black87,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildImageUpload(
-                            'Mặt sau',
-                            _idCardBack,
-                            () => _pickImage(false),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Đăng ký Tình nguyện viên',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tham gia mạng lưới cứu hộ cộng đồng',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    CheckboxListTile(
-                      value: _agreedToTerms,
-                      onChanged: (val) => setState(() => _agreedToTerms = val!),
-                      title: const Text(
-                        'Tôi cam kết các thông tin trên là chính xác và chịu trách nhiệm về hoạt động tình nguyện của mình.',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                  ),
+
+                  // Form Content
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionTitle('Thông tin cơ bản'),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                DropdownButtonFormField<String>(
+                                  value: _type,
+                                  decoration: _inputDecoration(
+                                    'Loại hình tham gia',
+                                  ),
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: 'CN',
+                                      child: Text(
+                                        'Cá nhân',
+                                        style: GoogleFonts.montserrat(),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'TC',
+                                      child: Text(
+                                        'Tổ chức',
+                                        style: GoogleFonts.montserrat(),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() => _type = val!);
+                                  },
+                                ),
+                                if (_type == 'TC') ...[
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _orgNameController,
+                                    decoration: _inputDecoration('Tên tổ chức'),
+                                    style: GoogleFonts.montserrat(),
+                                    validator: (val) {
+                                      if (_type == 'TC' &&
+                                          (val == null || val.isEmpty)) {
+                                        return 'Vui lòng nhập tên tổ chức';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Gửi Đăng Ký',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+
+                          const SizedBox(height: 24),
+                          _buildSectionTitle('Kỹ năng hỗ trợ'),
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _availableSkills.map((skill) {
+                                final isSelected = _selectedSkills.contains(
+                                  skill,
+                                );
+                                return FilterChip(
+                                  label: Text(
+                                    skill,
+                                    style: GoogleFonts.montserrat(
+                                      color: isSelected
+                                          ? const Color(0xFFD84315)
+                                          : Colors.black87,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedSkills.add(skill);
+                                      } else {
+                                        _selectedSkills.remove(skill);
+                                      }
+                                    });
+                                  },
+                                  backgroundColor: Colors.grey.shade100,
+                                  selectedColor: const Color(0xFFFFF8E1),
+                                  checkmarkColor: const Color(0xFFF57F17),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? const Color(0xFFF57F17)
+                                          : Colors.transparent,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                           ),
-                        ),
+
+                          const SizedBox(height: 24),
+                          _buildSectionTitle('Xác minh danh tính'),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Vui lòng tải lên ảnh CCCD/CMND hoặc giấy tờ liên quan',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12,
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _buildImageUpload(
+                                    'Mặt trước',
+                                    _idCardFront,
+                                    () => _pickImage(true),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildImageUpload(
+                                    'Mặt sau',
+                                    _idCardBack,
+                                    () => _pickImage(false),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+                          CheckboxListTile(
+                            value: _agreedToTerms,
+                            onChanged: (val) =>
+                                setState(() => _agreedToTerms = val!),
+                            title: Text(
+                              'Tôi cam kết các thông tin trên là chính xác và chịu trách nhiệm về hoạt động tình nguyện của mình.',
+                              style: GoogleFonts.montserrat(fontSize: 13),
+                            ),
+                            activeColor: const Color(0xFFF57F17),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+
+                          const SizedBox(height: 30),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFFF6F00),
+                                      Color(0xFFD84315),
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFFD84315,
+                                      ).withValues(alpha: 0.4),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                                ),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'GỬI ĐĂNG KÝ',
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.montserrat(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFF333333),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.montserrat(color: Colors.grey.shade600),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFF57F17), width: 1),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
@@ -324,14 +529,14 @@ class _VolunteerRegistrationScreenState
       children: [
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
               image: image != null
                   ? DecorationImage(image: FileImage(image), fit: BoxFit.cover)
                   : null,
@@ -340,11 +545,26 @@ class _VolunteerRegistrationScreenState
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt, color: Colors.grey.shade400),
-                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF8E1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Color(0xFFF57F17),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         'Tải ảnh lên',
-                        style: TextStyle(color: Colors.grey.shade600),
+                        style: GoogleFonts.montserrat(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   )
@@ -352,7 +572,14 @@ class _VolunteerRegistrationScreenState
           ),
         ),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: Colors.grey.shade700,
+          ),
+        ),
       ],
     );
   }
