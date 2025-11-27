@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
+import '../services/auth_service.dart';
+import '../services/social_auth_api.dart';
 import '../widgets/permission_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -102,6 +105,338 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi đăng nhập: $e')));
     }
+  }
+
+  // ===== Firebase Authentication Handlers =====
+
+  /// Handle Google Sign-In
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Step 1: Authenticate with Firebase
+      final userCredential = await AuthService.signInWithGoogle();
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        throw Exception('Firebase user is null');
+      }
+
+      // Step 2: Sync with backend
+      await SocialAuthApi.syncSocialLogin(firebaseUser, 'google');
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      // Navigate to main screen
+      Navigator.pushReplacementNamed(context, '/main');
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google sign-in failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Handle Facebook Sign-In
+  Future<void> _handleFacebookSignIn() async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Step 1: Authenticate with Firebase
+      final userCredential = await AuthService.signInWithFacebook();
+      final firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        throw Exception('Firebase user is null');
+      }
+
+      // Step 2: Sync with backend
+      await SocialAuthApi.syncSocialLogin(firebaseUser, 'facebook');
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      // Navigate to main screen
+      Navigator.pushReplacementNamed(context, '/main');
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Facebook sign-in failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Handle Phone Sign-In
+  Future<void> _handlePhoneSignIn() async {
+    // Show phone number input dialog
+    final phoneNumber = await _showPhoneInputDialog();
+    
+    if (phoneNumber == null || phoneNumber.isEmpty) return;
+
+    try {
+      // Show loading
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Store verification ID for later use
+      String? verificationId;
+
+      // Send OTP
+      await AuthService.sendOTP(
+        phoneNumber: phoneNumber,
+        onCodeSent: (String verId, int? resendToken) async {
+          verificationId = verId;
+          
+          if (!mounted) return;
+          Navigator.pop(context); // Close loading
+
+          // Show OTP input dialog
+          final smsCode = await _showOTPInputDialog();
+
+          if (smsCode == null || smsCode.isEmpty) return;
+
+          // Verify OTP
+          await _verifyOTP(verificationId!, smsCode);
+        },
+        onVerificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-verification (Android only)
+          if (!mounted) return;
+          Navigator.pop(context); // Close loading
+          
+          try {
+            final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+            final firebaseUser = userCredential.user;
+            
+            if (firebaseUser != null) {
+              // Sync with backend
+              await SocialAuthApi.syncSocialLogin(firebaseUser, 'phone');
+            }
+            
+            if (!mounted) return;
+            Navigator.pushReplacementNamed(context, '/main');
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Auto-verification failed: $e')),
+            );
+          }
+        },
+        onVerificationFailed: (FirebaseAuthException e) {
+          if (!mounted) return;
+          Navigator.pop(context); // Close loading
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Verification failed: ${e.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+        onCodeAutoRetrievalTimeout: (String verId) {
+          verificationId = verId;
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading if still open
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Phone sign-in failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Verify OTP code
+  Future<void> _verifyOTP(String verificationId, String smsCode) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final userCredential = await AuthService.verifyOTP(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+      
+      final firebaseUser = userCredential.user;
+      if (firebaseUser != null) {
+        // Sync with backend
+        await SocialAuthApi.syncSocialLogin(firebaseUser, 'phone');
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      // Navigate to main screen
+      Navigator.pushReplacementNamed(context, '/main');
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('OTP verification failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Show phone number input dialog
+  Future<String?> _showPhoneInputDialog() async {
+    final controller = TextEditingController();
+    
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Enter Phone Number',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Please include country code (e.g., +84 for Vietnam)',
+              style: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                hintText: '+84 xxx xxx xxx',
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.montserrat(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF005BEA),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Send OTP',
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show OTP input dialog
+  Future<String?> _showOTPInputDialog() async {
+    final controller = TextEditingController();
+    
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Enter OTP Code',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter the 6-digit code sent to your phone',
+              style: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: InputDecoration(
+                hintText: '123456',
+                prefixIcon: const Icon(Icons.lock_outline),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.montserrat(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF005BEA),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Verify',
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -216,9 +551,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       // Google Login Button (Modern Style)
                       OutlinedButton.icon(
-                        onPressed: () {
-                          // TODO: Implement Google Login
-                        },
+                        onPressed: _handleGoogleSignIn,
                         icon: Image.asset(
                           'assets/images/google_logo.png',
                           height: 24,
@@ -230,7 +563,63 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                         ),
                         label: Text(
-                          'Tiếp tục với Google',
+                          'Login with Google',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: Colors.grey.shade200),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Facebook Login Button
+                      OutlinedButton.icon(
+                        onPressed: _handleFacebookSignIn,
+                        icon: const Icon(
+                          Icons.facebook,
+                          size: 24,
+                          color: Color(0xFF1877F2),
+                        ),
+                        label: Text(
+                          'Login with Facebook',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: Colors.grey.shade200),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Phone Login Button
+                      OutlinedButton.icon(
+                        onPressed: _handlePhoneSignIn,
+                        icon: const Icon(
+                          Icons.phone_android,
+                          size: 24,
+                          color: Color(0xFF34A853),
+                        ),
+                        label: Text(
+                          'Login with Phone',
                           style: GoogleFonts.montserrat(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

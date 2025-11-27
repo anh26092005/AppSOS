@@ -28,8 +28,19 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
       trim: true,
+      default: null,
+      // Phone required only for local auth (email/password)
+      validate: {
+        validator: function (value) {
+          // If authProvider is 'local', phone is required
+          if (this.authProvider === 'local' && !value) {
+            return false;
+          }
+          return true;
+        },
+        message: 'Phone number is required for local authentication'
+      }
     },
     email: {
       type: String,
@@ -39,8 +50,37 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password hash is required'],
       select: false,
+      // Password required only for local auth
+      validate: {
+        validator: function (value) {
+          // If authProvider is 'local', passwordHash is required
+          if (this.authProvider === 'local' && !value) {
+            return false;
+          }
+          return true;
+        },
+        message: 'Password is required for local authentication'
+      }
+    },
+    // Firebase Auth UID for social login (Google, Facebook)
+    firebaseUid: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows null values while maintaining uniqueness
+      default: null,
+    },
+    // Authentication provider
+    authProvider: {
+      type: String,
+      enum: ['local', 'google', 'facebook', 'phone'],
+      default: 'local',
+      required: true,
+    },
+    // Date of birth (for age calculation)
+    dateOfBirth: {
+      type: Date,
+      default: null,
     },
     roles: {
       type: [String],
@@ -72,9 +112,12 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ phone: 1 }, { unique: true });
+
+userSchema.index({ phone: 1 }, { unique: true, sparse: true }); // sparse allows null
 userSchema.index({ email: 1 }, { unique: true, sparse: true });
+userSchema.index({ firebaseUid: 1 }, { unique: true, sparse: true });
 userSchema.index({ 'address.location': '2dsphere' });
+
 
 userSchema.methods.toJSON = function toJSON() {
   const obj = this.toObject({ getters: true });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
 import '../screens/main_screen.dart';
+import '../screens/home_screen.dart';
 import '../screens/sos_emergency_screen.dart';
 import '../screens/sos_found_screen.dart';
 import '../screens/sos_searching_screen.dart';
@@ -18,6 +19,7 @@ Map<String, WidgetBuilder> appRoutes = {
   '/login': (_) => const LoginScreen(),
   '/signup': (_) => const SignupScreen(),
   '/main': (_) => const MainScreen(),
+  '/home': (_) => const HomeScreen(),
   '/sos-emergency': (_) => const SosEmergencyScreen(),
   '/sos-found': (context) {
     final args =

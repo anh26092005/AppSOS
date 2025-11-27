@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -57,12 +59,29 @@ class _AccountScreenState extends State<AccountScreen> {
     return value.toString();
   }
 
+  // Get Firebase Auth user if logged in via Google/Facebook
+  User? _getFirebaseUser() {
+    return AuthService.currentUser;
+  }
+
   String _displayName() {
+    // Priority 1: Firebase Auth displayName (from Google/Facebook)
+    final firebaseUser = _getFirebaseUser();
+    if (firebaseUser != null && firebaseUser.displayName != null && firebaseUser.displayName!.isNotEmpty) {
+      return firebaseUser.displayName!;
+    }
+
+    // Priority 2: Backend API data
     final fullName = _stringValue(_user?['fullName']).trim();
     if (fullName.isNotEmpty) return fullName;
 
     final name = _stringValue(_user?['name']).trim();
     if (name.isNotEmpty) return name;
+
+    // Priority 3: Firebase email
+    if (firebaseUser != null && firebaseUser.email != null && firebaseUser.email!.isNotEmpty) {
+      return firebaseUser.email!;
+    }
 
     final email = _stringValue(_user?['email']).trim();
     if (email.isNotEmpty) return email;
@@ -71,6 +90,29 @@ class _AccountScreenState extends State<AccountScreen> {
     if (phone.isNotEmpty) return phone;
 
     return 'User';
+  }
+
+  String _displayEmail() {
+    // Priority 1: Firebase Auth email
+    final firebaseUser = _getFirebaseUser();
+    if (firebaseUser != null && firebaseUser.email != null && firebaseUser.email!.isNotEmpty) {
+      return firebaseUser.email!;
+    }
+
+    // Priority 2: Backend API email
+    final email = _stringValue(_user?['email']).trim();
+    if (email.isNotEmpty) return email;
+
+    return '';
+  }
+
+  String? _getPhotoUrl() {
+    // Get photo from Firebase Auth (Google/Facebook profile pic)
+    final firebaseUser = _getFirebaseUser();
+    if (firebaseUser != null && firebaseUser.photoURL != null && firebaseUser.photoURL!.isNotEmpty) {
+      return firebaseUser.photoURL;
+    }
+    return null;
   }
 
   String _displayInitial() {
@@ -137,7 +179,7 @@ class _AccountScreenState extends State<AccountScreen> {
     }
 
     final name = _displayName();
-    final email = _stringValue(_user?['email']);
+    final email = _displayEmail();
     final phone = _stringValue(_user?['phone']);
     final role = _stringValue(_user?['role']);
     final userId = _stringValue(_user?['id']);
@@ -217,14 +259,19 @@ class _AccountScreenState extends State<AccountScreen> {
                         child: CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.grey.shade200,
-                          child: Text(
-                            _displayInitial(),
-                            style: GoogleFonts.montserrat(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
+                          backgroundImage: _getPhotoUrl() != null 
+                              ? NetworkImage(_getPhotoUrl()!) 
+                              : null,
+                          child: _getPhotoUrl() == null
+                              ? Text(
+                                  _displayInitial(),
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
                       Positioned(
