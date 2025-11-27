@@ -11,6 +11,8 @@ class AccountPage extends StatefulWidget {
 
 class _AccountPageState extends State<AccountPage> {
   Map<String, dynamic>? _user;
+  bool _isReady = false;
+  bool _isTogglingReady = false;
 
   @override
   void initState() {
@@ -23,6 +25,10 @@ class _AccountPageState extends State<AccountPage> {
     if (mounted && cached != null) {
       setState(() {
         _user = cached;
+        final volunteerProfile = cached['volunteerProfile'];
+        if (volunteerProfile != null && volunteerProfile is Map) {
+          _isReady = volunteerProfile['ready'] ?? false;
+        }
       });
     }
     await _refreshProfile();
@@ -34,6 +40,10 @@ class _AccountPageState extends State<AccountPage> {
       if (!mounted) return;
       setState(() {
         _user = user;
+        final volunteerProfile = user['volunteerProfile'];
+        if (volunteerProfile != null && volunteerProfile is Map) {
+          _isReady = volunteerProfile['ready'] ?? false;
+        }
       });
     } catch (e) {
       print('Error loading profile: $e');
@@ -235,18 +245,144 @@ class _AccountPageState extends State<AccountPage> {
 
                         // 1. Đã là TNV (APPROVED)
                         if (isTNV) {
-                          return _buildAccountTile(
-                            context,
-                            icon: Icons.badge_outlined,
-                            title: 'Xem hồ sơ tình nguyện viên',
-                            subtitle: 'Quản lý hồ sơ TNV của bạn',
-                            onTap: () {
-                              Navigator.pushNamed(
+                          return Column(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          (_isReady
+                                                  ? Colors.green
+                                                  : Colors.grey)
+                                              .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      _isReady
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+                                      color: _isReady
+                                          ? Colors.green
+                                          : Colors.grey,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    'Trạng thái hoạt động',
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF333333),
+                                    ),
+                                  ),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      _isReady
+                                          ? 'Đang sẵn sàng nhận yêu cầu'
+                                          : 'Tắt nhận yêu cầu SOS',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: _isReady
+                                            ? Colors.green
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                  trailing: _isTogglingReady
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Switch(
+                                          value: _isReady,
+                                          onChanged: (value) async {
+                                            setState(() {
+                                              _isTogglingReady = true;
+                                            });
+                                            try {
+                                              final response =
+                                                  await ApiService.toggleVolunteerReady();
+                                              final data = response['data'];
+                                              final newReadyStatus =
+                                                  data['ready'] ?? false;
+                                              setState(() {
+                                                _isReady = newReadyStatus;
+                                                _isTogglingReady = false;
+                                              });
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    newReadyStatus
+                                                        ? 'Đã bật nhận yêu cầu SOS'
+                                                        : 'Đã tắt nhận yêu cầu SOS',
+                                                  ),
+                                                  backgroundColor:
+                                                      newReadyStatus
+                                                      ? Colors.green
+                                                      : Colors.grey,
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              setState(() {
+                                                _isTogglingReady = false;
+                                              });
+                                              if (!mounted) return;
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Lỗi: $e'),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          activeColor: Colors.green,
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildAccountTile(
                                 context,
-                                '/info-tnv',
-                                arguments: _user,
-                              );
-                            },
+                                icon: Icons.badge_outlined,
+                                title: 'Xem hồ sơ tình nguyện viên',
+                                subtitle: 'Quản lý hồ sơ TNV của bạn',
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/info-tnv',
+                                    arguments: _user,
+                                  );
+                                },
+                              ),
+                            ],
                           );
                         }
 

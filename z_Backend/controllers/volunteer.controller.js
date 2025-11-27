@@ -275,6 +275,42 @@ const updateVolunteer = async (req, res, next) => {
   }
 };
 
+// TNV toggle ready status (tự toggle, không cần admin)
+const toggleVolunteerReady = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+
+    // Verify user is a volunteer
+    const userRoles = req.user.roles || [];
+    const isTNV = userRoles.includes('TNV_CN') || userRoles.includes('TNV_TC');
+
+    if (!isTNV) {
+      throw new AppError('Only volunteers can toggle ready status', 403);
+    }
+
+    const volunteer = await VolunteerProfile.findOne({ userId });
+    if (!volunteer) {
+      throw new AppError('Volunteer profile not found', 404);
+    }
+
+    // Toggle ready status
+    volunteer.ready = !volunteer.ready;
+    await volunteer.save();
+
+    const volunteerObj = await VolunteerProfile.findById(volunteer._id)
+      .populate('userId', 'fullName phone email avatar roles isActive')
+      .lean();
+
+    res.json({
+      success: true,
+      data: volunteerObj,
+      message: `Ready status changed to ${volunteer.ready ? 'ACTIVE' : 'INACTIVE'}`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createVolunteerProfile,
   getVolunteers,
@@ -282,5 +318,6 @@ module.exports = {
   approveVolunteer,
   rejectVolunteer,
   updateVolunteer,
+  toggleVolunteerReady,
 };
 

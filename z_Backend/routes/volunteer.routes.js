@@ -6,6 +6,7 @@ const {
   approveVolunteer,
   rejectVolunteer,
   updateVolunteer,
+  toggleVolunteerReady,
 } = require('../controllers/volunteer.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 
@@ -13,6 +14,9 @@ const router = express.Router();
 
 // Tạo volunteer profile (cần authentication nhưng không cần admin)
 router.post('/', authenticate, createVolunteerProfile);
+
+// Toggle ready status (TNV tự toggle, không cần admin)
+router.patch('/me/toggle-ready', authenticate, toggleVolunteerReady);
 
 // Các routes còn lại cần authentication và admin authorization
 router.use(authenticate);

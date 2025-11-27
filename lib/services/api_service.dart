@@ -424,4 +424,19 @@ class ApiService {
 
     throw Exception(data['message'] ?? 'Đăng ký TNV thất bại');
   }
+
+  /// Toggle volunteer ready status (TNV tự toggle)
+  static Future<Map<String, dynamic>> toggleVolunteerReady() async {
+    final url = Uri.parse('$baseUrl/volunteers/me/toggle-ready');
+    final headers = await _headers();
+
+    final res = await http.patch(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể cập nhật trạng thái');
+  }
 }

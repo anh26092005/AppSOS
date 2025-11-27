@@ -117,11 +117,12 @@ const getProfile = async (req, res, next) => {
 
     const userResponse = buildUserResponse(freshUser);
 
-    // Check volunteer profile status
+    // Check volunteer profile status and include full profile
     const volunteerProfile = await VolunteerProfile.findOne({ userId: freshUser._id }).lean();
     if (volunteerProfile) {
       userResponse.volunteerStatus = volunteerProfile.status; // PENDING, APPROVED, REJECTED
       userResponse.volunteerId = volunteerProfile._id;
+      userResponse.volunteerProfile = volunteerProfile; // Include full profile with ready status
     }
 
     res.json({ user: userResponse });
