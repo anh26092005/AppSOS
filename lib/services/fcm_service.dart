@@ -212,6 +212,61 @@ class FCMService {
           }
         });
       }
+
+      // Hiển thị Alert khi SOS bị hủy
+      if (message.data['type'] == 'SOS_CANCELLED') {
+        final context = NavigationService.context;
+        if (context != null) {
+          try {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: Row(
+                    children: [
+                      Icon(Icons.cancel, color: Colors.orange, size: 28),
+                      SizedBox(width: 12),
+                      Text(
+                        message.notification?.title ?? 'SOS đã bị hủy',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  content: Text(
+                    message.notification?.body ??
+                        'Người dùng đã hủy yêu cầu SOS',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        'Đóng',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+            print('✅ SOS Cancelled Dialog shown');
+          } catch (e) {
+            print('❌ Error showing SOS Cancelled Dialog: $e');
+          }
+        } else {
+          print('❌ Cannot show dialog: Context is null');
+        }
+      }
     });
 
     // Xử lý khi user tap vào notification (app đang background)

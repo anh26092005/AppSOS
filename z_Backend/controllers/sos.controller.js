@@ -458,6 +458,55 @@ const cancelSosCase = async (req, res, next) => {
         { sosId: sosCase._id },
         { status: 'DECLINED', respondedAt: new Date() }
       );
+
+      // Gửi thông báo cho tất cả TNV trong queue khi REPORTER/ADMIN hủy
+      try {
+        const queueItems = await SosResponderQueue.find({
+          sosId: sosCase._id,
+          status: 'DECLINED',
+        }).distinct('volunteerId');
+
+        console.log(`📢 Notifying ${queueItems.length} volunteers about SOS cancellation`);
+
+        const notificationPromises = queueItems.map(async (volunteerId) => {
+          try {
+            const title = '❌ Yêu cầu SOS đã bị hủy';
+            const body = `Người dùng đã hủy yêu cầu ${sosCase.emergencyType}`;
+            const notificationData = {
+              type: 'SOS_CANCELLED',
+              caseId: sosCase._id.toString(),
+              caseCode: sosCase.code,
+              emergencyType: sosCase.emergencyType,
+              cancelReason: cancelReason,
+              cancelledByRole: cancelledByRole,
+            };
+
+            // Lưu in-app notification
+            const notificationPromise = Notification.create({
+              userId: volunteerId,
+              type: 'SOS_CANCELLED',
+              title,
+              body,
+              data: notificationData,
+              deliveredAt: new Date(),
+            });
+
+            // Gửi FCM
+            const fcmPromise = sendNotificationToUser(volunteerId, title, body, notificationData);
+
+            return Promise.all([notificationPromise, fcmPromise]);
+          } catch (error) {
+            console.error(`Error notifying volunteer ${volunteerId}:`, error);
+            return null;
+          }
+        });
+
+        await Promise.all(notificationPromises);
+        console.log('✅ Cancellation notifications sent to all volunteers');
+      } catch (notifyError) {
+        // Không throw error để không ảnh hưởng đến flow chính
+        console.error('Error sending cancellation notifications:', notifyError);
+      }
     }
 
     await sosCase.populate('reporterId', 'fullName phone avatar');

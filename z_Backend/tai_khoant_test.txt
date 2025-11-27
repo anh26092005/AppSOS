@@ -8,8 +8,7 @@ user2@example.com
 password123
 
 
-tnaav@gmail.com
-123456
+
 =======
 =====ADMIN======
 user@example.com
