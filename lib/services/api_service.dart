@@ -5,7 +5,13 @@ import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // Production: Cloudflare Tunnel URL
+  static const String baseUrl =
+      'https://mai-lake-indoor-teeth.trycloudflare.com/api';
+
+  // Development: Local emulator
+  // static const String baseUrl = 'http://10.0.2.2:5000/api';
+
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';
   static const String _rememberStorageKey = 'remember_login';
