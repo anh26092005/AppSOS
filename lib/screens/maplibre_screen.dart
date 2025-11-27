@@ -48,10 +48,7 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
       });
 
       // Di chuyển camera đến vị trí hiện tại
-      mapController.move(
-        LatLng(position.latitude, position.longitude),
-        15.0,
-      );
+      mapController.move(LatLng(position.latitude, position.longitude), 15.0);
 
       // Thêm marker tại vị trí hiện tại
       _addMarker(
@@ -73,11 +70,7 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
           height: 80,
           child: Column(
             children: [
-              Icon(
-                Icons.location_on,
-                color: Colors.red,
-                size: 40,
-              ),
+              Icon(Icons.location_on, color: Colors.red, size: 40),
               if (label != null)
                 Container(
                   padding: EdgeInsets.all(4),
@@ -85,10 +78,7 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(4),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 4,
-                      ),
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
                     ],
                   ),
                   child: Text(
@@ -111,7 +101,7 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
           point: position,
           radius: radiusMeters,
           useRadiusInMeter: true,
-          color: Colors.red.withOpacity(0.3),
+          color: Colors.red.withValues(alpha: 0.3),
           borderColor: Colors.red,
           borderStrokeWidth: 2,
         ),
@@ -127,12 +117,8 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
   @override
   Widget build(BuildContext context) {
     // Xác định vị trí ban đầu
-    final lat = widget.initialLat ??
-                currentPosition?.latitude ??
-                defaultLat;
-    final lng = widget.initialLng ??
-                currentPosition?.longitude ??
-                defaultLng;
+    final lat = widget.initialLat ?? currentPosition?.latitude ?? defaultLat;
+    final lng = widget.initialLng ?? currentPosition?.longitude ?? defaultLng;
 
     return Scaffold(
       appBar: AppBar(
@@ -220,10 +206,7 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
             mini: true,
             onPressed: () {
               final currentZoom = mapController.camera.zoom;
-              mapController.move(
-                mapController.camera.center,
-                currentZoom + 1,
-              );
+              mapController.move(mapController.camera.center, currentZoom + 1);
             },
             child: Icon(Icons.add),
           ),
@@ -234,10 +217,7 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
             mini: true,
             onPressed: () {
               final currentZoom = mapController.camera.zoom;
-              mapController.move(
-                mapController.camera.center,
-                currentZoom - 1,
-              );
+              mapController.move(mapController.camera.center, currentZoom - 1);
             },
             child: Icon(Icons.remove),
           ),
@@ -252,4 +232,3 @@ class _MapLibreScreenState extends State<MapLibreScreen> {
     super.dispose();
   }
 }
-

@@ -87,7 +87,7 @@ class SOSAlertDialog extends StatelessWidget {
                 border: Border.all(color: Colors.red.shade100, width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.red.withOpacity(0.2),
+                    color: Colors.red.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),

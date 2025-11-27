@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 =====ADMIN======
 user@example.com
 password123
@@ -9,3 +10,21 @@ password123
 
 tnaav@gmail.com
 123456
+=======
+=====ADMIN======
+user@example.com
+password123
+=====user
+{
+  "fullName": "Nguyễn Văn Tình Nguyện",
+  "phone": "+84987654321",
+  "email": "tnv@gmail.com",
+  "password": "123456"
+}
+====tnv
+user2@example.com
+password123
+
+
+usert
+>>>>>>> 815e4c5 (a)

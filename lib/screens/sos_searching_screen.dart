@@ -322,10 +322,10 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: emergencyColor.withOpacity(0.1),
+                  color: emergencyColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: emergencyColor.withOpacity(0.3),
+                    color: emergencyColor.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
