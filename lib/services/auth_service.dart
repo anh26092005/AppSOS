@@ -7,34 +7,31 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 class AuthService {
   // Firebase Auth instance
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   // Get current user
   static User? get currentUser => _auth.currentUser;
-  
+
   // Stream of auth state changes
   static Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  // Initialize Google Sign-In (should be called once at app startup)
-  static Future<void> initializeGoogleSignIn() async {
-    try {
-      await GoogleSignIn.instance.initialize();
-    } catch (e) {
-      print('Google Sign-In initialization error: $e');
-    }
-  }
 
   /// Sign in with Google
   /// Returns UserCredential on success, throws Exception on failure
   static Future<UserCredential> signInWithGoogle() async {
     try {
-      // Initialize if not already done
-      await initializeGoogleSignIn();
-      
-      // Authenticate with Google
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-      
+      // Initialize Google Sign-In
+      await GoogleSignIn.instance.initialize();
+
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+          .authenticate();
+
+      if (googleUser == null) {
+        throw Exception('Google sign-in was cancelled by user');
+      }
+
       // Get authentication tokens
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // Create a new credential (only idToken is available in v7.x)
       final credential = GoogleAuthProvider.credential(
@@ -54,7 +51,9 @@ class AuthService {
     try {
       // Trigger the Facebook Sign-In flow
       final LoginResult loginResult = await FacebookAuth.instance.login(
-        permissions: ['public_profile'], // Removed 'email' to avoid invalid scopes error
+        permissions: [
+          'public_profile',
+        ], // Removed 'email' to avoid invalid scopes error
       );
 
       // Check if login was successful
@@ -64,13 +63,13 @@ class AuthService {
 
       // Get the access token
       final AccessToken? accessToken = loginResult.accessToken;
-      
+
       if (accessToken == null) {
         throw Exception('Facebook access token is null');
       }
 
       // Create a credential from the access token
-      final OAuthCredential facebookAuthCredential = 
+      final OAuthCredential facebookAuthCredential =
           FacebookAuthProvider.credential(accessToken.tokenString);
 
       // Sign in to Firebase with the Facebook credential
@@ -82,7 +81,7 @@ class AuthService {
 
   /// Send OTP to phone number
   /// [phoneNumber] should include country code (e.g., +84 for Vietnam)
-  /// 
+  ///
   /// Callbacks:
   /// - [onCodeSent] called when OTP is sent successfully with verificationId and resendToken
   /// - [onVerificationCompleted] called when auto-verification succeeds
@@ -99,16 +98,16 @@ class AuthService {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         timeout: const Duration(seconds: 60),
-        
+
         // Called when SMS code is automatically retrieved (Android only)
         verificationCompleted: onVerificationCompleted,
-        
+
         // Called when verification fails
         verificationFailed: onVerificationFailed,
-        
+
         // Called when OTP is sent successfully
         codeSent: onCodeSent,
-        
+
         // Called when auto-retrieval timeout
         codeAutoRetrievalTimeout: onCodeAutoRetrievalTimeout,
       );
@@ -144,10 +143,11 @@ class AuthService {
     try {
       // Sign out from Firebase
       await _auth.signOut();
-      
+
       // Sign out from Google - Using attemptLightweightAuthentication to check
       try {
-        final account = await GoogleSignIn.instance.attemptLightweightAuthentication();
+        final account = await GoogleSignIn.instance
+            .attemptLightweightAuthentication();
         if (account != null) {
           await GoogleSignIn.instance.signOut();
         }
@@ -155,7 +155,7 @@ class AuthService {
         // Ignore if not signed in
         print('Google sign out skipped: $e');
       }
-      
+
       // Sign out from Facebook
       await FacebookAuth.instance.logOut();
     } catch (e) {
