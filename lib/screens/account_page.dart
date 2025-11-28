@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -77,7 +79,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 243, 243, 243),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
         child: SingleChildScrollView(
@@ -94,13 +96,18 @@ class _AccountPageState extends State<AccountPage> {
                   right: 20,
                 ),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFFFFF8E1), // Light beige
-                      Color(0xFFFFECB3), // Slightly deeper beige
-                    ],
+                    colors: Theme.of(context).brightness == Brightness.dark
+                        ? [
+                            Theme.of(context).colorScheme.surface,
+                            Theme.of(context).colorScheme.surfaceVariant,
+                          ]
+                        : [
+                            const Color(0xFFFFF8E1), // Light beige
+                            const Color(0xFFFFECB3), // Slightly deeper beige
+                          ],
                   ),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(24),
@@ -124,7 +131,9 @@ class _AccountPageState extends State<AccountPage> {
                       style: GoogleFonts.montserrat(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
-                        color: const Color(0xFF0D47A1), // Dark Blue
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF0D47A1), // Dark Blue
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -249,7 +258,7 @@ class _AccountPageState extends State<AccountPage> {
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
@@ -291,7 +300,9 @@ class _AccountPageState extends State<AccountPage> {
                                     style: GoogleFonts.montserrat(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                                      color: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                   subtitle: Padding(
@@ -458,6 +469,81 @@ class _AccountPageState extends State<AccountPage> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    // Dark Mode Toggle
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Consumer<ThemeProvider>(
+                        builder: (context, themeProvider, child) {
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color:
+                                    (themeProvider.isDarkMode
+                                            ? Colors.purple
+                                            : Colors.orange)
+                                        .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                themeProvider.isDarkMode
+                                    ? Icons.dark_mode
+                                    : Icons.light_mode,
+                                color: themeProvider.isDarkMode
+                                    ? Colors.purple
+                                    : Colors.orange,
+                                size: 24,
+                              ),
+                            ),
+                            title: Text(
+                              'Chế độ tối',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.color,
+                              ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                themeProvider.isDarkMode
+                                    ? 'Đang bật'
+                                    : 'Đang tắt',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ),
+                            trailing: Switch(
+                              value: themeProvider.isDarkMode,
+                              onChanged: (value) {
+                                themeProvider.toggleTheme();
+                              },
+                              activeColor: Colors.purple,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     _buildAccountTile(
                       context,
                       icon: Icons.help_outline,
@@ -496,7 +582,7 @@ class _AccountPageState extends State<AccountPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -511,12 +597,16 @@ class _AccountPageState extends State<AccountPage> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.redAccent.withValues(alpha: 0.1),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.redAccent.withValues(alpha: 0.2)
+                : Colors.redAccent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFFF57F17),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.redAccent
+                : const Color(0xFFF57F17),
             size: 24,
           ), // Gold/Orange icon
         ),
@@ -525,7 +615,7 @@ class _AccountPageState extends State<AccountPage> {
           style: GoogleFonts.montserrat(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF333333),
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         subtitle: Padding(

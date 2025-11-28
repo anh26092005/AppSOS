@@ -6,11 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Production: Cloudflare Tunnel URL
-  static const String baseUrl =
-      'https://mai-lake-indoor-teeth.trycloudflare.com/api';
+  // static const String baseUrl =
+  //     'https://mai-lake-indoor-teeth.trycloudflare.com/api';
 
   // Development: Local emulator
-  // static const String baseUrl = 'http://10.0.2.2:5000/api';
+  static const String baseUrl = 'http://10.0.2.2:5000/api';
 
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';

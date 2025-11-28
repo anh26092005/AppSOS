@@ -505,6 +505,112 @@ const cancelSosCase = async (req, res, next) => {
 
         await Promise.all(notificationPromises);
         console.log('✅ Cancellation notifications sent to all volunteers');
+
+        // NOTIFY NEXT SOS: Find and notify each volunteer of their next oldest pending SOS
+        console.log(`🔍 Finding next pending SOS for ${queueItems.length} volunteers...`);
+
+        const nextSosPromises = queueItems.map(async (volunteerId) => {
+          try {
+            // Get volunteer profile for homeBase location
+            const volunteerProfile = await VolunteerProfile.findOne({
+              userId: volunteerId,
+              status: 'APPROVED',
+              ready: true
+            });
+
+            if (!volunteerProfile) {
+              console.log(`ℹ️ Volunteer ${volunteerId} not ready or not approved`);
+              return null;
+            }
+
+            // Find oldest pending SOS case within 50km (excluding the canceled one)
+            const nextPendingCases = await SosCase.aggregate([
+              {
+                $match: {
+                  status: 'SEARCHING',
+                  _id: { $ne: sosCase._id }
+                }
+              },
+              {
+                $geoNear: {
+                  near: volunteerProfile.homeBase.location,
+                  distanceField: 'distance',
+                  maxDistance: 50000, // 50km in meters
+                  spherical: true
+                }
+              },
+              {
+                $sort: { createdAt: 1 } // Oldest first
+              },
+              {
+                $limit: 1
+              }
+            ]);
+
+            if (nextPendingCases.length > 0) {
+              const nextCase = nextPendingCases[0];
+
+              // Check if volunteer already in queue for this case
+              const existingQueue = await SosResponderQueue.findOne({
+                sosId: nextCase._id,
+                volunteerId
+              });
+
+              if (!existingQueue) {
+                // Add to queue
+                await SosResponderQueue.create({
+                  sosId: nextCase._id,
+                  volunteerId,
+                  distanceKm: nextCase.distance / 1000,
+                  status: 'NOTIFIED'
+                });
+
+                // Send notification
+                const distance = (nextCase.distance / 1000).toFixed(1);
+                const nextTitle = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+                const nextBody = `${nextCase.emergencyType} - Cách bạn ${distance}km`;
+
+                const nextNotificationData = {
+                  type: 'SOS_CASE',
+                  caseId: nextCase._id.toString(),
+                  caseCode: nextCase.code,
+                  emergencyType: nextCase.emergencyType,
+                  distance: distance
+                };
+
+                // Save in-app notification
+                await Notification.create({
+                  userId: volunteerId,
+                  type: 'SOS_CASE',
+                  title: nextTitle,
+                  body: nextBody,
+                  data: nextNotificationData,
+                  deliveredAt: new Date()
+                });
+
+                // Send FCM
+                await sendNotificationToUser(volunteerId, nextTitle, nextBody, nextNotificationData);
+
+                console.log(`✅ Notified volunteer of next oldest SOS (${distance}km, created ${nextCase.createdAt})`);
+                return nextCase._id;
+              } else {
+                console.log(`ℹ️ Volunteer already in queue for next pending SOS`);
+                return null;
+              }
+            } else {
+              console.log(`ℹ️ No other pending SOS found for volunteer ${volunteerId}`);
+              return null;
+            }
+          } catch (error) {
+            console.error(`Error finding next SOS for volunteer ${volunteerId}:`, error);
+            return null;
+          }
+        });
+
+        const nextSosResults = await Promise.all(nextSosPromises);
+        const notifiedCount = nextSosResults.filter(result => result !== null).length;
+        console.log(`📢 Notified ${notifiedCount} volunteers of their next oldest pending SOS`);
+
       } catch (notifyError) {
         // Không throw error để không ảnh hưởng đến flow chính
         console.error('Error sending cancellation notifications:', notifyError);

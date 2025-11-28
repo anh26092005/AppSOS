@@ -1,5 +1,6 @@
-const { VolunteerProfile, User } = require('../models');
+const { VolunteerProfile, User, SosCase, SosResponderQueue, Notification } = require('../models');
 const AppError = require('../utils/appError');
+const { sendNotificationToUser } = require('../services/fcm.service');
 
 // Tạo volunteer profile mới
 const createVolunteerProfile = async (req, res, next) => {
@@ -293,9 +294,93 @@ const toggleVolunteerReady = async (req, res, next) => {
       throw new AppError('Volunteer profile not found', 404);
     }
 
+    // Store previous ready status
+    const wasReady = volunteer.ready;
+
     // Toggle ready status
     volunteer.ready = !volunteer.ready;
     await volunteer.save();
+
+    // If toggled from OFF to ON, notify of oldest pending SOS
+    if (!wasReady && volunteer.ready === true) {
+      try {
+        // Find oldest pending SOS case within 50km
+        const oldestPendingCases = await SosCase.aggregate([
+          {
+            $match: { status: 'SEARCHING' }
+          },
+          {
+            $geoNear: {
+              near: volunteer.homeBase.location,
+              distanceField: 'distance',
+              maxDistance: 50000, // 50km in meters
+              spherical: true
+            }
+          },
+          {
+            $sort: { createdAt: 1 } // Oldest first
+          },
+          {
+            $limit: 1
+          }
+        ]);
+
+        if (oldestPendingCases.length > 0) {
+          const oldestCase = oldestPendingCases[0];
+
+          // Check if volunteer already in queue for this case
+          const existingQueue = await SosResponderQueue.findOne({
+            sosId: oldestCase._id,
+            volunteerId: userId
+          });
+
+          if (!existingQueue) {
+            // Add to queue
+            await SosResponderQueue.create({
+              sosId: oldestCase._id,
+              volunteerId: userId,
+              distanceKm: oldestCase.distance / 1000,
+              status: 'NOTIFIED'
+            });
+
+            // Send notification
+            const distance = (oldestCase.distance / 1000).toFixed(1);
+            const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+            const body = `${oldestCase.emergencyType} - Cách bạn ${distance}km`;
+
+            const notificationData = {
+              type: 'SOS_CASE',
+              caseId: oldestCase._id.toString(),
+              caseCode: oldestCase.code,
+              emergencyType: oldestCase.emergencyType,
+              distance: distance
+            };
+
+            // Save in-app notification
+            await Notification.create({
+              userId: userId,
+              type: 'SOS_CASE',
+              title,
+              body,
+              data: notificationData,
+              deliveredAt: new Date()
+            });
+
+            // Send FCM
+            await sendNotificationToUser(userId, title, body, notificationData);
+
+            console.log(`✅ Notified volunteer of oldest pending SOS (${distance}km, created ${oldestCase.createdAt})`);
+          } else {
+            console.log('ℹ️ Volunteer already in queue for oldest pending SOS');
+          }
+        } else {
+          console.log('ℹ️ No pending SOS cases found in range');
+        }
+      } catch (notifyError) {
+        // Log error but don't fail the toggle operation
+        console.error('Error notifying volunteer of pending SOS:', notifyError);
+      }
+    }
 
     const volunteerObj = await VolunteerProfile.findById(volunteer._id)
       .populate('userId', 'fullName phone email avatar roles isActive')

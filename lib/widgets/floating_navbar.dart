@@ -88,7 +88,10 @@ class _FloatingNavbarState extends State<FloatingNavbar>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.redAccent,
-                      border: Border.all(color: Colors.white, width: 3),
+                      border: Border.all(
+                        color: Theme.of(context).cardColor,
+                        width: 3,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.redAccent.withValues(alpha: 0.4),
@@ -129,7 +132,7 @@ class _FloatingNavbarState extends State<FloatingNavbar>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
@@ -155,7 +158,7 @@ class _FloatingNavbarState extends State<FloatingNavbar>
                   Icons.home,
                   color: widget.selectedIndex == 0
                       ? const Color(0xFF1976D2)
-                      : Colors.grey.shade600,
+                      : Theme.of(context).unselectedWidgetColor,
                 ),
                 iconSize: 28,
                 onPressed: widget.onHomePressed,
@@ -168,7 +171,7 @@ class _FloatingNavbarState extends State<FloatingNavbar>
                   Icons.person,
                   color: widget.selectedIndex == 2
                       ? const Color(0xFF1976D2)
-                      : Colors.grey.shade600,
+                      : Theme.of(context).unselectedWidgetColor,
                 ),
                 iconSize: 28,
                 onPressed: widget.onProfilePressed,
