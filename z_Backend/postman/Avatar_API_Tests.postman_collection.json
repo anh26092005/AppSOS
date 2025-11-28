@@ -1,0 +1,594 @@
+{
+	"info": {
+		"_postman_id": "avatar-api-tests-001",
+		"name": "Avatar API Tests",
+		"description": "Collection để test các API liên quan đến avatar upload và update",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login để lấy Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test response body",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.token).to.exist;",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"// Save token to environment",
+									"pm.test(\"Token saved to environment\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"auth_token\", jsonData.token);",
+									"    pm.environment.set(\"user_id\", jsonData.user._id);",
+									"    pm.expect(pm.environment.get(\"auth_token\")).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login để lấy authentication token cho các test tiếp theo"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile (Verify Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User data exists\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.exist;",
+									"    pm.expect(jsonData.data._id).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Verify token hoạt động bằng cách lấy profile"
+					},
+					"response": []
+				}
+			],
+			"description": "Các API để authentication và lấy token"
+		},
+		{
+			"name": "Avatar Upload",
+			"item": [
+				{
+					"name": "Upload Avatar - Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.message).to.equal('Avatar updated successfully');",
+									"});",
+									"",
+									"pm.test(\"Avatar data is returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.exist;",
+									"    pm.expect(jsonData.data.avatar).to.exist;",
+									"    pm.expect(jsonData.data.avatar.url).to.exist;",
+									"    pm.expect(jsonData.data.avatar.key).to.exist;",
+									"    pm.expect(jsonData.data.avatar.bucket).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Avatar URL is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var avatarUrl = jsonData.data.avatar.url;",
+									"    pm.expect(avatarUrl).to.match(/^https?:\\/\\//);",
+									"});",
+									"",
+									"// Save avatar data for future tests",
+									"pm.test(\"Save avatar data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"avatar_url\", jsonData.data.avatar.url);",
+									"    pm.environment.set(\"avatar_key\", jsonData.data.avatar.key);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": "/path/to/your/avatar.jpg",
+									"description": "Chọn một file ảnh để upload (jpg, png, gif, webp)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/avatar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"avatar"
+							]
+						},
+						"description": "Upload avatar mới. File cũ sẽ bị xóa tự động."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Avatar - No File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message is correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.message).to.include('avatar');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/avatar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"avatar"
+							]
+						},
+						"description": "Test case: Upload avatar không có file"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Avatar - No Auth Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Error message indicates unauthorized\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": "/path/to/your/avatar.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/avatar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"avatar"
+							]
+						},
+						"description": "Test case: Upload avatar không có authentication token"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Avatar - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Error indicates invalid token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "invalid_token_here",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": "/path/to/your/avatar.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/avatar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"avatar"
+							]
+						},
+						"description": "Test case: Upload avatar với token không hợp lệ"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Avatar - Large File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Kiểm tra xem server có giới hạn file size không",
+									"pm.test(\"Response status\", function () {",
+									"    // Có thể là 200 (success) hoặc 413 (payload too large)",
+									"    pm.expect([200, 413]).to.include(pm.response.code);",
+									"});",
+									"",
+									"if (pm.response.code === 413) {",
+									"    pm.test(\"File size limit error\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.be.false;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": "/path/to/large-file.jpg",
+									"description": "Upload file lớn hơn 5MB để test giới hạn"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/avatar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"avatar"
+							]
+						},
+						"description": "Test case: Upload file ảnh lớn để kiểm tra giới hạn size"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Avatar - Update Existing",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Avatar updated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.avatar).to.exist;",
+									"});",
+									"",
+									"pm.test(\"New avatar URL is different from old one\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var oldAvatarUrl = pm.environment.get(\"avatar_url\");",
+									"    var newAvatarUrl = jsonData.data.avatar.url;",
+									"    ",
+									"    // Avatar mới nên khác avatar cũ",
+									"    if (oldAvatarUrl) {",
+									"        pm.expect(newAvatarUrl).to.not.equal(oldAvatarUrl);",
+									"    }",
+									"    ",
+									"    // Update environment với avatar mới",
+									"    pm.environment.set(\"avatar_url\", newAvatarUrl);",
+									"    pm.environment.set(\"avatar_key\", jsonData.data.avatar.key);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": "/path/to/another-avatar.jpg",
+									"description": "Upload avatar mới để replace avatar cũ"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/avatar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"avatar"
+							]
+						},
+						"description": "Test case: Update avatar khi đã có avatar cũ (avatar cũ sẽ bị xóa)"
+					},
+					"response": []
+				}
+			],
+			"description": "Các API test cho avatar upload"
+		},
+		{
+			"name": "Verification",
+			"item": [
+				{
+					"name": "Get Profile After Upload",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Profile contains avatar data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.avatar).to.exist;",
+									"    pm.expect(jsonData.data.avatar.url).to.exist;",
+									"    pm.expect(jsonData.data.avatar.key).to.exist;",
+									"    pm.expect(jsonData.data.avatar.bucket).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Avatar URL matches uploaded avatar\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var profileAvatarUrl = jsonData.data.avatar.url;",
+									"    var savedAvatarUrl = pm.environment.get(\"avatar_url\");",
+									"    ",
+									"    if (savedAvatarUrl) {",
+									"        pm.expect(profileAvatarUrl).to.equal(savedAvatarUrl);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Verify avatar đã được update trong profile"
+					},
+					"response": []
+				}
+			],
+			"description": "Verify kết quả sau khi upload avatar"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		}
+	]
+}

@@ -104,6 +104,54 @@ const login = async (req, res, next) => {
   }
 };
 
+const updateAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError('No avatar file provided', 400);
+    }
+
+    const userId = req.user._id;
+
+    // Lấy thông tin user hiện tại
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Xóa avatar cũ khỏi S3 nếu có
+    if (user.avatar && user.avatar.key) {
+      const { deleteFileFromS3 } = require('../config/s3');
+      await deleteFileFromS3(user.avatar.key);
+    }
+
+    // Cập nhật avatar mới
+    const avatarData = {
+      bucket: process.env.AWS_S3_BUCKET_NAME,
+      key: req.file.key,
+      url: req.file.location,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      etag: req.file.etag
+    };
+
+    user.avatar = avatarData;
+    await user.save();
+
+    res.json({
+      success: true,
+      data: buildUserResponse(user),
+      message: 'Avatar updated successfully'
+    });
+  } catch (error) {
+    // Nếu có lỗi và đã upload file, xóa file khỏi S3
+    if (req.file) {
+      const { deleteFileFromS3 } = require('../config/s3');
+      await deleteFileFromS3(req.file.key);
+    }
+    next(error);
+  }
+};
+
 const getProfile = async (req, res, next) => {
   try {
     if (!req.user?._id) {
@@ -135,4 +183,5 @@ module.exports = {
   register,
   login,
   getProfile,
+  updateAvatar,
 };

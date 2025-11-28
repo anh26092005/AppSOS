@@ -4,6 +4,7 @@ import { CommunityPost, ApprovalStatus } from '../types';
 import { CheckCircleIcon, XCircleIcon } from './icons';
 import { articleService } from '../services/articleService';
 import { mapBackendArticleToCommunityPost } from '../utils/articleMapper';
+import AvatarImage from './AvatarImage';
 
 const RejectModal: React.FC<{ post: CommunityPost, onClose: () => void, onConfirm: (id: string, reason: string) => void }> = ({ post, onClose, onConfirm }) => {
     const [reason, setReason] = useState('');
@@ -102,9 +103,9 @@ const CommunityManagement: React.FC = () => {
                     {pendingPosts.map(post => (
                         <div key={post.id} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col">
                             {post.imageUrl && <img src={post.imageUrl} alt="Post content" className="w-full h-48 object-cover" />}
-                            <div className="p-6 flex-grow flex flex-col">
+                                <div className="p-6 flex-grow flex flex-col">
                                 <div className="flex items-center mb-4">
-                                    <img src={post.author.avatar} alt={post.author.name} className="w-10 h-10 rounded-full mr-3" />
+                                    <AvatarImage src={post.author.avatar} alt={post.author.name} size="md" className="mr-3" />
                                     <div>
                                         <p className="font-semibold text-white">{post.author.name}</p>
                                         <p className="text-xs text-gray-400">{new Date(post.timestamp).toLocaleString()}</p>

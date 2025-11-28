@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { CaseStatus } from '../types';
+import { CaseStatus, SOSCase } from '../types';
 import { EyeIcon, MapPinIcon } from './icons';
 import { sosService } from '../services/sosService';
+import AvatarImage from './AvatarImage';
 
 // Trash icon component
 const TrashIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" }) => (
@@ -39,7 +40,7 @@ const SOSDetailModal: React.FC<{ sosCase: SOSCase, onClose: () => void }> = ({ s
                         <div className="mt-6">
                             <h3 className="text-lg font-semibold text-white mb-2">Người gặp nạn (NGN)</h3>
                             <div className="flex items-center bg-gray-700 p-3 rounded-md">
-                                <img src={sosCase.user.avatar} alt={sosCase.user.name} className="w-12 h-12 rounded-full mr-4"/>
+                                <AvatarImage src={sosCase.user.avatar} alt={sosCase.user.name} size="lg" className="mr-4" />
                                 <div>
                                     <p className="font-bold text-white">{sosCase.user.name}</p>
                                     <p className="text-sm text-gray-400">{sosCase.user.phone}</p>
@@ -51,7 +52,7 @@ const SOSDetailModal: React.FC<{ sosCase: SOSCase, onClose: () => void }> = ({ s
                             <div className="mt-4">
                                 <h3 className="text-lg font-semibold text-white mb-2">Tình nguyện viên (TNV)</h3>
                                 <div className="flex items-center bg-gray-700 p-3 rounded-md">
-                                    <img src={sosCase.volunteer.avatar} alt={sosCase.volunteer.name} className="w-12 h-12 rounded-full mr-4"/>
+                                    <AvatarImage src={sosCase.volunteer.avatar} alt={sosCase.volunteer.name} size="lg" className="mr-4" />
                                     <div>
                                         <p className="font-bold text-white">{sosCase.volunteer.name}</p>
                                         <p className="text-sm text-gray-400">{sosCase.volunteer.phone}</p>

@@ -8,6 +8,7 @@ import VolunteerManagement from './components/VolunteerManagement';
 import UserManagement from './components/UserManagement';
 import CommunityManagement from './components/CommunityManagement';
 import BlogManagement from './components/BlogManagement';
+import AvatarImage from './components/AvatarImage';
 import { HomeIcon, ShieldAlertIcon, UsersIcon, UserCogIcon, MessageSquareIcon, FileTextIcon, LogOutIcon } from './components/icons';
 
 import { volunteerService } from './services/volunteerService';
@@ -122,7 +123,7 @@ const App: React.FC = () => {
                 </nav>
                  <div className="p-4 border-t border-gray-700">
                     <div className="flex items-center">
-                        <img src={adminUser.avatar} alt="Admin" className="w-10 h-10 rounded-full"/>
+                        <AvatarImage src={adminUser.avatar} alt={adminUser.name} size="md" />
                         <div className="ml-3">
                             <p className="text-sm font-semibold text-white">{adminUser.name}</p>
                             <p className="text-xs text-gray-400">Admin</p>

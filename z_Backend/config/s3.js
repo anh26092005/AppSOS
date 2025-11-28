@@ -14,7 +14,7 @@ const s3Client = new S3Client({
   },
 });
 
-// Cấu hình multer cho S3
+// Cấu hình multer cho S3 (Articles)
 const upload = multer({
   storage: multerS3({
     s3: s3Client,
@@ -24,6 +24,40 @@ const upload = multer({
       // Tạo tên file unique
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const fileName = `articles/${uniqueSuffix}${path.extname(file.originalname)}`;
+      cb(null, fileName);
+    },
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    metadata: function (req, file, cb) {
+      cb(null, {
+        fieldName: file.fieldname,
+        originalName: file.originalname,
+        uploadedBy: req.user ? req.user._id.toString() : 'anonymous'
+      });
+    }
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Chỉ cho phép upload hình ảnh
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ được upload file hình ảnh!'), false);
+    }
+  }
+});
+
+// Cấu hình multer cho Avatar upload
+const uploadAvatar = multer({
+  storage: multerS3({
+    s3: s3Client,
+    bucket: process.env.AWS_S3_BUCKET_NAME,
+    // acl: 'public-read',
+    key: function (req, file, cb) {
+      // Tạo tên file unique cho avatar
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const fileName = `avatars/${uniqueSuffix}${path.extname(file.originalname)}`;
       cb(null, fileName);
     },
     contentType: multerS3.AUTO_CONTENT_TYPE,
@@ -161,6 +195,7 @@ const getFileInfo = async (key) => {
 module.exports = {
   s3Client,
   upload,
+  uploadAvatar,
   handleUploadError,
   deleteFileFromS3,
   getFileUrl,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, UserStatus } from '../types';
 import { userService } from '../services/userService';
 import { mapBackendUserToFrontendUser } from '../utils/userMapper';
+import AvatarImage from './AvatarImage';
 
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -104,7 +105,7 @@ const UserManagement: React.FC = () => {
                                 <tr key={user.id} className="bg-gray-800 border-b border-gray-700 hover:bg-gray-600/50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            <img className="w-10 h-10 rounded-full" src={user.avatar} alt={user.name} />
+                                            <AvatarImage src={user.avatar} alt={user.name} size="md" />
                                             <div className="pl-3">
                                                 <div className="text-base font-semibold text-white">{user.name}</div>
                                             </div>
