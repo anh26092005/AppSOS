@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
-import 'package:provider/provider.dart';
-import '../providers/theme_provider.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -465,85 +463,11 @@ class _AccountPageState extends State<AccountPage> {
                       title: 'Cài đặt',
                       subtitle: 'Tùy chỉnh ứng dụng',
                       onTap: () {
-                        // TODO: Navigate to settings
+                        Navigator.pushNamed(context, '/settings');
                       },
                     ),
                     const SizedBox(height: 12),
-                    // Dark Mode Toggle
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Consumer<ThemeProvider>(
-                        builder: (context, themeProvider, child) {
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            leading: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color:
-                                    (themeProvider.isDarkMode
-                                            ? Colors.purple
-                                            : Colors.orange)
-                                        .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                themeProvider.isDarkMode
-                                    ? Icons.dark_mode
-                                    : Icons.light_mode,
-                                color: themeProvider.isDarkMode
-                                    ? Colors.purple
-                                    : Colors.orange,
-                                size: 24,
-                              ),
-                            ),
-                            title: Text(
-                              'Chế độ tối',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.color,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                themeProvider.isDarkMode
-                                    ? 'Đang bật'
-                                    : 'Đang tắt',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ),
-                            trailing: Switch(
-                              value: themeProvider.isDarkMode,
-                              onChanged: (value) {
-                                themeProvider.toggleTheme();
-                              },
-                              activeColor: Colors.purple,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+
                     _buildAccountTile(
                       context,
                       icon: Icons.help_outline,
