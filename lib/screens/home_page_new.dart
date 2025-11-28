@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/post_model.dart';
@@ -202,12 +201,24 @@ class _HomePageNewState extends State<HomePageNew> {
     }
   }
 
+  String _sanitizeUrl(String url) {
+    if (Platform.isAndroid) {
+      if (url.contains('localhost')) {
+        return url.replaceFirst('localhost', '10.0.2.2');
+      }
+      if (url.contains('127.0.0.1')) {
+        return url.replaceFirst('127.0.0.1', '10.0.2.2');
+      }
+    }
+    return url;
+  }
+
   @override
   Widget build(BuildContext context) {
     final greeting = _getGreeting();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
@@ -273,7 +284,7 @@ class _HomePageNewState extends State<HomePageNew> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -401,7 +412,7 @@ class _HomePageNewState extends State<HomePageNew> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -470,7 +481,9 @@ class _HomePageNewState extends State<HomePageNew> {
                                 style: GoogleFonts.montserrat(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF333333),
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyLarge?.color,
                                 ),
                               ),
                               if (post.authorType == 'group') ...[
@@ -563,7 +576,7 @@ class _HomePageNewState extends State<HomePageNew> {
                     style: GoogleFonts.montserrat(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF333333),
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       height: 1.5,
                     ),
                   ),
@@ -577,7 +590,7 @@ class _HomePageNewState extends State<HomePageNew> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.network(
-                      post.imageUrl!,
+                      _sanitizeUrl(post.imageUrl!),
                       width: double.infinity,
                       height: 200,
                       fit: BoxFit.cover,
@@ -593,15 +606,36 @@ class _HomePageNewState extends State<HomePageNew> {
                           ),
                         );
                       },
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 200,
-                        color: Colors.grey.shade100,
-                        child: const Icon(
-                          Icons.broken_image,
-                          size: 40,
-                          color: Colors.grey,
-                        ),
-                      ),
+                      errorBuilder: (context, error, stackTrace) {
+                        debugPrint(
+                          'Error loading image: ${_sanitizeUrl(post.imageUrl!)}',
+                        );
+                        debugPrint('Error details: $error');
+                        return Container(
+                          height: 200,
+                          color: Colors
+                              .grey
+                              .shade300, // Darker grey for visibility
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.broken_image,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Lỗi tải ảnh',
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -677,13 +711,18 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFFFF8E1), // Light beige
-            Color(0xFFFFECB3), // Slightly deeper beige
-          ],
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+                  Theme.of(context).colorScheme.surface,
+                  Theme.of(context).colorScheme.surfaceVariant,
+                ]
+              : [
+                  const Color(0xFFFFF8E1), // Light beige
+                  const Color(0xFFFFECB3), // Slightly deeper beige
+                ],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
@@ -726,7 +765,11 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 style: GoogleFonts.montserrat(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0D47A1),
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : const Color(0xFF0D47A1),
                                   height: 1.2,
                                 ),
                               ),
@@ -736,7 +779,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.color,
                                 ),
                               ),
                             ],
@@ -787,7 +832,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 style: GoogleFonts.montserrat(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  color: const Color.fromARGB(255, 6, 82, 158),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.blueAccent
+                      : const Color.fromARGB(255, 6, 82, 158),
                   letterSpacing: 0.5,
                 ),
               ),

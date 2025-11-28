@@ -8,6 +8,9 @@ import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'utils/navigation_service.dart';
 
+import 'package:provider/provider.dart';
+import 'providers/theme_provider.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,7 +30,12 @@ Future<void> main() async {
     // TODO: Gửi token mới lên backend
   });
 
-  runApp(const SOSApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const SOSApp(),
+    ),
+  );
 }
 
 class SOSApp extends StatelessWidget {
@@ -35,13 +43,21 @@ class SOSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: NavigationService.navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'SOS App',
-      theme: appTheme,
-      initialRoute: '/',
-      routes: {'/': (_) => const _AppEntry(), ...appRoutes},
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          navigatorKey: NavigationService.navigatorKey,
+          debugShowCheckedModeBanner: false,
+          title: 'SOS App',
+          theme: appTheme,
+          darkTheme: appThemeDark,
+          themeMode: themeProvider.isDarkMode
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          initialRoute: '/',
+          routes: {'/': (_) => const _AppEntry(), ...appRoutes},
+        );
+      },
     );
   }
 }
