@@ -17,7 +17,7 @@ const createArticle = async (req, res, next) => {
         url: req.file.location,
         mimeType: req.file.mimetype,
         size: req.file.size,
-        acl: 'public-read',
+        // acl: 'public-read',
         etag: req.file.etag
       };
     }
@@ -185,7 +185,7 @@ const updateArticle = async (req, res, next) => {
         url: req.file.location,
         mimeType: req.file.mimetype,
         size: req.file.size,
-        acl: 'public-read',
+        // acl: 'public-read',
         etag: req.file.etag
       };
     }
@@ -278,7 +278,7 @@ const uploadImage = async (req, res, next) => {
       url: req.file.location,
       mimeType: req.file.mimetype,
       size: req.file.size,
-      acl: 'public-read',
+      // acl: 'public-read',
       etag: req.file.etag
     };
 

@@ -130,6 +130,9 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
 
     if (shouldCancel != true) return;
 
+    // Cancel polling timer FIRST before making any changes
+    _pollingTimer?.cancel();
+
     setState(() {
       _isCancelling = true;
     });
@@ -145,15 +148,26 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
 
       if (!mounted) return;
 
+      // Show success message before navigating
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Đã hủy yêu cầu SOS'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
 
+      // Use a short delay to ensure snackbar is visible
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (!mounted) return;
+
       print('🔄 Navigating to main screen after cancel');
-      Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+      // Use Navigator.of(context) with rootNavigator to ensure proper navigation
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamedAndRemoveUntil('/main', (route) => false);
     } catch (e) {
       print('❌ Error cancelling SOS: $e');
       if (!mounted) return;
@@ -161,6 +175,9 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
       setState(() {
         _isCancelling = false;
       });
+
+      // Restart polling if cancel failed
+      _startPolling();
 
       // Check if error is 401 Unauthorized
       final errorMessage = e.toString();
@@ -173,7 +190,10 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
           ),
         );
         // Navigate to login instead of just popping
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

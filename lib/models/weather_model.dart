@@ -27,19 +27,20 @@ class WeatherModel {
     final temperature = (main['temp'] as num).toDouble();
     final humidity = main['humidity'] as int;
     final windSpeed = (wind?['speed'] as num?)?.toDouble() ?? 0.0;
-    
+
     // Convert m/s to km/h
     final windSpeedKmh = windSpeed * 3.6;
 
     // Map OpenWeatherMap icon code to emoji
     final iconCode = weather['icon'] as String;
     final weatherIcon = _getWeatherEmoji(iconCode);
-    
+
     // Map condition
     final condition = _mapCondition(weather['main'] as String);
 
     return WeatherModel(
-      locationName: json['name'] as String? ?? locationName,
+      locationName:
+          locationName, // Use geocoding location name, not API's generic name
       temperature: temperature,
       humidity: humidity,
       windSpeed: windSpeedKmh,
@@ -114,4 +115,3 @@ class WeatherModel {
     };
   }
 }
-
