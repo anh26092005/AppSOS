@@ -13,10 +13,15 @@ class PostService {
     int page = 0,
     int limit = 10,
     bool refresh = false,
+    String? authorId,
   }) async {
     try {
       // ApiService.fetchBlogs uses 1-based page index
-      final data = await ApiService.fetchBlogs(page: page + 1, limit: limit);
+      final data = await ApiService.fetchBlogs(
+        page: page + 1,
+        limit: limit,
+        authorId: authorId,
+      );
       return data.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
       print('Error fetching posts: $e');

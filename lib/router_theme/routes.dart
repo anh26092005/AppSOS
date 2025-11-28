@@ -15,6 +15,7 @@ import '../screens/fcm_token_screen.dart';
 import '../screens/sos_accepted_screen.dart';
 import '../screens/volunteer_registration_screen.dart';
 import '../screens/settings_page.dart';
+import '../screens/volunteer_profile_screen.dart';
 
 Map<String, WidgetBuilder> appRoutes = {
   '/login': (_) => const LoginScreen(),
@@ -54,5 +55,10 @@ Map<String, WidgetBuilder> appRoutes = {
     return SosAcceptedScreen(sosData: sosData);
   },
   '/volunteer-registration': (_) => const VolunteerRegistrationScreen(),
+  '/volunteer-profile': (context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    return VolunteerProfileScreen(volunteerData: args);
+  },
   '/settings': (_) => const SettingsPage(),
 };

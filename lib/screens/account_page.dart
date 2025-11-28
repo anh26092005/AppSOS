@@ -73,12 +73,6 @@ class _AccountPageState extends State<AccountPage> {
     return 'User';
   }
 
-  String _initial() {
-    final name = _displayName();
-    if (name.isEmpty) return '?';
-    return name.substring(0, 1).toUpperCase();
-  }
-
   String? _getAvatarUrl(dynamic avatar) {
     if (avatar == null) return null;
     if (avatar is String) return avatar;
@@ -528,6 +522,40 @@ class _AccountPageState extends State<AccountPage> {
                         // TODO: Navigate to about
                       },
                     ),
+                    const SizedBox(height: 30),
+                    // Logout Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await ApiService.clearSession();
+                          if (context.mounted) {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/login',
+                              (route) => false,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.logout, color: Colors.red),
+                        label: Text(
+                          'Đăng xuất',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),

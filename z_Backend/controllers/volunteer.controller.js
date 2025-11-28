@@ -151,6 +151,30 @@ const getVolunteerById = async (req, res, next) => {
   }
 };
 
+// Lấy chi tiết volunteer theo userId (public/authenticated user)
+const getVolunteerByUserId = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const volunteer = await VolunteerProfile.findOne({ userId })
+      .populate('userId', 'fullName phone email avatar roles isActive')
+      .lean();
+
+    if (!volunteer) {
+      // Không tìm thấy profile tình nguyện viên, trả về null hoặc lỗi 404 tùy logic frontend
+      // Ở đây trả về 404 để frontend biết
+      throw new AppError('Volunteer profile not found', 404);
+    }
+
+    res.json({
+      success: true,
+      data: volunteer,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Phê duyệt volunteer
 const approveVolunteer = async (req, res, next) => {
   try {
@@ -400,6 +424,7 @@ module.exports = {
   createVolunteerProfile,
   getVolunteers,
   getVolunteerById,
+  getVolunteerByUserId,
   approveVolunteer,
   rejectVolunteer,
   updateVolunteer,

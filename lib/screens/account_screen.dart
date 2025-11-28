@@ -3,6 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../widgets/user_avatar.dart';
+import '../widgets/avatar_upload_dialog.dart';
+import '../services/social_auth_api.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -15,116 +20,8 @@ class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic>? _user;
   bool _isLoading = true;
   String? _error;
+  bool _isUploadingAvatar = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadProfile();
-  }
-
-  Future<void> _loadProfile() async {
-    final cached = await ApiService.getCachedUser();
-    if (mounted && cached != null) {
-      setState(() {
-        _user = cached;
-      });
-    }
-    await _refreshProfile();
-  }
-
-  Future<void> _refreshProfile() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final user = await ApiService.fetchProfile();
-      if (!mounted) return;
-      setState(() {
-        _user = user;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _stringValue(dynamic value) {
-    if (value == null) return '';
-    if (value is String) return value;
-    return value.toString();
-  }
-
-  // Get Firebase Auth user if logged in via Google/Facebook
-  User? _getFirebaseUser() {
-    return AuthService.currentUser;
-  }
-
-  String _displayName() {
-    // Priority 1: Firebase Auth displayName (from Google/Facebook)
-    final firebaseUser = _getFirebaseUser();
-    if (firebaseUser != null && firebaseUser.displayName != null && firebaseUser.displayName!.isNotEmpty) {
-      return firebaseUser.displayName!;
-    }
-
-    // Priority 2: Backend API data
-    final fullName = _stringValue(_user?['fullName']).trim();
-    if (fullName.isNotEmpty) return fullName;
-
-    final name = _stringValue(_user?['name']).trim();
-    if (name.isNotEmpty) return name;
-
-    // Priority 3: Firebase email
-    if (firebaseUser != null && firebaseUser.email != null && firebaseUser.email!.isNotEmpty) {
-      return firebaseUser.email!;
-    }
-
-    final email = _stringValue(_user?['email']).trim();
-    if (email.isNotEmpty) return email;
-
-    final phone = _stringValue(_user?['phone']).trim();
-    if (phone.isNotEmpty) return phone;
-
-    return 'User';
-  }
-
-  String _displayEmail() {
-    // Priority 1: Firebase Auth email
-    final firebaseUser = _getFirebaseUser();
-    if (firebaseUser != null && firebaseUser.email != null && firebaseUser.email!.isNotEmpty) {
-      return firebaseUser.email!;
-    }
-
-    // Priority 2: Backend API email
-    final email = _stringValue(_user?['email']).trim();
-    if (email.isNotEmpty) return email;
-
-    return '';
-  }
-
-  String? _getPhotoUrl() {
-    // Get photo from Firebase Auth (Google/Facebook profile pic)
-    final firebaseUser = _getFirebaseUser();
-    if (firebaseUser != null && firebaseUser.photoURL != null && firebaseUser.photoURL!.isNotEmpty) {
-      return firebaseUser.photoURL;
-    }
-    return null;
-  }
-
-  String _displayInitial() {
-    final name = _displayName();
-    if (name.isEmpty) return '?';
-    return name.substring(0, 1).toUpperCase();
-  }
-
-  Widget _buildLoading() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: const [
         SizedBox(height: 200),
         Center(child: CircularProgressIndicator()),
       ],
@@ -241,57 +138,52 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 10),
                   // Avatar
-                  Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.grey.shade200,
-                          backgroundImage: _getPhotoUrl() != null 
-                              ? NetworkImage(_getPhotoUrl()!) 
-                              : null,
-                          child: _getPhotoUrl() == null
-                              ? Text(
-                                  _displayInitial(),
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFF57F17), // Orange/Gold
+                  // Avatar - Using UserAvatar widget
+                  _isUploadingAvatar
+                      ? Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            color: Colors.grey.shade200,
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 16,
-                            color: Colors.white,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFF6C343),
+                            ),
+                          ),
+                        )
+                      : GestureDetector(
+                          onTap: _isUploadingAvatar
+                              ? null
+                              : _handleAvatarUpload,
+                          child: Stack(
+                            children: [
+                              UserAvatar(
+                                avatarUrl: _getAvatarUrl(_user?['avatar']),
+                                name: _displayName(),
+                                size: AvatarSize.large,
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF57F17), // Orange/Gold
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
                   Text(
                     name,
@@ -397,51 +289,6 @@ class _AccountScreenState extends State<AccountScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          Icons.security,
-                          color: Color(0xFFF57F17),
-                          size: 24,
-                        ),
-                      ),
-                      title: Text(
-                        'Xác thực 2 lớp (2FA)',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF333333),
-                        ),
-                      ),
-                      trailing: Switch(
-                        value: false,
-                        activeColor: const Color(0xFFF57F17),
-                        onChanged: (value) {},
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8E1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
                           Icons.delete_outline,
                           color: Colors.red,
                           size: 24,
@@ -465,9 +312,13 @@ class _AccountScreenState extends State<AccountScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        await ApiService.clearSession();
+                        await SocialAuthApi.signOutComplete();
                         if (context.mounted) {
-                          Navigator.pushReplacementNamed(context, '/login');
+                          Navigator.pushNamedAndRemoveUntil(
+                            context,
+                            '/login',
+                            (route) => false,
+                          );
                         }
                       },
                       icon: const Icon(Icons.logout, color: Colors.red),
@@ -488,15 +339,6 @@ class _AccountScreenState extends State<AccountScreen> {
                       ),
                     ),
                   ),
-
-                  if (_error != null) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Lỗi: $_error',
-                      style: GoogleFonts.montserrat(color: Colors.redAccent),
-                    ),
-                  ],
-                  const SizedBox(height: 40),
                 ],
               ),
             ),

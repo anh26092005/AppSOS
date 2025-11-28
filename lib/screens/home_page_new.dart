@@ -509,14 +509,27 @@ class _HomePageNewState extends State<HomePageNew> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                post.authorName,
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: Theme.of(
+                              InkWell(
+                                onTap: () {
+                                  Navigator.pushNamed(
                                     context,
-                                  ).textTheme.bodyLarge?.color,
+                                    '/volunteer-profile',
+                                    arguments: {
+                                      'id': post.authorId,
+                                      'name': post.authorName,
+                                      'avatar': post.authorAvatar,
+                                    },
+                                  );
+                                },
+                                child: Text(
+                                  post.authorName,
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge?.color,
+                                  ),
                                 ),
                               ),
                               if (post.authorType == 'group') ...[

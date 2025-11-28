@@ -78,6 +78,11 @@ const getArticles = async (req, res, next) => {
     if (status) {
       query.status = status;
     }
+
+    // Filter theo author
+    if (req.query.author) {
+      query.author = req.query.author;
+    }
     
     // Tìm kiếm theo title và content
     if (search) {

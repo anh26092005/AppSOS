@@ -6,7 +6,7 @@ import 'api_service.dart';
 /// Service to sync Firebase Auth users with backend API
 class SocialAuthApi {
   /// Sync social login (Google/Facebook/Phone) with backend
-  /// 
+  ///
   /// This method:
   /// 1. Takes Firebase user data
   /// 2. Sends it to backend /api/auth/social-login
@@ -54,6 +54,7 @@ class SocialAuthApi {
 
         // Save token to ApiService for authenticated requests
         await ApiService.setToken(token);
+        await ApiService.saveUser(user);
 
         return {
           'success': true,
@@ -77,10 +78,10 @@ class SocialAuthApi {
     try {
       // Clear backend session
       await ApiService.clearSession();
-      
+
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
-      
+
       print('✅ Signed out from both Firebase and backend');
     } catch (e) {
       print('❌ Sign out error: $e');

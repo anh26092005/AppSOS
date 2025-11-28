@@ -42,7 +42,7 @@ class ApiService {
     return _token;
   }
 
-  static Future<void> _saveUser(Map<String, dynamic> user) async {
+  static Future<void> saveUser(Map<String, dynamic> user) async {
     _cachedUser = user;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userStorageKey, jsonEncode(user));
@@ -140,7 +140,7 @@ class ApiService {
       }
       final user = data['user'];
       if (user is Map<String, dynamic>) {
-        await _saveUser(user);
+        await saveUser(user);
       }
       return data;
     }
@@ -199,7 +199,7 @@ class ApiService {
     if (res.statusCode == 200) {
       final user = data['user'];
       if (user is Map<String, dynamic>) {
-        await _saveUser(user);
+        await saveUser(user);
         return user;
       }
       return data;
@@ -211,10 +211,14 @@ class ApiService {
   static Future<List<dynamic>> fetchBlogs({
     int page = 1,
     int limit = 10,
+    String? authorId,
   }) async {
-    final url = Uri.parse(
-      '$baseUrl/articles?page=$page&limit=$limit&sortBy=publishedAt&sortOrder=desc',
-    );
+    String urlString =
+        '$baseUrl/articles?page=$page&limit=$limit&sortBy=publishedAt&sortOrder=desc';
+    if (authorId != null) {
+      urlString += '&author=$authorId';
+    }
+    final url = Uri.parse(urlString);
     final headers = await _headers();
 
     try {
@@ -228,6 +232,26 @@ class ApiService {
     } catch (e) {
       print('Error fetching blogs: $e');
       rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> fetchVolunteerProfile(
+    String userId,
+  ) async {
+    final url = Uri.parse('$baseUrl/volunteers/user/$userId');
+    final headers = await _headers();
+
+    try {
+      final res = await http.get(url, headers: headers);
+      final data = _decode(res);
+
+      if (res.statusCode == 200) {
+        return data['data'];
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching volunteer profile: $e');
+      return null;
     }
   }
 
@@ -478,7 +502,7 @@ class ApiService {
       // Update cached user with new avatar
       final user = data['data']['user'];
       if (user is Map<String, dynamic>) {
-        await _saveUser(user);
+        await saveUser(user);
       }
       return data;
     } else {

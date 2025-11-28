@@ -3,6 +3,7 @@ const {
   createVolunteerProfile,
   getVolunteers,
   getVolunteerById,
+  getVolunteerByUserId,
   approveVolunteer,
   rejectVolunteer,
   updateVolunteer,
@@ -20,6 +21,10 @@ router.patch('/me/toggle-ready', authenticate, toggleVolunteerReady);
 
 // Các routes còn lại cần authentication và admin authorization
 router.use(authenticate);
+
+// Lấy chi tiết volunteer theo userId (cho user thường xem profile TNV)
+router.get('/user/:userId', getVolunteerByUserId);
+
 router.use(authorize('ADMIN'));
 
 // Lấy danh sách volunteers
