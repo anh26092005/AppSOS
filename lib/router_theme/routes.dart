@@ -14,6 +14,7 @@ import '../screens/permission_test_screen.dart';
 import '../screens/fcm_token_screen.dart';
 import '../screens/sos_accepted_screen.dart';
 import '../screens/volunteer_registration_screen.dart';
+import '../screens/settings_page.dart';
 
 Map<String, WidgetBuilder> appRoutes = {
   '/login': (_) => const LoginScreen(),
@@ -53,4 +54,5 @@ Map<String, WidgetBuilder> appRoutes = {
     return SosAcceptedScreen(sosData: sosData);
   },
   '/volunteer-registration': (_) => const VolunteerRegistrationScreen(),
+  '/settings': (_) => const SettingsPage(),
 };
