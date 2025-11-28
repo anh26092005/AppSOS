@@ -110,9 +110,9 @@ class InfoTnvScreen extends StatelessWidget {
                           child: ClipOval(
                             child:
                                 (tnv['avatar'] != null &&
-                                    tnv['avatar'].toString().isNotEmpty)
+                                    _getAvatarUrl(tnv['avatar']) != null)
                                 ? Image.network(
-                                    tnv['avatar'],
+                                    _getAvatarUrl(tnv['avatar'])!,
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
@@ -633,5 +633,16 @@ class InfoTnvScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String? _getAvatarUrl(dynamic avatar) {
+    if (avatar == null) return null;
+    if (avatar is String) {
+      return avatar.isEmpty ? null : avatar;
+    }
+    if (avatar is Map<String, dynamic>) {
+      return avatar['url'] as String?;
+    }
+    return null;
   }
 }

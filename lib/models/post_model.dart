@@ -54,17 +54,40 @@ class PostModel {
   }
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
+    // Helper để lấy URL từ avatar object hoặc string
+    String? getAvatarUrl(dynamic avatar) {
+      if (avatar == null) return null;
+      if (avatar is String) return avatar;
+      if (avatar is Map<String, dynamic>) return avatar['url'] as String?;
+      return null;
+    }
+
+    // Helper để lấy URL từ images object hoặc string
+    String? getImageUrl(dynamic images) {
+      if (images == null) return null;
+      if (images is String) return images;
+      if (images is Map<String, dynamic>) return images['url'] as String?;
+      // Nếu là List (array of images), lấy cái đầu tiên
+      if (images is List && images.isNotEmpty) {
+        final firstImage = images[0];
+        if (firstImage is String) return firstImage;
+        if (firstImage is Map<String, dynamic>)
+          return firstImage['url'] as String?;
+      }
+      return null;
+    }
+
     return PostModel(
       id: json['_id'] ?? '',
       authorId: json['author']?['_id'] ?? '',
       authorType: 'group',
       authorName:
           json['authorName'] ?? json['author']?['fullName'] ?? 'Unknown',
-      authorAvatar: json['author']?['avatar'],
+      authorAvatar: getAvatarUrl(json['author']?['avatar']),
       createdAt: DateTime.tryParse(json['publishedAt'] ?? '') ?? DateTime.now(),
       contentText: json['title'] ?? '',
       bodyContent: json['content'] ?? '',
-      imageUrl: json['images']?['url'],
+      imageUrl: getImageUrl(json['images']),
       likeCount: json['likeCount'] ?? 0,
       isLiked: false,
     );

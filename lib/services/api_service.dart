@@ -446,4 +446,43 @@ class ApiService {
 
     throw Exception(data['message'] ?? 'Không thể cập nhật trạng thái');
   }
+
+  /// Upload/Update user avatar
+  static Future<Map<String, dynamic>> updateAvatar(File imageFile) async {
+    final uri = Uri.parse('$baseUrl/auth/avatar');
+    final request = http.MultipartRequest('PUT', uri);
+
+    // Add authorization header
+    final token = await getToken();
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    // Add image file
+    final filename = imageFile.path.split('/').last;
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'avatar',
+        imageFile.path,
+        contentType: MediaType('image', 'jpeg'),
+        filename: filename,
+      ),
+    );
+
+    // Send request
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+    final data = jsonDecode(responseBody);
+
+    if (response.statusCode == 200) {
+      // Update cached user with new avatar
+      final user = data['data']['user'];
+      if (user is Map<String, dynamic>) {
+        await _saveUser(user);
+      }
+      return data;
+    } else {
+      throw Exception(data['message'] ?? 'Không thể tải ảnh lên');
+    }
+  }
 }

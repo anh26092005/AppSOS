@@ -34,6 +34,7 @@ class _HomePageNewState extends State<HomePageNew> {
   final int _pageSize = 10;
 
   String _userName = 'Bạn';
+  String? _userAvatar; // Avatar URL from user profile
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _HomePageNewState extends State<HomePageNew> {
       if (user != null && mounted) {
         setState(() {
           _userName = user['fullName'] ?? 'Bạn';
+          _userAvatar = _getAvatarUrl(user['avatar']);
         });
       } else {
         // Nếu chưa có cache, thử fetch mới
@@ -78,12 +80,23 @@ class _HomePageNewState extends State<HomePageNew> {
         if (mounted) {
           setState(() {
             _userName = newUser['fullName'] ?? 'Bạn';
+            _userAvatar = _getAvatarUrl(newUser['avatar']);
           });
         }
       }
     } catch (e) {
       debugPrint('Error loading user profile: $e');
     }
+  }
+
+  /// Helper to extract avatar URL from various formats
+  String? _getAvatarUrl(dynamic avatar) {
+    if (avatar == null) return null;
+    if (avatar is String) return avatar;
+    if (avatar is Map<String, dynamic>) {
+      return avatar['url'] as String?;
+    }
+    return null;
   }
 
   Future<void> _fetchWeather() async {
@@ -233,6 +246,7 @@ class _HomePageNewState extends State<HomePageNew> {
                 pinned: true,
                 delegate: _HomeHeaderDelegate(
                   userName: _userName,
+                  userAvatar: _userAvatar,
                   greeting: greeting,
                   weatherCard: _buildWeatherCard(),
                 ),
@@ -459,6 +473,23 @@ class _HomePageNewState extends State<HomePageNew> {
                               child: Image.network(
                                 post.authorAvatar!,
                                 fit: BoxFit.cover,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      // Shimmer skeleton while loading
+                                      return Shimmer.fromColors(
+                                        baseColor: Colors.grey.shade300,
+                                        highlightColor: Colors.grey.shade100,
+                                        child: Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                 errorBuilder: (_, __, ___) => const Icon(
                                   Icons.person,
                                   color: Color(0xFFF6C343),
@@ -686,11 +717,13 @@ class _HomePageNewState extends State<HomePageNew> {
 
 class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String userName;
+  final String? userAvatar;
   final String greeting;
   final Widget weatherCard;
 
   _HomeHeaderDelegate({
     required this.userName,
+    this.userAvatar,
     required this.greeting,
     required this.weatherCard,
   });
@@ -789,12 +822,16 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                             ],
                           ),
                         ),
+                        // User Avatar
                         Container(
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
+                            color: const Color(
+                              0xFFF6C343,
+                            ).withValues(alpha: 0.2),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.1),
@@ -802,12 +839,41 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 offset: const Offset(0, 2),
                               ),
                             ],
-                            image: const DecorationImage(
-                              image: NetworkImage(
-                                'https://img.freepik.com/premium-vector/cute-duck-avatar-cartoon-style_174639-566.jpg',
-                              ),
-                              fit: BoxFit.cover,
-                            ),
+                          ),
+                          child: ClipOval(
+                            child: userAvatar != null
+                                ? Image.network(
+                                    userAvatar!,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return Shimmer.fromColors(
+                                            baseColor: Colors.grey.shade300,
+                                            highlightColor:
+                                                Colors.grey.shade100,
+                                            child: Container(
+                                              width: 48,
+                                              height: 48,
+                                              decoration: const BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.person,
+                                      color: Color(0xFFF6C343),
+                                      size: 24,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    color: Color(0xFFF6C343),
+                                    size: 24,
+                                  ),
                           ),
                         ),
                       ],

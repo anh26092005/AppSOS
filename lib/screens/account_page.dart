@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import '../widgets/user_avatar.dart';
+import '../widgets/avatar_upload_dialog.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -13,6 +17,7 @@ class _AccountPageState extends State<AccountPage> {
   Map<String, dynamic>? _user;
   bool _isReady = false;
   bool _isTogglingReady = false;
+  bool _isUploadingAvatar = false;
 
   @override
   void initState() {
@@ -72,6 +77,44 @@ class _AccountPageState extends State<AccountPage> {
     final name = _displayName();
     if (name.isEmpty) return '?';
     return name.substring(0, 1).toUpperCase();
+  }
+
+  String? _getAvatarUrl(dynamic avatar) {
+    if (avatar == null) return null;
+    if (avatar is String) return avatar;
+    if (avatar is Map<String, dynamic>) {
+      return avatar['url'] as String?;
+    }
+    return null;
+  }
+
+  Future<void> _handleAvatarUpload() async {
+    try {
+      final XFile? imageFile = await AvatarUploadDialog.show(context);
+      if (imageFile == null) return;
+
+      setState(() => _isUploadingAvatar = true);
+
+      await ApiService.updateAvatar(File(imageFile.path));
+      await _refreshProfile();
+
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã cập nhật ảnh đại diện'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -162,58 +205,56 @@ class _AccountPageState extends State<AccountPage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Avatar
-                    Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            backgroundColor: Colors.grey.shade200,
-                            backgroundImage: const AssetImage(
-                              'assets/images/default_avatar.png',
-                            ), // Fallback
-                            // foregroundImage: NetworkImage(_user?['avatar'] ?? ''), // Uncomment when ready
-                            child: Text(
-                              _initial(),
-                              style: const TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
+                    // Avatar - Using UserAvatar widget
+                    _isUploadingAvatar
+                        ? Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                              color: Colors.grey.shade200,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFF6C343),
                               ),
                             ),
+                          )
+                        : UserAvatar(
+                            avatarUrl: _getAvatarUrl(_user?['avatar']),
+                            name: _displayName(),
+                            size: AvatarSize.large,
                           ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 12),
                     // Edit Avatar Button
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.edit, size: 14, color: Colors.grey.shade600),
-                        const SizedBox(width: 4),
-                        Text(
-                          "Đổi ảnh đại diện",
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                    GestureDetector(
+                      onTap: _isUploadingAvatar ? null : _handleAvatarUpload,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit,
+                            size: 14,
+                            color: _isUploadingAvatar
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            _isUploadingAvatar
+                                ? "Đang tải lên..."
+                                : "Đổi ảnh đại diện",
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _isUploadingAvatar
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
