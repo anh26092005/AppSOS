@@ -22,6 +22,138 @@ class _AccountScreenState extends State<AccountScreen> {
   String? _error;
   bool _isUploadingAvatar = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  String? _getAvatarUrl(dynamic avatar) {
+    if (avatar == null) return null;
+    if (avatar is String) return avatar;
+    if (avatar is Map<String, dynamic>) {
+      return avatar['url'] as String?;
+    }
+    return null;
+  }
+
+  Future<void> _handleAvatarUpload() async {
+    try {
+      final XFile? imageFile = await AvatarUploadDialog.show(context);
+      if (imageFile == null) return;
+
+      setState(() => _isUploadingAvatar = true);
+
+      await ApiService.updateAvatar(File(imageFile.path));
+      await _refreshProfile();
+
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã cập nhật ảnh đại diện'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    final cached = await ApiService.getCachedUser();
+    if (mounted && cached != null) {
+      setState(() {
+        _user = cached;
+      });
+    }
+    await _refreshProfile();
+  }
+
+  Future<void> _refreshProfile() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final user = await ApiService.fetchProfile();
+      if (!mounted) return;
+      setState(() {
+        _user = user;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _stringValue(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    return value.toString();
+  }
+
+  User? _getFirebaseUser() {
+    return AuthService.currentUser;
+  }
+
+  String _displayName() {
+    final firebaseUser = _getFirebaseUser();
+    if (firebaseUser != null &&
+        firebaseUser.displayName != null &&
+        firebaseUser.displayName!.isNotEmpty) {
+      return firebaseUser.displayName!;
+    }
+
+    final fullName = _stringValue(_user?['fullName']).trim();
+    if (fullName.isNotEmpty) return fullName;
+
+    final name = _stringValue(_user?['name']).trim();
+    if (name.isNotEmpty) return name;
+
+    if (firebaseUser != null &&
+        firebaseUser.email != null &&
+        firebaseUser.email!.isNotEmpty) {
+      return firebaseUser.email!;
+    }
+
+    final email = _stringValue(_user?['email']).trim();
+    if (email.isNotEmpty) return email;
+
+    final phone = _stringValue(_user?['phone']).trim();
+    if (phone.isNotEmpty) return phone;
+
+    return 'User';
+  }
+
+  String _displayEmail() {
+    final firebaseUser = _getFirebaseUser();
+    if (firebaseUser != null &&
+        firebaseUser.email != null &&
+        firebaseUser.email!.isNotEmpty) {
+      return firebaseUser.email!;
+    }
+
+    final email = _stringValue(_user?['email']).trim();
+    if (email.isNotEmpty) return email;
+
+    return '';
+  }
+
+  Widget _buildLoading() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
         SizedBox(height: 200),
         Center(child: CircularProgressIndicator()),
       ],
