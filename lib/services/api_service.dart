@@ -562,4 +562,52 @@ class ApiService {
       throw Exception(data['message'] ?? 'Không thể tải ảnh lên');
     }
   }
+
+  /// Lấy danh sách hàng đợi và lịch sử hoạt động (cho TNV)
+  static Future<List<dynamic>> getVolunteerQueue() async {
+    final url = Uri.parse('$baseUrl/volunteers/queue');
+    final headers = await _headers();
+
+    final res = await http.get(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data['data'] ?? [];
+    }
+
+    throw Exception(data['message'] ?? 'Không thể lấy danh sách hoạt động');
+  }
+
+  /// Xóa hàng đợi (các yêu cầu cũ)
+  static Future<void> clearVolunteerQueue() async {
+    final url = Uri.parse('$baseUrl/volunteers/queue');
+    final headers = await _headers();
+
+    final res = await http.delete(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode != 200) {
+      throw Exception(data['message'] ?? 'Không thể xóa hàng đợi');
+    }
+  }
+
+  // Lấy SOS case đang hoạt động
+  static Future<Map<String, dynamic>?> getActiveSosCase() async {
+    try {
+      final url = Uri.parse('$baseUrl/sos/active');
+      final headers = await _headers();
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        final data = _decode(response);
+        if (data['success'] == true && data['data'] != null) {
+          return data['data'];
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error getting active SOS case: $e');
+      return null;
+    }
+  }
 }

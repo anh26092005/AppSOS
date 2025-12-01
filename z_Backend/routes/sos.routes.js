@@ -8,6 +8,7 @@ const {
   getSosCaseDetails,
   getSosCases,
   getDirections,
+  getActiveSosCase,
 } = require('../controllers/sos.controller');
 const { authenticate } = require('../middleware/auth');
 
@@ -21,6 +22,9 @@ router.post('/', createSosCase);
 
 // Lấy danh sách cases (phải đặt trước route /:caseId)
 router.get('/', getSosCases);
+
+// Lấy case đang hoạt động (phải đặt trước route /:caseId)
+router.get('/active', getActiveSosCase);
 
 // Lấy Google Maps directions URL (phải đặt trước route /:caseId)
 router.get('/:caseId/directions', getDirections);

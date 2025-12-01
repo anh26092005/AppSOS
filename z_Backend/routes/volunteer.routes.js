@@ -8,6 +8,8 @@ const {
   rejectVolunteer,
   updateVolunteer,
   toggleVolunteerReady,
+  clearQueue,
+  getQueue,
 } = require('../controllers/volunteer.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 
@@ -19,28 +21,32 @@ router.post('/', authenticate, createVolunteerProfile);
 // Toggle ready status (TNV tự toggle, không cần admin)
 router.patch('/me/toggle-ready', authenticate, toggleVolunteerReady);
 
-// Các routes còn lại cần authentication và admin authorization
-router.use(authenticate);
+// Clear queue (delete pending/declined requests)
+router.delete('/queue', authenticate, clearQueue);
+
+// Get queue and history
+router.get('/queue', authenticate, getQueue);
 
 // Lấy chi tiết volunteer theo userId (cho user thường xem profile TNV)
-router.get('/user/:userId', getVolunteerByUserId);
+router.get('/user/:userId', authenticate, getVolunteerByUserId);
 
-router.use(authorize('ADMIN'));
+// Các routes còn lại cần authentication và admin authorization
+// Note: We need to be careful with middleware order. 
+// Routes below this line require ADMIN role.
 
-// Lấy danh sách volunteers
-router.get('/', getVolunteers);
+// Lấy danh sách volunteers (Admin only)
+router.get('/', authenticate, authorize('ADMIN'), getVolunteers);
 
-// Lấy chi tiết volunteer
-router.get('/:id', getVolunteerById);
+// Lấy chi tiết volunteer (Admin only)
+router.get('/:id', authenticate, authorize('ADMIN'), getVolunteerById);
 
-// Phê duyệt volunteer
-router.post('/:id/approve', approveVolunteer);
+// Phê duyệt volunteer (Admin only)
+router.post('/:id/approve', authenticate, authorize('ADMIN'), approveVolunteer);
 
-// Từ chối volunteer
-router.post('/:id/reject', rejectVolunteer);
+// Từ chối volunteer (Admin only)
+router.post('/:id/reject', authenticate, authorize('ADMIN'), rejectVolunteer);
 
-// Cập nhật volunteer
-router.put('/:id', updateVolunteer);
+// Cập nhật volunteer (Admin only)
+router.put('/:id', authenticate, authorize('ADMIN'), updateVolunteer);
 
 module.exports = router;
-

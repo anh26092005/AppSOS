@@ -77,23 +77,24 @@ const authenticateOptional = async (req, res, next) => {
 
 const authorize =
   (...allowedRoles) =>
-  (req, res, next) => {
-    if (!req.user) {
-      return next(new AppError('Authentication required', 401));
-    }
+    (req, res, next) => {
+      if (!req.user) {
+        return next(new AppError('Authentication required', 401));
+      }
 
-    if (allowedRoles.length === 0) {
+      if (allowedRoles.length === 0) {
+        return next();
+      }
+
+      const userRoles = req.user.roles || [];
+      const isAllowed = allowedRoles.some((role) => userRoles.includes(role));
+      if (!isAllowed) {
+        console.log(`[Auth] Forbidden access to ${req.originalUrl} by user ${req.user._id} with roles ${userRoles}. Required: ${allowedRoles}`);
+        return next(new AppError('Forbidden', 403));
+      }
+
       return next();
-    }
-
-    const userRoles = req.user.roles || [];
-    const isAllowed = allowedRoles.some((role) => userRoles.includes(role));
-    if (!isAllowed) {
-      return next(new AppError('Forbidden', 403));
-    }
-
-    return next();
-  };
+    };
 
 module.exports = {
   authenticate,

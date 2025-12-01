@@ -326,8 +326,13 @@ const toggleVolunteerReady = async (req, res, next) => {
     await volunteer.save();
 
     // If toggled from OFF to ON, notify of pending SOS cases
+    console.log(`[Toggle] User ${userId} toggled ready: ${wasReady} -> ${volunteer.ready}`);
+
     if (!wasReady && volunteer.ready === true) {
       try {
+        console.log('[Toggle] Searching for pending SOS cases...');
+        console.log(`[Toggle] Location: ${JSON.stringify(volunteer.homeBase.location)}`);
+
         // Find pending SOS cases within 50km
         const pendingCases = await SosCase.aggregate([
           {
@@ -348,49 +353,56 @@ const toggleVolunteerReady = async (req, res, next) => {
           }
         ]);
 
-        if (pendingCases.length > 0) {
-          console.log(`Found ${pendingCases.length} pending SOS cases`);
+        console.log(`[Toggle] Found ${pendingCases.length} pending cases`);
 
-          for (const sosCase of pendingCases) {
-            // Check if volunteer already in queue for this case
-            const existingQueue = await SosResponderQueue.findOne({
+        for (const sosCase of pendingCases) {
+          // Check if volunteer already in queue for this case
+          const existingQueue = await SosResponderQueue.findOne({
+            sosId: sosCase._id,
+            volunteerId: userId
+          });
+
+          if (!existingQueue) {
+            // Add to queue
+            await SosResponderQueue.create({
               sosId: sosCase._id,
-              volunteerId: userId
+              volunteerId: userId,
+              distanceKm: sosCase.distance / 1000,
+              status: 'NOTIFIED'
             });
-
-            if (!existingQueue) {
-              // Add to queue
-              await SosResponderQueue.create({
-                sosId: sosCase._id,
-                volunteerId: userId,
-                distanceKm: sosCase.distance / 1000,
-                status: 'NOTIFIED'
-              });
-
-              // Send notification
-              const distance = (sosCase.distance / 1000).toFixed(1);
-              const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
-              const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
-
-              const notificationData = {
-                type: 'SOS_CASE',
-                caseId: sosCase._id.toString(),
-                caseCode: sosCase.code,
-                emergencyType: sosCase.emergencyType,
-                distance: distance
-              };
-
-              // Send FCM (will also save to database)
-              await sendNotificationToUser(userId, title, body, notificationData);
-
-              console.log(`✅ Notified volunteer of pending SOS ${sosCase._id} (${distance}km)`);
-            } else {
-              console.log(`ℹ️ Volunteer already in queue for SOS ${sosCase._id}`);
-            }
+          } else if (existingQueue.status !== 'ACCEPTED') {
+            // If already in queue but not ACCEPTED (e.g. DECLINED or NOTIFIED), re-notify
+            // This allows volunteers to "reset" and see cases again when they toggle Active
+            existingQueue.status = 'NOTIFIED';
+            existingQueue.distanceKm = sosCase.distance / 1000;
+            existingQueue.respondedAt = null; // Reset response time
+            existingQueue.declineReason = null; // Clear decline reason
+            await existingQueue.save();
+            console.log(`[Toggle] Re-activating queue item for SOS ${sosCase._id}`);
+          } else {
+            console.log(`ℹ️ Volunteer already ACCEPTED SOS ${sosCase._id} - skipping`);
+            continue; // Skip notification for this case
           }
-        } else {
-          console.log('ℹ️ No pending SOS cases found in range');
+
+          // Send notification (for both new and updated queue items)
+          const distance = (sosCase.distance / 1000).toFixed(1);
+          const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+          const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
+
+          const notificationData = {
+            type: 'SOS_CASE',
+            caseId: sosCase._id.toString(),
+            caseCode: sosCase.code,
+            emergencyType: sosCase.emergencyType,
+            distance: distance
+          };
+
+          // Send FCM (will also save to database)
+          await sendNotificationToUser(userId, title, body, notificationData);
+
+          console.log(`✅ Notified volunteer of pending SOS ${sosCase._id} (${distance}km)`);
         }
+
       } catch (notifyError) {
         // Log error but don't fail the toggle operation
         console.error('Error notifying volunteer of pending SOS:', notifyError);
@@ -411,6 +423,102 @@ const toggleVolunteerReady = async (req, res, next) => {
   }
 };
 
+// Xóa hàng đợi (các yêu cầu cũ)
+const clearQueue = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Delete queue items that are NOTIFIED or DECLINED (not ACCEPTED)
+    const result = await SosResponderQueue.deleteMany({
+      volunteerId: userId,
+      status: { $in: ['NOTIFIED', 'DECLINED'] }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Đã xóa ${result.deletedCount} yêu cầu cũ khỏi hàng đợi.`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Error clearing queue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xóa hàng đợi',
+      error: error.message
+    });
+  }
+};
+
+// Lấy danh sách hàng đợi và lịch sử hoạt động
+const getQueue = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // 1. Lấy danh sách đang chờ hoặc đã từ chối (Queue)
+    const queueItems = await SosResponderQueue.find({
+      volunteerId: userId,
+      status: { $in: ['NOTIFIED', 'DECLINED'] }
+    })
+      .populate({
+        path: 'sosId',
+        select: 'location emergencyType status createdAt code'
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // 2. Lấy danh sách đã hoàn thành hoặc đã hủy (History)
+    // Note: acceptedBy trong SosCase tham chiếu đến User model, không phải VolunteerProfile
+    const historyItems = await SosCase.find({
+      acceptedBy: userId,
+      status: { $in: ['COMPLETED', 'CANCELLED'] }
+    })
+      .select('location emergencyType status createdAt code')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // 3. Chuẩn hóa dữ liệu trả về
+    const formattedQueue = queueItems.map(item => ({
+      _id: item._id, // Queue ID
+      type: 'QUEUE',
+      status: item.status, // NOTIFIED, DECLINED
+      sosId: item.sosId?._id,
+      code: item.sosId?.code,
+      emergencyType: item.sosId?.emergencyType,
+      createdAt: item.createdAt,
+      distance: item.distanceKm
+    }));
+
+    const formattedHistory = historyItems.map(item => ({
+      _id: item._id, // Case ID
+      type: 'HISTORY',
+      status: item.status, // COMPLETED, CANCELLED
+      sosId: item._id,
+      code: item.code,
+      emergencyType: item.emergencyType,
+      createdAt: item.createdAt,
+      distance: null // History might not have distance stored easily, or we can calculate if needed
+    }));
+
+    // Gộp và sắp xếp theo thời gian mới nhất
+    const allActivities = [...formattedQueue, ...formattedHistory].sort((a, b) =>
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    res.status(200).json({
+      success: true,
+      data: allActivities
+    });
+
+  } catch (error) {
+    console.error('Error getting queue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách hoạt động',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createVolunteerProfile,
   getVolunteers,
@@ -420,5 +528,7 @@ module.exports = {
   rejectVolunteer,
   updateVolunteer,
   toggleVolunteerReady,
+  clearQueue,
+  getQueue
 };
 

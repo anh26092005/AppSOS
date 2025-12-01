@@ -781,6 +781,7 @@ const declineSosCase = async (req, res, next) => {
 const getSosCaseDetails = async (req, res, next) => {
   try {
     const { caseId } = req.params;
+    console.log(`[getSosCaseDetails] Request for caseId: ${caseId}`);
 
     const sosCase = await findSosCaseByIdOrCode(caseId);
     if (!sosCase) {
@@ -981,6 +982,28 @@ const getDirections = async (req, res, next) => {
         origin: { lat: originLat, lng: originLng },
         destination: { lat: destLat, lng: destLng },
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Lấy SOS case đang hoạt động của user (nếu có)
+const getActiveSosCase = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+
+    // Tìm case mới nhất đang active
+    const activeCase = await SosCase.findOne({
+      reporterId: userId,
+      status: { $in: ['SEARCHING', 'ACCEPTED', 'IN_PROGRESS'] }
+    })
+      .populate('acceptedBy', 'fullName phone avatar')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: activeCase
     });
   } catch (error) {
     next(error);

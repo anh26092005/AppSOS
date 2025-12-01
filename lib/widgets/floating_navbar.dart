@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class FloatingNavbar extends StatefulWidget {
   final int selectedIndex;
   final VoidCallback onHomePressed;
+  final VoidCallback onActivityPressed;
   final VoidCallback onSOSPressed;
   final VoidCallback onProfilePressed;
 
@@ -10,6 +11,7 @@ class FloatingNavbar extends StatefulWidget {
     super.key,
     required this.selectedIndex,
     required this.onHomePressed,
+    required this.onActivityPressed,
     required this.onSOSPressed,
     required this.onProfilePressed,
   });
@@ -163,13 +165,24 @@ class _FloatingNavbarState extends State<FloatingNavbar>
                 iconSize: 28,
                 onPressed: widget.onHomePressed,
               ),
+              // Activity icon
+              IconButton(
+                icon: Icon(
+                  Icons.history,
+                  color: widget.selectedIndex == 1
+                      ? const Color(0xFF1976D2)
+                      : Theme.of(context).unselectedWidgetColor,
+                ),
+                iconSize: 28,
+                onPressed: widget.onActivityPressed,
+              ),
               // SOS button
               _buildSOSButton(),
               // Profile icon
               IconButton(
                 icon: Icon(
                   Icons.person,
-                  color: widget.selectedIndex == 2
+                  color: widget.selectedIndex == 3
                       ? const Color(0xFF1976D2)
                       : Theme.of(context).unselectedWidgetColor,
                 ),
