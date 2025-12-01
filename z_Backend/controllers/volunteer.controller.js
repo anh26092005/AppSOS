@@ -325,77 +325,68 @@ const toggleVolunteerReady = async (req, res, next) => {
     volunteer.ready = !volunteer.ready;
     await volunteer.save();
 
-    // If toggled from OFF to ON, notify of oldest pending SOS
+    // If toggled from OFF to ON, notify of pending SOS cases
     if (!wasReady && volunteer.ready === true) {
       try {
-        // Find oldest pending SOS case within 50km
-        const oldestPendingCases = await SosCase.aggregate([
-          {
-            $match: { status: 'SEARCHING' }
-          },
+        // Find pending SOS cases within 50km
+        const pendingCases = await SosCase.aggregate([
           {
             $geoNear: {
               near: volunteer.homeBase.location,
               distanceField: 'distance',
               maxDistance: 50000, // 50km in meters
-              spherical: true
+              spherical: true,
+              key: 'location', // Explicitly specify index key
+              query: { status: 'SEARCHING' } // Filter for pending cases
             }
           },
           {
             $sort: { createdAt: 1 } // Oldest first
           },
           {
-            $limit: 1
+            $limit: 10 // Limit to 10 cases to avoid spamming
           }
         ]);
 
-        if (oldestPendingCases.length > 0) {
-          const oldestCase = oldestPendingCases[0];
+        if (pendingCases.length > 0) {
+          console.log(`Found ${pendingCases.length} pending SOS cases`);
 
-          // Check if volunteer already in queue for this case
-          const existingQueue = await SosResponderQueue.findOne({
-            sosId: oldestCase._id,
-            volunteerId: userId
-          });
-
-          if (!existingQueue) {
-            // Add to queue
-            await SosResponderQueue.create({
-              sosId: oldestCase._id,
-              volunteerId: userId,
-              distanceKm: oldestCase.distance / 1000,
-              status: 'NOTIFIED'
+          for (const sosCase of pendingCases) {
+            // Check if volunteer already in queue for this case
+            const existingQueue = await SosResponderQueue.findOne({
+              sosId: sosCase._id,
+              volunteerId: userId
             });
 
-            // Send notification
-            const distance = (oldestCase.distance / 1000).toFixed(1);
-            const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
-            const body = `${oldestCase.emergencyType} - Cách bạn ${distance}km`;
+            if (!existingQueue) {
+              // Add to queue
+              await SosResponderQueue.create({
+                sosId: sosCase._id,
+                volunteerId: userId,
+                distanceKm: sosCase.distance / 1000,
+                status: 'NOTIFIED'
+              });
 
-            const notificationData = {
-              type: 'SOS_CASE',
-              caseId: oldestCase._id.toString(),
-              caseCode: oldestCase.code,
-              emergencyType: oldestCase.emergencyType,
-              distance: distance
-            };
+              // Send notification
+              const distance = (sosCase.distance / 1000).toFixed(1);
+              const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+              const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
-            // Save in-app notification
-            await Notification.create({
-              userId: userId,
-              type: 'SOS_CASE',
-              title,
-              body,
-              data: notificationData,
-              deliveredAt: new Date()
-            });
+              const notificationData = {
+                type: 'SOS_CASE',
+                caseId: sosCase._id.toString(),
+                caseCode: sosCase.code,
+                emergencyType: sosCase.emergencyType,
+                distance: distance
+              };
 
-            // Send FCM
-            await sendNotificationToUser(userId, title, body, notificationData);
+              // Send FCM (will also save to database)
+              await sendNotificationToUser(userId, title, body, notificationData);
 
-            console.log(`✅ Notified volunteer of oldest pending SOS (${distance}km, created ${oldestCase.createdAt})`);
-          } else {
-            console.log('ℹ️ Volunteer already in queue for oldest pending SOS');
+              console.log(`✅ Notified volunteer of pending SOS ${sosCase._id} (${distance}km)`);
+            } else {
+              console.log(`ℹ️ Volunteer already in queue for SOS ${sosCase._id}`);
+            }
           }
         } else {
           console.log('ℹ️ No pending SOS cases found in range');

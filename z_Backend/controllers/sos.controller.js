@@ -71,8 +71,11 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       status: 'NOTIFIED',
     }).distinct('volunteerId');
 
-    // Gộp danh sách loại trừ
-    const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers].map(id => id.toString()))];
+    // Gộp danh sách loại trừ và convert sang ObjectId
+    const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers])]
+      .map(id => new mongoose.Types.ObjectId(id));
+
+    console.log(`🔍 Finding volunteers. Excluded: ${excludedVolunteerIds.length}, Radius: ${maxRadius}km`);
 
     // Tìm TNV trong bán kính, không bận, đã approved và ready
     // Sử dụng $geoNear làm stage đầu tiên (bắt buộc)
@@ -86,6 +89,7 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           distanceField: 'distance',
           maxDistance: maxRadius * 1000, // chuyển km sang mét
           spherical: true,
+          key: 'homeBase.location', // Explicitly specify index key
           query: {
             status: 'APPROVED',
             ready: true,
@@ -128,9 +132,15 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
         $project: {
           userId: 1,
           distance: { $divide: ['$distance', 1000] }, // distance in km
+          ready: 1, // Include ready status for debugging
+          status: 1 // Include profile status for debugging
         },
       },
     ]);
+
+    console.log(`Found ${volunteers.length} volunteers. Details:`,
+      volunteers.map(v => ({ id: v.userId, dist: v.distance, ready: v.ready }))
+    );
 
     // Tạo queue cho từng TNV
     const queuePromises = volunteers.map((volunteer) =>
