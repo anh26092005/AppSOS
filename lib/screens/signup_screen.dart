@@ -54,22 +54,16 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (res.containsKey('token')) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công ✅')));
+        _showCustomSnackBar(context, 'Đăng ký thành công ✅');
         Navigator.pushReplacementNamed(context, '/login');
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Đăng ký thất bại!')));
+        _showCustomSnackBar(context, 'Đăng ký thất bại!', isError: true);
       }
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi đăng ký: $e')));
+      _showCustomSnackBar(context, 'Lỗi đăng ký: $e', isError: true);
     }
   }
 
@@ -341,14 +335,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           // TODO: Implement Google Login
                         },
                         icon: Image.asset(
-                          'assets/images/google_logo.png',
+                          'assets/images/google.png',
                           height: 24,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.g_mobiledata,
-                                size: 28,
-                                color: Color(0xFF005BEA),
-                              ),
                         ),
                         label: Text(
                           'Đăng nhập với Google',
@@ -432,6 +420,32 @@ class _SignupScreenState extends State<SignupScreen> {
           }
           return null;
         },
+      ),
+    );
+  }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: isError
+            ? Colors.red.withOpacity(0.9)
+            : const Color(0xFF333333).withOpacity(0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

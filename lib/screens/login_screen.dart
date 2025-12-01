@@ -80,9 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await ApiService.setRememberMe(_rememberMe);
 
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Đăng nhập thành công ✅')));
+        _showCustomSnackBar(context, 'Đăng nhập thành công ✅');
 
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/main');
@@ -94,16 +92,16 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sai thông tin đăng nhập ❌')),
+        _showCustomSnackBar(
+          context,
+          'Sai thông tin đăng nhập ❌',
+          isError: true,
         );
       }
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi đăng nhập: $e')));
+      _showCustomSnackBar(context, 'Lỗi đăng nhập: $e', isError: true);
     }
   }
 
@@ -138,11 +136,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pop(context); // Close loading
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google sign-in failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
+      _showCustomSnackBar(
+        context,
+        'Google sign-in failed: ${e.toString()}',
+        isError: true,
       );
     }
   }
@@ -213,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Chào mừng bạn quay trở lại!',
+                        'Chào mừng bạn!',
                         style: GoogleFonts.montserrat(
                           fontSize: 15,
                           color: Colors.white.withValues(alpha: 0.9),
@@ -261,17 +258,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       OutlinedButton.icon(
                         onPressed: _handleGoogleSignIn,
                         icon: Image.asset(
-                          'assets/images/google_logo.png',
+                          'assets/images/google.png',
                           height: 24,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.g_mobiledata,
-                                size: 28,
-                                color: Color(0xFF005BEA),
-                              ),
                         ),
                         label: Text(
-                          'Login with Google',
+                          'Đăng nhập với Google',
                           style: GoogleFonts.montserrat(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -518,6 +509,32 @@ class _LoginScreenState extends State<LoginScreen> {
           }
           return null;
         },
+      ),
+    );
+  }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: isError
+            ? Colors.red.withOpacity(0.9)
+            : const Color(0xFF333333).withOpacity(0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

@@ -265,11 +265,15 @@ class ApiService {
     int page = 1,
     int limit = 10,
     String? authorId,
+    String? status,
   }) async {
     String urlString =
         '$baseUrl/articles?page=$page&limit=$limit&sortBy=publishedAt&sortOrder=desc';
     if (authorId != null) {
       urlString += '&author=$authorId';
+    }
+    if (status != null) {
+      urlString += '&status=$status';
     }
     final url = Uri.parse(urlString);
     final headers = await _headers();

@@ -128,7 +128,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
         ],
       ),
+      backgroundColor: Colors.white,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,

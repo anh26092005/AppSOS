@@ -749,9 +749,9 @@ class _HomePageNewState extends State<HomePageNew> {
                     ), // Responsive radius
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1976D2).withValues(alpha: 0.3),
+                        color: const Color(0xFF1976D2).withValues(alpha: 0.2),
                         blurRadius: 8.r,
-                        offset: Offset(0, 3.h),
+                        offset: Offset(0, 0),
                       ),
                     ],
                   ),
