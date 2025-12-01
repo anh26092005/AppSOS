@@ -11,6 +11,7 @@ export const mapBackendArticleToCommunityPost = (article: any): CommunityPost =>
     status: article.status === 'PENDING' ? ApprovalStatus.PENDING :
             article.status === 'APPROVED' ? ApprovalStatus.APPROVED :
             ApprovalStatus.REJECTED,
+    likeCount: article.likeCount || 0,
   };
 };
 
@@ -22,6 +23,7 @@ export const mapBackendArticleToBlogPost = (article: any): BlogPost => {
     imageUrl: article.images?.url || article.images || 'https://picsum.photos/800/400',
     author: mapBackendUserToFrontendUser(article.author || {}),
     publishedDate: article.publishedAt || article.createdAt || new Date().toISOString(),
+    likeCount: article.likeCount || 0,
   };
 };
 

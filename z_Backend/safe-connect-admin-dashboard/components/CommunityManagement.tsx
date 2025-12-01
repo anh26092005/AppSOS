@@ -104,11 +104,19 @@ const CommunityManagement: React.FC = () => {
                         <div key={post.id} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col">
                             {post.imageUrl && <img src={post.imageUrl} alt="Post content" className="w-full h-48 object-cover" />}
                                 <div className="p-6 flex-grow flex flex-col">
-                                <div className="flex items-center mb-4">
-                                    <AvatarImage src={post.author.avatar} alt={post.author.name} size="md" className="mr-3" />
-                                    <div>
-                                        <p className="font-semibold text-white">{post.author.name}</p>
-                                        <p className="text-xs text-gray-400">{new Date(post.timestamp).toLocaleString()}</p>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center">
+                                        <AvatarImage src={post.author.avatar} alt={post.author.name} size="md" className="mr-3" />
+                                        <div>
+                                            <p className="font-semibold text-white">{post.author.name}</p>
+                                            <p className="text-xs text-gray-400">{new Date(post.timestamp).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-gray-400">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="text-xs">{post.likeCount || 0}</span>
                                     </div>
                                 </div>
                                 <p className="text-gray-300 text-sm mb-4 flex-grow">{post.content}</p>

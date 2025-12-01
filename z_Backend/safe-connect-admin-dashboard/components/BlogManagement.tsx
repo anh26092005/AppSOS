@@ -193,7 +193,15 @@ const BlogManagement: React.FC = () => {
                             <img src={post.imageUrl} alt={post.title} className="w-full h-48 object-cover" />
                             <div className="p-6 flex-grow flex flex-col">
                                 <h2 className="text-xl font-bold text-white mb-2">{post.title}</h2>
-                                <p className="text-xs text-gray-400 mb-4">Đăng ngày {new Date(post.publishedDate).toLocaleDateString()}</p>
+                                <div className="flex items-center justify-between mb-4">
+                                    <p className="text-xs text-gray-400">Đăng ngày {new Date(post.publishedDate).toLocaleDateString()}</p>
+                                    <div className="flex items-center gap-1 text-gray-400">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="text-xs">{post.likeCount || 0}</span>
+                                    </div>
+                                </div>
                                 <p className="text-gray-300 text-sm mb-4 flex-grow overflow-hidden text-ellipsis">{post.content.substring(0, 100)}...</p>
                                 <div className="mt-auto pt-4 border-t border-gray-700 flex justify-end gap-3">
                                     <button onClick={() => handleEdit(post)} className="text-sm px-4 py-2 bg-blue-600/20 text-blue-300 rounded-md hover:bg-blue-600/40 transition-colors">Chỉnh sửa</button>

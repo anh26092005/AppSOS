@@ -62,6 +62,7 @@ export interface CommunityPost {
   imageUrl?: string;
   timestamp: string;
   status: ApprovalStatus;
+  likeCount?: number;
 }
 
 export interface BlogPost {
@@ -71,4 +72,5 @@ export interface BlogPost {
   imageUrl: string;
   author: User; // Admin user
   publishedDate: string;
+  likeCount?: number;
 }
