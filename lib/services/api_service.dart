@@ -524,6 +524,54 @@ class ApiService {
     throw Exception(data['message'] ?? 'Không thể cập nhật trạng thái');
   }
 
+  /// Tạo bài viết mới
+  static Future<Map<String, dynamic>> createArticle({
+    required String title,
+    required String content,
+    required String category,
+    File? imageFile,
+  }) async {
+    final url = Uri.parse('$baseUrl/articles');
+    final request = http.MultipartRequest('POST', url);
+
+    final token = await getToken();
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.fields['title'] = title;
+    request.fields['content'] = content;
+    request.fields['category'] = category;
+
+    if (imageFile != null) {
+      final extension = imageFile.path.split('.').last.toLowerCase();
+      String mimeType = 'image/jpeg';
+      if (extension == 'png') {
+        mimeType = 'image/png';
+      } else if (extension == 'jpg' || extension == 'jpeg') {
+        mimeType = 'image/jpeg';
+      }
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+          contentType: MediaType.parse(mimeType),
+        ),
+      );
+    }
+
+    final streamedRes = await request.send();
+    final res = await http.Response.fromStream(streamedRes);
+    final data = _decode(res);
+
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể tạo bài viết');
+  }
+
   /// Upload/Update user avatar
   static Future<Map<String, dynamic>> updateAvatar(File imageFile) async {
     final uri = Uri.parse('$baseUrl/auth/avatar');

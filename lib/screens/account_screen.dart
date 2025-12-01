@@ -49,19 +49,12 @@ class _AccountScreenState extends State<AccountScreen> {
 
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã cập nhật ảnh đại diện'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _showCustomSnackBar(context, 'Đã cập nhật ảnh đại diện');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-        );
+        _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
       }
     }
   }
@@ -182,21 +175,11 @@ class _AccountScreenState extends State<AccountScreen> {
         await ApiService.updateProfile(dateOfBirth: picked);
         await _refreshProfile();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đã cập nhật ngày sinh'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _showCustomSnackBar(context, 'Đã cập nhật ngày sinh');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi: $e'),
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-            ),
-          );
+          _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
         }
       }
     }
@@ -594,6 +577,32 @@ class _AccountScreenState extends State<AccountScreen> {
               )
             : null,
         onTap: onTap,
+      ),
+    );
+  }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: isError
+            ? Colors.red.withOpacity(0.9)
+            : const Color(0xFF333333).withOpacity(0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

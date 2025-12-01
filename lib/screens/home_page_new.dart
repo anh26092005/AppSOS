@@ -214,8 +214,10 @@ class _HomePageNewState extends State<HomePageNew> {
     } catch (e) {
       debugPrint('Error toggling like: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể cập nhật lượt thích')),
+      _showCustomSnackBar(
+        context,
+        'Không thể cập nhật lượt thích',
+        isError: true,
       );
     }
   }
@@ -794,6 +796,32 @@ class _HomePageNewState extends State<HomePageNew> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: isError
+            ? Colors.red.withOpacity(0.9)
+            : const Color(0xFF333333).withOpacity(0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
