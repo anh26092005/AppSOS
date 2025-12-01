@@ -147,10 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-
-
-
-
   @override
   Widget build(BuildContext context) {
     // Modern Blue Gradient
@@ -293,10 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-
-
-
 
                       // Divider
                       Row(

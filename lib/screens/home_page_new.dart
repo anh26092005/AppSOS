@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../models/post_model.dart';
@@ -426,13 +427,13 @@ class _HomePageNewState extends State<HomePageNew> {
 
   Widget _buildPostCard(PostModel post) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 7,
             offset: const Offset(0, 0),
             spreadRadius: 2,
@@ -623,7 +624,7 @@ class _HomePageNewState extends State<HomePageNew> {
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
-                      height: 1.5,
+                      height: 1,
                     ),
                   ),
                 ),
@@ -634,7 +635,7 @@ class _HomePageNewState extends State<HomePageNew> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.network(
                       _sanitizeUrl(post.imageUrl!),
                       width: double.infinity,
@@ -689,32 +690,61 @@ class _HomePageNewState extends State<HomePageNew> {
 
               // Footer (Read More Button)
               Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PostDetailScreen(post: post),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF6C343),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 120.w, // Responsive width
+                  vertical: 8.h, // Responsive height
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Text(
-                      'Xem chi tiết',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                    borderRadius: BorderRadius.circular(
+                      30.r,
+                    ), // Responsive radius
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1976D2).withValues(alpha: 0.3),
+                        blurRadius: 8.r,
+                        offset: Offset(0, 3.h),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PostDetailScreen(post: post),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(30.r),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.h),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Xem chi tiết',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 10.sp, // Responsive font size
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 14.sp, // Responsive icon size
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -810,8 +840,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                             children: [
                               Text(
                                 'Xin chào, $userName',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 22,
+                                  fontSize: 20.sp,
                                   fontWeight: FontWeight.w800,
                                   color:
                                       Theme.of(context).brightness ==
@@ -825,7 +857,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                               Text(
                                 greeting,
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 14,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w500,
                                   color: Theme.of(
                                     context,
@@ -837,8 +869,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         ),
                         // User Avatar
                         Container(
-                          width: 48,
-                          height: 48,
+                          width: 40.w,
+                          height: 40.h,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
@@ -848,7 +880,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
+                                blurRadius: 8.r,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -867,8 +899,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                             highlightColor:
                                                 Colors.grey.shade100,
                                             child: Container(
-                                              width: 48,
-                                              height: 48,
+                                              width: 48.w,
+                                              height: 48.h,
                                               decoration: const BoxDecoration(
                                                 shape: BoxShape.circle,
                                                 color: Colors.white,
@@ -905,13 +937,13 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
             child: Padding(
               padding: EdgeInsets.only(
                 left: titlePaddingLeft,
-                bottom: 16,
+                bottom: 12,
                 right: 20 * (1 - progress),
               ),
               child: Text(
                 'Bản tin',
                 style: GoogleFonts.montserrat(
-                  fontSize: 24,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w900,
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.blueAccent
@@ -930,7 +962,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 250; // Reduced from 300 to decrease gap
 
   @override
-  double get minExtent => 80;
+  double get minExtent => 60;
 
   @override
   bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {

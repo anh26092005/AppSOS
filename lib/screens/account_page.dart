@@ -523,39 +523,6 @@ class _AccountPageState extends State<AccountPage> {
                       },
                     ),
                     const SizedBox(height: 30),
-                    // Logout Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await ApiService.clearSession();
-                          if (context.mounted) {
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/login',
-                              (route) => false,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.logout, color: Colors.red),
-                        label: Text(
-                          'Đăng xuất',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.red, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
                   ],
                 ),
               ),

@@ -28,7 +28,8 @@ class _MainScreenState extends State<MainScreen> {
       body: Stack(
         children: [
           // Nội dung chính
-          _pages[_selectedIndex],
+          // Nội dung chính
+          Positioned.fill(child: _pages[_selectedIndex]),
           // Floating navbar
           FloatingNavbar(
             selectedIndex: _selectedIndex,

@@ -10,6 +10,7 @@ import 'utils/navigation_service.dart';
 
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,19 +44,26 @@ class SOSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          navigatorKey: NavigationService.navigatorKey,
-          debugShowCheckedModeBanner: false,
-          title: 'SOS App',
-          theme: appTheme,
-          darkTheme: appThemeDark,
-          themeMode: themeProvider.isDarkMode
-              ? ThemeMode.dark
-              : ThemeMode.light,
-          initialRoute: '/',
-          routes: {'/': (_) => const _AppEntry(), ...appRoutes},
+    return ScreenUtilInit(
+      designSize: const Size(375, 812), // Standard mobile design size
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return MaterialApp(
+              navigatorKey: NavigationService.navigatorKey,
+              debugShowCheckedModeBanner: false,
+              title: 'SOS App',
+              theme: appTheme,
+              darkTheme: appThemeDark,
+              themeMode: themeProvider.isDarkMode
+                  ? ThemeMode.dark
+                  : ThemeMode.light,
+              initialRoute: '/',
+              routes: {'/': (_) => const _AppEntry(), ...appRoutes},
+            );
+          },
         );
       },
     );

@@ -161,177 +161,218 @@ class _VolunteerRegistrationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Custom Header with Back Button
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back_ios, size: 20),
-                            onPressed: () => Navigator.pop(context),
+      backgroundColor: Colors.white,
+      body: Container(
+        height: double.infinity,
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFF8E1), // Light beige (matching home header)
+              Colors.white,
+              Colors.white,
+            ],
+            stops: [0.0, 0.3, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Custom Header with Back Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  margin: const EdgeInsets.only(left: 0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.arrow_back_ios_new,
+                                      color: Colors.black,
+                                      size: 20,
+                                    ),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                'Đăng ký Tình nguyện viên',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          const Text(
-                            'Đăng ký Tình nguyện viên',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Thông tin cơ bản',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.redAccent,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Thông tin cơ bản',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: _type,
-                        decoration: const InputDecoration(
-                          labelText: 'Loại hình tham gia',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          DropdownMenuItem(value: 'CN', child: Text('Cá nhân')),
-                          DropdownMenuItem(value: 'TC', child: Text('Tổ chức')),
-                        ],
-                        onChanged: (val) {
-                          setState(() => _type = val!);
-                        },
-                      ),
-                      if (_type == 'TC') ...[
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _orgNameController,
+                        DropdownButtonFormField<String>(
+                          value: _type,
                           decoration: const InputDecoration(
-                            labelText: 'Tên tổ chức',
+                            labelText: 'Loại hình tham gia',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (val) {
-                            if (_type == 'TC' && (val == null || val.isEmpty)) {
-                              return 'Vui lòng nhập tên tổ chức';
-                            }
-                            return null;
+                          items: [
+                            DropdownMenuItem(
+                              value: 'CN',
+                              child: Text('Cá nhân'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'TC',
+                              child: Text('Tổ chức'),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            setState(() => _type = val!);
                           },
                         ),
-                      ],
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Kỹ năng hỗ trợ',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: _availableSkills.map((skill) {
-                          final isSelected = _selectedSkills.contains(skill);
-                          return FilterChip(
-                            label: Text(skill),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                if (selected) {
-                                  _selectedSkills.add(skill);
-                                } else {
-                                  _selectedSkills.remove(skill);
-                                }
-                              });
+                        if (_type == 'TC') ...[
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _orgNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Tên tổ chức',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (val) {
+                              if (_type == 'TC' &&
+                                  (val == null || val.isEmpty)) {
+                                return 'Vui lòng nhập tên tổ chức';
+                              }
+                              return null;
                             },
-                            selectedColor: Colors.redAccent.withOpacity(0.2),
-                            checkmarkColor: Colors.redAccent,
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Xác minh danh tính',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Vui lòng tải lên ảnh CCCD/CMND hoặc giấy tờ liên quan',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildImageUpload(
-                              'Mặt trước',
-                              _idCardFront,
-                              () => _pickImage(true),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildImageUpload(
-                              'Mặt sau',
-                              _idCardBack,
-                              () => _pickImage(false),
-                            ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 24),
-                      CheckboxListTile(
-                        value: _agreedToTerms,
-                        onChanged: (val) =>
-                            setState(() => _agreedToTerms = val!),
-                        title: const Text(
-                          'Tôi cam kết các thông tin trên là chính xác và chịu trách nhiệm về hoạt động tình nguyện của mình.',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Gửi Đăng Ký',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Kỹ năng hỗ trợ',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.redAccent,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: _availableSkills.map((skill) {
+                            final isSelected = _selectedSkills.contains(skill);
+                            return FilterChip(
+                              label: Text(skill),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedSkills.add(skill);
+                                  } else {
+                                    _selectedSkills.remove(skill);
+                                  }
+                                });
+                              },
+                              selectedColor: Colors.redAccent.withOpacity(0.2),
+                              checkmarkColor: Colors.redAccent,
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Xác minh danh tính',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Vui lòng tải lên ảnh CCCD/CMND hoặc giấy tờ liên quan',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildImageUpload(
+                                'Mặt trước',
+                                _idCardFront,
+                                () => _pickImage(true),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildImageUpload(
+                                'Mặt sau',
+                                _idCardBack,
+                                () => _pickImage(false),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        CheckboxListTile(
+                          value: _agreedToTerms,
+                          onChanged: (val) =>
+                              setState(() => _agreedToTerms = val!),
+                          title: const Text(
+                            'Tôi cam kết các thông tin trên là chính xác và chịu trách nhiệm về hoạt động tình nguyện của mình.',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'Gửi Đăng Ký',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }
