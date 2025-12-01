@@ -210,7 +210,12 @@ class _AccountScreenState extends State<AccountScreen> {
     final name = _displayName();
     final email = _displayEmail();
     final phone = _stringValue(_user?['phone']);
-    final role = _stringValue(_user?['role']);
+
+    var role = _stringValue(_user?['role']);
+    if (role.isEmpty) role = _stringValue(_user?['roles']);
+    if (role.isEmpty) role = _stringValue(_user?['type']);
+    if (role.isEmpty) role = 'Người dùng';
+
     final userId = _stringValue(_user?['id']);
 
     return Scaffold(
@@ -270,7 +275,6 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 10),
                   // Avatar
-                  // Avatar - Using UserAvatar widget
                   _isUploadingAvatar
                       ? Container(
                           width: 100,
@@ -296,22 +300,6 @@ class _AccountScreenState extends State<AccountScreen> {
                                 avatarUrl: _getAvatarUrl(_user?['avatar']),
                                 name: _displayName(),
                                 size: AvatarSize.large,
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF57F17), // Orange/Gold
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.camera_alt,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
                               ),
                             ],
                           ),
@@ -352,6 +340,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     title: 'Họ và tên',
                     value: name,
                     onTap: () {},
+                    showEdit: false,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoTile(
@@ -359,6 +348,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     title: 'Email',
                     value: email.isNotEmpty ? email : 'Chưa cập nhật',
                     onTap: () {},
+                    showEdit: false,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoTile(
@@ -366,16 +356,15 @@ class _AccountScreenState extends State<AccountScreen> {
                     title: 'Số điện thoại',
                     value: phone.isNotEmpty ? phone : 'Chưa cập nhật',
                     onTap: () {},
+                    showEdit: false,
                   ),
-                  if (role.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _buildInfoTile(
-                      icon: Icons.verified_user_outlined,
-                      title: 'Vai trò',
-                      value: role,
-                      showEdit: false,
-                    ),
-                  ],
+                  const SizedBox(height: 12),
+                  _buildInfoTile(
+                    icon: Icons.verified_user_outlined,
+                    title: 'Vai trò',
+                    value: role,
+                    showEdit: false,
+                  ),
                   if (userId.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _buildInfoTile(

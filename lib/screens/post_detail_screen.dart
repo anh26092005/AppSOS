@@ -111,7 +111,12 @@ class PostDetailScreen extends StatelessWidget {
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFF6C343).withValues(alpha: 0.2),
+                        color: const Color.fromRGBO(
+                          246,
+                          195,
+                          67,
+                          1,
+                        ).withValues(alpha: 0.2),
                       ),
                       child: post.authorAvatar != null
                           ? ClipOval(

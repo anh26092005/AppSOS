@@ -16,6 +16,9 @@ class SettingsPage extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).scaffoldBackgroundColor
+            : const Color.fromRGBO(246, 195, 67, 1),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

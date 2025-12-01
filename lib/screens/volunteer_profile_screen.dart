@@ -8,6 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:intl/intl.dart';
 import 'post_detail_screen.dart';
 import '../services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class VolunteerProfileScreen extends StatefulWidget {
   final Map<String, dynamic> volunteerData;
@@ -336,8 +337,8 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                 Positioned(
                   bottom: -60,
                   child: Container(
-                    width: 160,
-                    height: 160,
+                    width: 130.w,
+                    height: 130.h,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 4),
@@ -398,22 +399,21 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
   Widget _buildPostCard(BuildContext context, PostModel post) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 7,
-            offset: const Offset(0, 0),
-            spreadRadius: 2,
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10.r,
+            offset: Offset(0, 4.h),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () {
             Navigator.push(
@@ -423,13 +423,13 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24.r),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Author Info
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Row(
                   children: [
                     // Avatar
@@ -474,7 +474,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                               size: 24,
                             ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,22 +492,22 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                                 ),
                               ),
                               if (post.authorType == 'group') ...[
-                                const SizedBox(width: 6),
+                                SizedBox(width: 6.w),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 6.w,
+                                    vertical: 2.h,
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(
                                       0xFFF6C343,
                                     ).withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(8.r),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.group,
                                     size: 12,
-                                    color: Color(0xFFF6C343),
+                                    color: const Color(0xFFF6C343),
                                   ),
                                 ),
                               ],
@@ -516,7 +516,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                           Text(
                             _formatTimeAgo(post.createdAt),
                             style: GoogleFonts.montserrat(
-                              fontSize: 12,
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.w500,
                               color: const Color(0xFF999999),
                             ),
@@ -529,7 +529,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                       onTap: () => _handleLike(post),
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
                         ),
@@ -551,11 +551,11 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                                   ? Colors.red
                                   : const Color(0xFF777777),
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6),
                             Text(
                               '${post.likeCount}',
                               style: GoogleFonts.montserrat(
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                                 color: post.isLiked
                                     ? Colors.red
@@ -573,7 +573,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
               // Content Text
               if (post.contentText.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     post.contentText,
                     maxLines: 3,
@@ -582,18 +582,18 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
-                      height: 1.5,
+                      height: 1,
                     ),
                   ),
                 ),
 
               // Image
               if (post.imageUrl != null) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12.h),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8.r),
                     child: Image.network(
                       _sanitizeUrl(post.imageUrl!),
                       width: double.infinity,
@@ -605,7 +605,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                           baseColor: Colors.grey.shade300,
                           highlightColor: Colors.grey.shade100,
                           child: Container(
-                            height: 200,
+                            height: 200.h,
                             width: double.infinity,
                             color: Colors.white,
                           ),
@@ -617,7 +617,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                         );
                         debugPrint('Error details: $error');
                         return Container(
-                          height: 200,
+                          height: 200.h,
                           color: Colors
                               .grey
                               .shade300, // Darker grey for visibility
@@ -648,32 +648,61 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
               // Footer (Read More Button)
               Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PostDetailScreen(post: post),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF6C343),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 120.w, // Responsive width
+                  vertical: 8.h, // Responsive height
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Text(
-                      'Xem chi tiết',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                    borderRadius: BorderRadius.circular(
+                      30.r,
+                    ), // Responsive radius
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1976D2).withValues(alpha: 0.3),
+                        blurRadius: 8.r,
+                        offset: Offset(0, 3.h),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PostDetailScreen(post: post),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(30.r),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.h),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Xem chi tiết',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 10.sp, // Responsive font size
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 14.sp, // Responsive icon size
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
