@@ -209,9 +209,30 @@ const getProfile = async (req, res, next) => {
   }
 };
 
+const logout = async (req, res, next) => {
+  try {
+    const { pushToken } = req.body;
+    const userId = req.user._id;
+
+    if (pushToken) {
+      // Remove device token
+      const { Device } = require('../models');
+      await Device.findOneAndDelete({ userId, pushToken });
+    }
+
+    res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
+  logout,
   getProfile,
   updateProfile,
   updateAvatar,

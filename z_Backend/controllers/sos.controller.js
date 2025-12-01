@@ -63,6 +63,17 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       acceptedBy: { $ne: null },
     }).distinct('acceptedBy');
 
+    // [NEW] Tìm các TNV đang được thông báo cho một case khác (status SEARCHING + queue NOTIFIED)
+    // Để tránh việc 1 người nhận 3 case cùng lúc
+    const searchingCaseIds = await SosCase.find({ status: 'SEARCHING' }).distinct('_id');
+    const notifiedVolunteers = await SosResponderQueue.find({
+      sosId: { $in: searchingCaseIds },
+      status: 'NOTIFIED',
+    }).distinct('volunteerId');
+
+    // Gộp danh sách loại trừ
+    const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers].map(id => id.toString()))];
+
     // Tìm TNV trong bán kính, không bận, đã approved và ready
     // Sử dụng $geoNear làm stage đầu tiên (bắt buộc)
     const volunteers = await VolunteerProfile.aggregate([
@@ -78,7 +89,7 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           query: {
             status: 'APPROVED',
             ready: true,
-            userId: { $nin: busyVolunteers },
+            userId: { $nin: excludedVolunteerIds },
           },
         },
       },
@@ -680,15 +691,39 @@ const declineSosCase = async (req, res, next) => {
     await queueItem.save();
 
     // Tìm TNV tiếp theo trong queue (sử dụng _id của case)
-    const nextQueueItem = await SosResponderQueue.findOne({
-      sosId: sosCase._id,
-      status: 'NOTIFIED',
-    }).sort({ distanceKm: 1 });
+    // Loop để tìm người tiếp theo thỏa mãn điều kiện (ready + active)
+    let nextVolunteerFound = false;
+    let currentQueueItem = null;
 
-    if (nextQueueItem && sosCase.status === 'SEARCHING') {
+    while (!nextVolunteerFound) {
+      currentQueueItem = await SosResponderQueue.findOne({
+        sosId: sosCase._id,
+        status: 'NOTIFIED',
+      }).sort({ distanceKm: 1 });
+
+      if (!currentQueueItem) break; // Hết queue
+
+      // Check status của volunteer này hiện tại
+      const volunteerProfile = await VolunteerProfile.findOne({ userId: currentQueueItem.volunteerId });
+      const user = await User.findById(currentQueueItem.volunteerId);
+
+      // Nếu user active và volunteer ready -> OK
+      if (user && user.isActive && volunteerProfile && volunteerProfile.status === 'APPROVED' && volunteerProfile.ready) {
+        nextVolunteerFound = true;
+      } else {
+        // Nếu không thỏa mãn, đánh dấu là SKIPPED hoặc DECLINED (system declined)
+        currentQueueItem.status = 'DECLINED';
+        currentQueueItem.declineReason = 'System: Volunteer not ready or inactive';
+        currentQueueItem.respondedAt = new Date();
+        await currentQueueItem.save();
+        // Loop tiếp tục tìm người sau
+      }
+    }
+
+    if (nextVolunteerFound && currentQueueItem && sosCase.status === 'SEARCHING') {
       // Gửi notification cho TNV tiếp theo
       try {
-        const distance = nextQueueItem.distanceKm.toFixed(1);
+        const distance = currentQueueItem.distanceKm.toFixed(1);
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
         const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
         const notificationData = {
@@ -701,7 +736,7 @@ const declineSosCase = async (req, res, next) => {
 
         // Lưu in-app notification
         await Notification.create({
-          userId: nextQueueItem.volunteerId,
+          userId: currentQueueItem.volunteerId,
           type: 'SOS_CASE',
           title,
           body,
@@ -710,14 +745,14 @@ const declineSosCase = async (req, res, next) => {
         });
 
         // Gửi FCM
-        await sendNotificationToUser(nextQueueItem.volunteerId, title, body, notificationData);
+        await sendNotificationToUser(currentQueueItem.volunteerId, title, body, notificationData);
 
         console.log(`✅ Notified NEXT volunteer after decline (${distance}km away)`);
       } catch (notifyError) {
         console.error('Error notifying next volunteer:', notifyError);
       }
-    } else if (!nextQueueItem && sosCase.status === 'SEARCHING') {
-      console.log('⚠️ No more volunteers in queue - all declined');
+    } else if (!nextVolunteerFound && sosCase.status === 'SEARCHING') {
+      console.log('⚠️ No more volunteers in queue - all declined or skipped');
       // Có thể thông báo cho reporter: "Không tìm thấy TNV"
     }
 

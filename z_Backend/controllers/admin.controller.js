@@ -1,6 +1,4 @@
-const { User } = require('../models');
-const { SosCase } = require('../models');
-const { SosResponderQueue } = require('../models');
+const { User, VolunteerProfile, Device, Notification, SosCase, SosResponderQueue } = require('../models');
 const AppError = require('../utils/appError');
 
 // Lấy danh sách users
@@ -130,7 +128,7 @@ const updateUser = async (req, res, next) => {
   }
 };
 
-// Xóa user (soft delete)
+// Xóa user (hard delete)
 const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -140,13 +138,31 @@ const deleteUser = async (req, res, next) => {
       throw new AppError('User not found', 404);
     }
 
-    // Soft delete: set isActive = false
-    user.isActive = false;
-    await user.save();
+    // 1. Xóa VolunteerProfile nếu có
+    await VolunteerProfile.findOneAndDelete({ userId: id });
+
+    // 2. Xóa Devices
+    await Device.deleteMany({ userId: id });
+
+    // 3. Xóa Notifications
+    await Notification.deleteMany({ userId: id });
+
+    // 4. Xóa SOS Cases do user này report
+    // Trước khi xóa case, cần xóa queue liên quan
+    const userCases = await SosCase.find({ reporterId: id });
+    const userCaseIds = userCases.map(c => c._id);
+
+    if (userCaseIds.length > 0) {
+      await SosResponderQueue.deleteMany({ sosId: { $in: userCaseIds } });
+      await SosCase.deleteMany({ reporterId: id });
+    }
+
+    // 5. Xóa User
+    await User.findByIdAndDelete(id);
 
     res.json({
       success: true,
-      message: 'User deactivated successfully',
+      message: 'User deleted permanently',
     });
   } catch (error) {
     next(error);
@@ -160,12 +176,12 @@ const deleteSosCase = async (req, res, next) => {
 
     // Tìm case - có thể dùng _id hoặc code
     let sosCase = null;
-    
+
     // Thử tìm bằng code trước
     if (caseId && typeof caseId === 'string' && caseId.startsWith('SOS')) {
       sosCase = await SosCase.findOne({ code: caseId });
     }
-    
+
     // Nếu không tìm thấy, thử tìm bằng _id
     if (!sosCase) {
       try {
