@@ -7,9 +7,9 @@ async function fixAccount() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
 
-    const userId = '69104cd9f7c23b7c27c38e19';
+    const userId = '69098015593b3ba819856918';
     const user = await User.findById(userId);
-    
+
     if (!user) {
       console.log('❌ User not found!');
       process.exit(1);
