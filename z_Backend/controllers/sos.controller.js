@@ -910,6 +910,95 @@ const completeSosCase = async (req, res, next) => {
     await sosCase.populate('reporterId', 'fullName phone avatar');
     await sosCase.populate('acceptedBy', 'fullName phone avatar');
 
+    // [AUTO-CATCH] Tìm và thông báo ca SOS tiếp theo cho TNV vừa hoàn thành
+    try {
+      console.log(`[Auto-Catch] Volunteer ${volunteerId} completed case. Searching for next pending SOS...`);
+
+      // Lấy thông tin volunteer profile để có vị trí homeBase
+      const volunteerProfile = await VolunteerProfile.findOne({
+        userId: volunteerId,
+        status: 'APPROVED',
+        ready: true
+      });
+
+      if (volunteerProfile && volunteerProfile.homeBase && volunteerProfile.homeBase.location) {
+        // Tìm pending SOS cases trong bán kính 50km
+        const nextPendingCases = await SosCase.aggregate([
+          {
+            $geoNear: {
+              near: volunteerProfile.homeBase.location,
+              distanceField: 'distance',
+              maxDistance: 50000, // 50km
+              spherical: true,
+              key: 'location',
+              query: { status: 'SEARCHING' }
+            }
+          },
+          { $sort: { createdAt: 1 } }, // Ưu tiên ca cũ nhất
+          { $limit: 1 } // Chỉ lấy 1 ca để không spam
+        ]);
+
+        if (nextPendingCases.length > 0) {
+          const nextCase = nextPendingCases[0];
+          console.log(`[Auto-Catch] Found next case: ${nextCase._id}`);
+
+          // Kiểm tra xem đã có trong queue chưa
+          const existingQueue = await SosResponderQueue.findOne({
+            sosId: nextCase._id,
+            volunteerId
+          });
+
+          if (!existingQueue) {
+            console.log(`[Auto-Catch] Creating queue item for volunteer ${volunteerId}`);
+            // Thêm vào queue
+            await SosResponderQueue.create({
+              sosId: nextCase._id,
+              volunteerId,
+              distanceKm: nextCase.distance / 1000,
+              status: 'NOTIFIED'
+            });
+
+            // Gửi thông báo
+            const distance = (nextCase.distance / 1000).toFixed(1);
+            const nextTitle = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+            const nextBody = `${nextCase.emergencyType} - Cách bạn ${distance}km`;
+
+            const nextNotificationData = {
+              type: 'SOS_CASE',
+              caseId: nextCase._id.toString(),
+              caseCode: nextCase.code,
+              emergencyType: nextCase.emergencyType,
+              distance: distance
+            };
+
+            console.log(`[Auto-Catch] Creating notification for volunteer ${volunteerId}`);
+            // Lưu notification
+            await Notification.create({
+              userId: volunteerId,
+              type: 'SOS_CASE',
+              title: nextTitle,
+              body: nextBody,
+              data: nextNotificationData,
+              deliveredAt: new Date()
+            });
+
+            console.log(`[Auto-Catch] Sending FCM to volunteer ${volunteerId}`);
+            // Gửi FCM
+            await sendNotificationToUser(volunteerId, nextTitle, nextBody, nextNotificationData);
+
+            console.log(`✅ [Auto-Catch] Notified volunteer of next SOS ${nextCase._id} (${distance}km)`);
+          } else {
+            console.log(`[Auto-Catch] Volunteer ${volunteerId} already in queue for case ${nextCase._id}`);
+          }
+        } else {
+          console.log(`[Auto-Catch] No pending cases found nearby.`);
+        }
+      }
+    } catch (autoCatchError) {
+      console.error('[Auto-Catch] Error:', autoCatchError);
+      // Không throw error để không ảnh hưởng flow chính
+    }
+
     // Send notification to reporter
     try {
       const reporterId = sosCase.reporterId._id || sosCase.reporterId;
@@ -993,17 +1082,39 @@ const getActiveSosCase = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    // Tìm case mới nhất đang active
+    // Tìm case mới nhất đang active mà user là reporter HOẶC volunteer
     const activeCase = await SosCase.findOne({
-      reporterId: userId,
+      $or: [
+        { reporterId: userId },
+        { acceptedBy: userId }
+      ],
       status: { $in: ['SEARCHING', 'ACCEPTED', 'IN_PROGRESS'] }
     })
+      .populate('reporterId', 'fullName phone avatar')
       .populate('acceptedBy', 'fullName phone avatar')
       .sort({ createdAt: -1 });
 
+    if (!activeCase) {
+      return res.json({
+        success: true,
+        data: null
+      });
+    }
+
+    // Xác định vai trò của user trong case này
+    let role = 'UNKNOWN';
+    if (activeCase.reporterId._id.toString() === userId.toString()) {
+      role = 'REPORTER';
+    } else if (activeCase.acceptedBy && activeCase.acceptedBy._id.toString() === userId.toString()) {
+      role = 'VOLUNTEER';
+    }
+
     res.json({
       success: true,
-      data: activeCase
+      data: {
+        ...activeCase.toObject(),
+        userRole: role // Trả về role để frontend dễ xử lý
+      }
     });
   } catch (error) {
     next(error);
@@ -1021,4 +1132,5 @@ module.exports = {
   getDirections,
   findAndNotifyNearestVolunteers,
   getDirectionsUrl,
+  getActiveSosCase,
 };

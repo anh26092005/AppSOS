@@ -23,6 +23,8 @@ class _MainScreenState extends State<MainScreen> {
     const AccountPage(), // Profile is now index 3
   ];
 
+  bool _isLoading = true; // Thêm trạng thái loading để tránh flash màn hình
+
   @override
   void initState() {
     super.initState();
@@ -34,31 +36,58 @@ class _MainScreenState extends State<MainScreen> {
 
     if (activeCase != null && mounted) {
       final status = activeCase['status'];
-      final caseId = activeCase['_id'];
+      final userRole = activeCase['userRole']; // Lấy role từ backend
 
-      // Delay nhẹ để UI render xong
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Delay nhẹ để đảm bảo context sẵn sàng
+      await Future.delayed(const Duration(milliseconds: 100));
 
       if (!mounted) return;
 
-      if (status == 'SEARCHING') {
-        Navigator.pushNamed(
-          context,
-          '/sos-searching',
-          arguments: {'caseId': caseId, 'caseData': activeCase},
-        );
-      } else if (status == 'ACCEPTED' || status == 'IN_PROGRESS') {
-        Navigator.pushNamed(
-          context,
-          '/sos-accepted',
-          arguments: {'case': activeCase, 'directionsUrl': null},
-        );
+      if (userRole == 'REPORTER') {
+        // Logic cho người báo tin
+        if (status == 'SEARCHING') {
+          Navigator.pushNamed(
+            context,
+            '/sos-searching',
+            arguments: {'caseId': activeCase['_id'], 'caseData': activeCase},
+          );
+        } else if (status == 'ACCEPTED' || status == 'IN_PROGRESS') {
+          Navigator.pushNamed(
+            context,
+            '/sos-found',
+            arguments: {'caseId': activeCase['_id'], 'caseData': activeCase},
+          );
+        }
+      } else if (userRole == 'VOLUNTEER') {
+        // Logic cho tình nguyện viên
+        if (status == 'ACCEPTED' || status == 'IN_PROGRESS') {
+          // SosAcceptedScreen cần cấu trúc { 'case': ... }
+          // Backend trả về activeCase đã populate đầy đủ
+          Navigator.pushNamed(
+            context,
+            '/sos-accepted',
+            arguments: {'case': activeCase, 'directionsUrl': null},
+          );
+        }
       }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false; // Tắt loading sau khi check xong
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Hiển thị màn hình loading nếu đang check SOS
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Colors.orange)),
+      );
+    }
+
     return Scaffold(
       body: Stack(
         children: [

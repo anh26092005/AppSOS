@@ -1,0 +1,106 @@
+﻿[dotenv@17.2.3] injecting env (10) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+≡ƒÜÇ Starting Full Flow Verification...
+node : (node:2736) 
+[MONGOOSE] Warning: 
+Duplicate schema 
+index on 
+{"firebaseUid":1} 
+found. This is often 
+due to declaring an 
+index using both 
+"index: true" and 
+"schema.index()". 
+Please remove the 
+duplicate index 
+definition.
+At line:1 char:1
++ node 
+verify-full-flow.js > 
+debug_output.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ((node:2736   
+ ) [MO...dex defin    
+ition.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+Γ£à Connected to DB
+
+1∩╕ÅΓâú Setting up Test Users...
+   Reporter: Ng╞░ß╗¥i D├╣ng Test (692df40fc7749d7b97a296a1)
+   Volunteer: T├¼nh Nguyß╗çn Vi├¬n Test (692df43c5141d0d8ecb7b85d)
+   Volunteer Profile: READY
+   Cleaned up old test data
+
+2∩╕ÅΓâú Reporter Creating SOS...
+≡ƒöì Finding volunteers. Excluded: 2, Radius: 50km
+Found 1 volunteers. Details: [
+  {
+    id: new ObjectId('692df43c5141d0d8ecb7b85d'),
+    dist: 0,
+    ready: true
+  }
+]
+≡ƒöì Finding devices for userId: 692df43c5141d0d8ecb7b85d
+≡ƒô▒ Found 1 devices for user 692df43c5141d0d8ecb7b85d
+ΓÜá∩╕Å [MOCK] Would send multicast notification: {
+  title: '≡ƒÜ¿ C├│ tr╞░ß╗¥ng hß╗úp khß║⌐n cß║Ñp cß║ºn hß╗ù trß╗ú',
+  body: 'ACCIDENT - C├ích bß║ín 0.0km',
+  count: 1
+}
+Γ£à Notification sent to FIRST volunteer only (0.0km away)
+≡ƒôï 0 other volunteers in queue as backup
+   SOS Created: 692df5f7b5262475c8c4b8cc (Status: SEARCHING)
+
+3∩╕ÅΓâú Volunteer Accepting SOS...
+≡ƒöì Finding devices for userId: 692df40fc7749d7b97a296a1
+   SOS Accepted. Status: ACCEPTED
+
+4∩╕ÅΓâú Verifying State Restoration (Routing)...
+≡ƒô▒ Found 0 devices for user 692df40fc7749d7b97a296a1
+Γ¥î No devices found for user: 692df40fc7749d7b97a296a1
+DEBUG: First 5 devices in DB: [{"_id":"6914bcd99db3da2f7e122bbe","pushToken":"flTogGYzTGSVx8X0XXDmJQ:APA91bE_QhAXGp6H123tV4I_9vdCtUUBJikE08w0gM-ejSen-mmQV0OlL5tyXj16uW-M85Cl3EeNHRjojzoT3FdIJ4Dr--EWBgJs6P7BwmqxAmBKuojJSY0","userId":"690985c6b5630f8b245f97ef","createdAt":"2025-11-12T16:59:05.187Z","lastLocation":{"type":"Point","coordinates":[106.660172,10.762622]},"lastSeenAt":"2025-11-12T16:59:05.187Z","platform":"ANDROID"},{"_id":"692703d34b2a211b30f0c590","userId":"690985c6b5630f8b245f97ef","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","createdAt":"2025-11-26T13:42:42.135Z","lastLocation":null,"lastSeenAt":"2025-11-26T13:42:42.545Z","platform":"ANDROID"},{"_id":"69270c214b2a211b30f0ca3f","userId":"69098015593b3ba819856918","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","createdAt":"2025-11-26T14:18:07.596Z","lastLocation":null,"lastSeenAt":"2025-12-01T19:05:03.568Z","platform":"ANDROID"},{"_id":"692726b54b2a211b30f0d2b7","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","userId":"6927269324b30c754d42dfb9","createdAt":"2025-11-26T16:11:31.923Z","lastLocation":null,"lastSeenAt":"2025-11-26T16:47:50.300Z","platform":"ANDROID"},{"_id":"69273f154b2a211b30f0da0c","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","userId":"69271103b62fac508bdc3b9a","createdAt":"2025-11-26T17:55:32.261Z","lastLocation":null,"lastSeenAt":"2025-12-01T16:53:49.667Z","platform":"ANDROID"}]
+   Reporter Check: Role=REPORTER (Expected: REPORTER) -> Γ£à PASS
+   Volunteer Check: Role=VOLUNTEER (Expected: VOLUNTEER) -> Γ£à PASS
+
+5∩╕ÅΓâú Setting up Auto-Catch (Creating 2nd Pending SOS)...
+≡ƒöì Finding volunteers. Excluded: 3, Radius: 50km
+Found 0 volunteers. Details: []
+ΓÜá∩╕Å No volunteers found in range
+   2nd SOS Created: 692df5f8b5262475c8c4b8f4 (Status: SEARCHING)
+
+6∩╕ÅΓâú Volunteer Completing First SOS...
+[Auto-Catch] Volunteer 692df43c5141d0d8ecb7b85d completed case. Searching for next pending SOS...
+[Auto-Catch] Found next case: 69274b6deeea471ac04fea17
+[Auto-Catch] Creating queue item for volunteer 692df43c5141d0d8ecb7b85d
+[Auto-Catch] Creating notification for volunteer 692df43c5141d0d8ecb7b85d
+[Auto-Catch] Sending FCM to volunteer 692df43c5141d0d8ecb7b85d
+≡ƒöì Finding devices for userId: 692df43c5141d0d8ecb7b85d
+≡ƒô▒ Found 1 devices for user 692df43c5141d0d8ecb7b85d
+ΓÜá∩╕Å [MOCK] Would send multicast notification: {
+  title: '≡ƒÜ¿ C├│ tr╞░ß╗¥ng hß╗úp khß║⌐n cß║Ñp cß║ºn hß╗ù trß╗ú',
+  body: 'MEDICAL - C├ích bß║ín 0.0km',
+  count: 1
+}
+Γ£à [Auto-Catch] Notified volunteer of next SOS 69274b6deeea471ac04fea17 (0.0km)
+≡ƒöì Finding devices for userId: 692df40fc7749d7b97a296a1
+   First SOS Completed. Status: RESOLVED
+
+7∩╕ÅΓâú Verifying Auto-Catch Logic...
+≡ƒô▒ Found 0 devices for user 692df40fc7749d7b97a296a1
+Γ¥î No devices found for user: 692df40fc7749d7b97a296a1
+   Queue Item for 2nd Case: NOT FOUND (Expected: FOUND)
+DEBUG: First 5 devices in DB: [{"_id":"6914bcd99db3da2f7e122bbe","pushToken":"flTogGYzTGSVx8X0XXDmJQ:APA91bE_QhAXGp6H123tV4I_9vdCtUUBJikE08w0gM-ejSen-mmQV0OlL5tyXj16uW-M85Cl3EeNHRjojzoT3FdIJ4Dr--EWBgJs6P7BwmqxAmBKuojJSY0","userId":"690985c6b5630f8b245f97ef","createdAt":"2025-11-12T16:59:05.187Z","lastLocation":{"type":"Point","coordinates":[106.660172,10.762622]},"lastSeenAt":"2025-11-12T16:59:05.187Z","platform":"ANDROID"},{"_id":"692703d34b2a211b30f0c590","userId":"690985c6b5630f8b245f97ef","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","createdAt":"2025-11-26T13:42:42.135Z","lastLocation":null,"lastSeenAt":"2025-11-26T13:42:42.545Z","platform":"ANDROID"},{"_id":"69270c214b2a211b30f0ca3f","userId":"69098015593b3ba819856918","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","createdAt":"2025-11-26T14:18:07.596Z","lastLocation":null,"lastSeenAt":"2025-12-01T19:05:03.568Z","platform":"ANDROID"},{"_id":"692726b54b2a211b30f0d2b7","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","userId":"6927269324b30c754d42dfb9","createdAt":"2025-11-26T16:11:31.923Z","lastLocation":null,"lastSeenAt":"2025-11-26T16:47:50.300Z","platform":"ANDROID"},{"_id":"69273f154b2a211b30f0da0c","pushToken":"cDJXIo1qS2inwydKK5ndIx:APA91bFBpDJfTgxUuvFB-GA-t_NmwxwjaKnmZsWV6_NI1aiiT4S8eGg7Fdi5J8VsJyPusc4jTI23ZlKdXjTiWR8qUa2IRdxHhDo3vJrVf8yBn-VRaIRfj40","userId":"69271103b62fac508bdc3b9a","createdAt":"2025-11-26T17:55:32.261Z","lastLocation":null,"lastSeenAt":"2025-12-01T16:53:49.667Z","platform":"ANDROID"}]
+   Notification Sent: NO (Expected: YES) -> Γ¥î FAIL
+
+Γ£¿ ALL TESTS COMPLETED Γ£¿
