@@ -150,6 +150,58 @@ class _AccountScreenState extends State<AccountScreen> {
     return '';
   }
 
+  String _formatDateOfBirth(dynamic dateOfBirth) {
+    if (dateOfBirth == null) return 'Chưa cập nhật';
+    try {
+      final date = DateTime.parse(dateOfBirth.toString());
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return 'Chưa cập nhật';
+    }
+  }
+
+  Future<void> _showDatePicker() async {
+    DateTime? currentDate;
+    try {
+      if (_user?['dateOfBirth'] != null) {
+        currentDate = DateTime.parse(_user!['dateOfBirth'].toString());
+      }
+    } catch (e) {
+      currentDate = null;
+    }
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: currentDate ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      try {
+        await ApiService.updateProfile(dateOfBirth: picked);
+        await _refreshProfile();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã cập nhật ngày sinh'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi: $e'),
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildLoading() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -357,6 +409,14 @@ class _AccountScreenState extends State<AccountScreen> {
                     value: phone.isNotEmpty ? phone : 'Chưa cập nhật',
                     onTap: () {},
                     showEdit: false,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoTile(
+                    icon: Icons.cake_outlined,
+                    title: 'Ngày sinh',
+                    value: _formatDateOfBirth(_user?['dateOfBirth']),
+                    onTap: _showDatePicker,
+                    showEdit: true,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoTile(

@@ -11,6 +11,8 @@ const buildUserResponse = (user) => {
     phone: user.phone,
     roles: user.roles,
     avatar: user.avatar,
+    bio: user.bio,
+    dateOfBirth: user.dateOfBirth,
     address: user.address,
   };
 };
@@ -152,6 +154,34 @@ const updateAvatar = async (req, res, next) => {
   }
 };
 
+const updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { fullName, bio, dateOfBirth } = req.body;
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Update allowed fields
+    if (fullName !== undefined) user.fullName = fullName;
+    if (bio !== undefined) user.bio = bio;
+    if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      data: buildUserResponse(user),
+      message: 'Profile updated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getProfile = async (req, res, next) => {
   try {
     if (!req.user?._id) {
@@ -183,5 +213,6 @@ module.exports = {
   register,
   login,
   getProfile,
+  updateProfile,
   updateAvatar,
 };

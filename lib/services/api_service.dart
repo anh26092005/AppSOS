@@ -208,6 +208,40 @@ class ApiService {
     throw Exception(data['message'] ?? 'Không thể lấy thông tin tài khoản');
   }
 
+  static Future<Map<String, dynamic>> updateProfile({
+    String? fullName,
+    String? bio,
+    DateTime? dateOfBirth,
+  }) async {
+    final token = await getToken();
+    if (token == null) {
+      throw Exception('Vui lòng đăng nhập để cập nhật hồ sơ');
+    }
+
+    final url = Uri.parse('$baseUrl/auth/profile');
+    final headers = await _headers();
+
+    final body = <String, dynamic>{};
+    if (fullName != null) body['fullName'] = fullName;
+    if (bio != null) body['bio'] = bio;
+    if (dateOfBirth != null)
+      body['dateOfBirth'] = dateOfBirth.toIso8601String();
+
+    final res = await http.put(url, headers: headers, body: jsonEncode(body));
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      final user = data['data'];
+      if (user is Map<String, dynamic>) {
+        await saveUser(user);
+        return user;
+      }
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể cập nhật hồ sơ');
+  }
+
   static Future<List<dynamic>> fetchBlogs({
     int page = 1,
     int limit = 10,

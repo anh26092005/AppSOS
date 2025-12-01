@@ -97,6 +97,12 @@ const userSchema = new mongoose.Schema(
       type: mediaAssetSchema,
       default: null,
     },
+    bio: {
+      type: String,
+      trim: true,
+      default: null,
+      maxlength: [500, 'Bio cannot exceed 500 characters'],
+    },
     address: {
       type: addressSchema,
       default: null,

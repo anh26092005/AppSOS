@@ -111,6 +111,89 @@ class _AccountPageState extends State<AccountPage> {
     }
   }
 
+  String _getBio() {
+    final bio = _stringValue(_user?['bio']).trim();
+    if (bio.isNotEmpty) return bio;
+    return 'Chưa có giới thiệu bản thân';
+  }
+
+  String _getBirthYear() {
+    final dateOfBirth = _user?['dateOfBirth'];
+    if (dateOfBirth == null) return ' ';
+    try {
+      final date = DateTime.parse(dateOfBirth);
+      return date.year.toString();
+    } catch (e) {
+      return 'Cập nhật năm sinh';
+    }
+  }
+
+  Future<void> _showEditBioDialog() async {
+    final TextEditingController bioController = TextEditingController(
+      text: _stringValue(_user?['bio']).trim(),
+    );
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chỉnh sửa giới thiệu'),
+        backgroundColor: Theme.of(context).cardColor,
+        content: TextField(
+          controller: bioController,
+          maxLines: 3,
+          maxLength: 25,
+          decoration: InputDecoration(
+            hintText: 'Nhập giới thiệu về bạn...',
+            border: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.cyan, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.cyan, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.blue, width: 2.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      final newBio = bioController.text.trim();
+      try {
+        await ApiService.updateProfile(bio: newBio);
+        await _refreshProfile();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã cập nhật giới thiệu'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,10 +255,10 @@ class _AccountPageState extends State<AccountPage> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    // Birth Year (Placeholder logic)
-                    const Text(
-                      "2004", // TODO: Get from user profile
-                      style: TextStyle(
+                    // Birth Year
+                    Text(
+                      _getBirthYear(),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey,
@@ -183,20 +266,32 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                     const SizedBox(height: 8),
                     // Bio
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "Mờ cương tớiiiiii", // TODO: Get from user profile
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey,
+                    GestureDetector(
+                      onTap: _showEditBioDialog,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _getBio(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.edit, size: 16, color: Colors.grey.shade600),
-                      ],
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     // Avatar - Using UserAvatar widget

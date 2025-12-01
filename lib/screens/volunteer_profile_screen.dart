@@ -135,9 +135,25 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
         volunteer['authorName'] ?? volunteer['name'] ?? 'Tình nguyện viên';
     final avatar = volunteer['authorAvatar'] ?? volunteer['avatar'];
 
-    // Data from fetched profile
-    final birthYear = '2004'; // Birth year not in profile yet, keeping mock
-    final bio = 'Mờ cương tòiiiiiii'; // Bio not in profile yet, keeping mock
+    // Data from fetched profile or volunteer data
+    String birthYear = 'Ngày sinh chưa cập nhật';
+    String bio = 'Chưa có giới thiệu';
+
+    // Get bio from volunteer data
+    if (volunteer['bio'] != null &&
+        volunteer['bio'].toString().trim().isNotEmpty) {
+      bio = volunteer['bio'].toString().trim();
+    }
+
+    // Get birth year from dateOfBirth
+    if (volunteer['dateOfBirth'] != null) {
+      try {
+        final date = DateTime.parse(volunteer['dateOfBirth'].toString());
+        birthYear = date.year.toString();
+      } catch (e) {
+        birthYear = '';
+      }
+    }
 
     String helpedCount = '0';
     String specialty = 'Chưa cập nhật';
@@ -399,15 +415,15 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
   Widget _buildPostCard(BuildContext context, PostModel post) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      margin: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10.r,
-            offset: Offset(0, 4.h),
+            blurRadius: 7,
+            offset: Offset(0, 0),
           ),
         ],
       ),
