@@ -598,16 +598,51 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    _buildAccountTile(
-                      context,
-                      icon: Icons.help_outline,
-                      title: 'Trợ giúp & Hỗ trợ',
-                      subtitle: 'Câu hỏi thường gặp',
-                      onTap: () {
-                        // TODO: Navigate to help
+                    // Menu "Đăng bài viết" - chỉ hiển thị cho TNV và ADMIN
+                    Builder(
+                      builder: (context) {
+                        final roles = _user?['roles'];
+                        bool canCreateArticle = false;
+
+                        if (roles is List) {
+                          canCreateArticle =
+                              roles.contains('TNV_CN') ||
+                              roles.contains('TNV_TC') ||
+                              roles.contains('ADMIN');
+                        } else if (roles is String) {
+                          canCreateArticle =
+                              roles == 'TNV_CN' ||
+                              roles == 'TNV_TC' ||
+                              roles == 'ADMIN';
+                        }
+
+                        if (!canCreateArticle) {
+                          return const SizedBox.shrink(); // Không hiển thị gì
+                        }
+
+                        return Column(
+                          children: [
+                            _buildAccountTile(
+                              context,
+                              icon: Icons.create_outlined,
+                              title: 'Đăng bài viết',
+                              subtitle: 'Tạo bài viết mới cho cộng đồng',
+                              onTap: () {
+                                // TODO: Navigate to create article screen
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Chức năng đang phát triển'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
                       },
                     ),
-                    const SizedBox(height: 12),
+
                     _buildAccountTile(
                       context,
                       icon: Icons.info_outline,
