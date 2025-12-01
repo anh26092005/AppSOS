@@ -6,6 +6,7 @@ import 'services/fcm_service.dart';
 import 'services/api_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'utils/navigation_service.dart';
 
 import 'package:provider/provider.dart';
@@ -54,7 +55,7 @@ class SOSApp extends StatelessWidget {
             return MaterialApp(
               navigatorKey: NavigationService.navigatorKey,
               debugShowCheckedModeBanner: false,
-              title: 'SOS App',
+              title: 'SOS App UTH',
               theme: appTheme,
               darkTheme: appThemeDark,
               themeMode: themeProvider.isDarkMode
@@ -78,13 +79,21 @@ class _AppEntry extends StatefulWidget {
 }
 
 class _AppEntryState extends State<_AppEntry> {
-  late Future<bool> _sessionFuture;
+  late Future<int> _sessionFuture;
 
   @override
   void initState() {
     super.initState();
-    _sessionFuture = ApiService.hasActiveSession();
+    _sessionFuture = _checkSession();
     _registerTokenIfLoggedIn();
+  }
+
+  Future<int> _checkSession() async {
+    final hasSeenOnboarding = await ApiService.hasSeenOnboarding();
+    if (!hasSeenOnboarding) return 0; // Show Onboarding
+
+    final hasSession = await ApiService.hasActiveSession();
+    return hasSession ? 2 : 1; // 2 = Main, 1 = Login
   }
 
   // Đăng ký FCM token nếu đã đăng nhập
@@ -109,7 +118,7 @@ class _AppEntryState extends State<_AppEntry> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
+    return FutureBuilder<int>(
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -117,8 +126,13 @@ class _AppEntryState extends State<_AppEntry> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final hasSession = snapshot.data ?? false;
-        return hasSession ? const MainScreen() : const LoginScreen();
+
+        final sessionState = snapshot.data!;
+        // sessionState: 0 = Onboarding, 1 = Login, 2 = Main
+
+        if (sessionState == 0) return const OnboardingScreen();
+        if (sessionState == 1) return const LoginScreen();
+        return const MainScreen();
       },
     );
   }

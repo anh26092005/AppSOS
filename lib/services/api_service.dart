@@ -82,6 +82,16 @@ class ApiService {
     await prefs.setBool(_rememberStorageKey, value);
   }
 
+  static Future<void> setSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seen_onboarding', true);
+  }
+
+  static Future<bool> hasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('seen_onboarding') ?? false;
+  }
+
   static Future<bool> getRememberMe() async {
     if (_rememberLogin != null) return _rememberLogin!;
     final prefs = await SharedPreferences.getInstance();
