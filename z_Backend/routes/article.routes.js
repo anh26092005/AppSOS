@@ -10,14 +10,14 @@ const {
   approveArticle,
   rejectArticle,
 } = require('../controllers/article.controller');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authenticateOptional, authorize } = require('../middleware/auth');
 const { upload, handleUploadError } = require('../config/s3');
 
 const router = express.Router();
 
-// Public routes
-router.get('/', getArticles);
-router.get('/:id', getArticleById);
+// Public routes - sử dụng authenticateOptional để có thể trả về isLikedByCurrentUser cho user đã login
+router.get('/', authenticateOptional, getArticles);
+router.get('/:id', authenticateOptional, getArticleById);
 
 // Protected routes - cần xác thực
 router.use(authenticate);

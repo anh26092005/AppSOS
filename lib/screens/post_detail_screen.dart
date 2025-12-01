@@ -1,11 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/post_model.dart';
+import '../services/post_service.dart';
 
-class PostDetailScreen extends StatelessWidget {
+class PostDetailScreen extends StatefulWidget {
   final PostModel post;
 
   const PostDetailScreen({super.key, required this.post});
+
+  @override
+  State<PostDetailScreen> createState() => _PostDetailScreenState();
+}
+
+class _PostDetailScreenState extends State<PostDetailScreen> {
+  final PostService _postService = PostService();
+  late PostModel _currentPost;
+  bool _isLiking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPost = widget.post;
+    debugPrint('Post isLiked: ${_currentPost.isLiked}');
+  }
+
+  Future<void> _handleLike() async {
+    if (_isLiking) return;
+
+    setState(() => _isLiking = true);
+
+    try {
+      final updatedPost = await _postService.toggleLike(
+        _currentPost.id,
+        _currentPost.isLiked,
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentPost = updatedPost;
+          _isLiking = false;
+        });
+        debugPrint('Updated post isLiked: ${_currentPost.isLiked}');
+      }
+    } catch (e) {
+      debugPrint('Error toggling like: $e');
+      if (mounted) {
+        setState(() => _isLiking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể cập nhật lượt thích')),
+        );
+      }
+    }
+  }
 
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
@@ -36,31 +82,48 @@ class PostDetailScreen extends StatelessWidget {
               color: Colors.black,
               size: 20,
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, _currentPost),
           ),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.favorite, color: Colors.red, size: 20),
-                const SizedBox(width: 4),
-                Text(
-                  '${post.likeCount}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+          GestureDetector(
+            onTap: _isLiking ? null : _handleLike,
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _currentPost.isLiked
+                    ? Colors.red.withValues(alpha: 0.15)
+                    : Colors.white.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _currentPost.isLiked
+                      ? Colors.red.withValues(alpha: 0.3)
+                      : Colors.transparent,
+                  width: 1,
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _currentPost.isLiked
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: _currentPost.isLiked ? Colors.red : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_currentPost.likeCount}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: _currentPost.isLiked ? Colors.red : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -70,11 +133,7 @@ class PostDetailScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF8E1), // Light beige (matching home header)
-              Colors.white,
-              Colors.white,
-            ],
+            colors: [Color(0xFFFFF8E1), Colors.white, Colors.white],
             stops: [0.0, 0.3, 1.0],
           ),
         ),
@@ -84,9 +143,8 @@ class PostDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
-                  post.contentText, // Headline
+                  _currentPost.contentText,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
@@ -95,15 +153,11 @@ class PostDetailScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-
-                // Metadata
                 Text(
-                  '${_calculateReadingTime(post.bodyContent)} | ${_formatDate(post.createdAt)}',
+                  '${_calculateReadingTime(_currentPost.bodyContent)} | ${_formatDate(_currentPost.createdAt)}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
-
-                // Author
                 Row(
                   children: [
                     Container(
@@ -118,10 +172,10 @@ class PostDetailScreen extends StatelessWidget {
                           1,
                         ).withValues(alpha: 0.2),
                       ),
-                      child: post.authorAvatar != null
+                      child: _currentPost.authorAvatar != null
                           ? ClipOval(
                               child: Image.network(
-                                post.authorAvatar!,
+                                _currentPost.authorAvatar!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Icon(
                                   Icons.person,
@@ -137,7 +191,7 @@ class PostDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      post.authorName,
+                      _currentPost.authorName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -147,13 +201,11 @@ class PostDetailScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Main Image
-                if (post.imageUrl != null)
+                if (_currentPost.imageUrl != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.network(
-                      post.imageUrl!,
+                      _currentPost.imageUrl!,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
@@ -167,15 +219,8 @@ class PostDetailScreen extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: 24),
-
-                // Content Body
-                // Xử lý hiển thị nội dung: Tách các đoạn văn bản
-                ...post.bodyContent.split('\r\n\r\n').map((paragraph) {
+                ..._currentPost.bodyContent.split('\r\n\r\n').map((paragraph) {
                   if (paragraph.trim().isEmpty) return const SizedBox.shrink();
-
-                  // Kiểm tra xem đoạn văn có phải là heading không (giả định đơn giản: ngắn và không có dấu chấm câu cuối cùng, hoặc viết hoa hết - tùy data, ở đây hiển thị text thường nhưng đậm hơn chút nếu ngắn)
-                  // Với data mẫu, các heading như "Dọn nội thất..." không có định dạng đặc biệt trong JSON text thuần.
-                  // Ta sẽ hiển thị text bình thường với line height tốt để dễ đọc.
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
@@ -190,7 +235,6 @@ class PostDetailScreen extends StatelessWidget {
                     ),
                   );
                 }),
-
                 const SizedBox(height: 40),
               ],
             ),

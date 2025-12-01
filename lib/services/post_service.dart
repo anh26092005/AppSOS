@@ -31,22 +31,28 @@ class PostService {
 
   /// Toggle like status for a post
   Future<PostModel> toggleLike(String postId, bool currentLikeStatus) async {
-    // TODO: Implement API call for like
-    // For now, return a mock updated post to update UI immediately
-    // In real implementation: await ApiService.likePost(postId);
+    try {
+      // Call backend API to toggle like
+      final response = await ApiService.togglePostLike(postId);
 
-    // Tạm thời throw error hoặc return dummy để UI không crash,
-    // nhưng vì không có full post data ở đây để return,
-    // nên tốt nhất là UI nên handle optimistic update hoặc fetch lại.
-    // Tuy nhiên, để đơn giản, ta sẽ giả định thành công và trả về post đã update (nếu có thể lấy từ cache)
-    // Nhưng service này hiện không cache _allPosts nữa.
+      // Get the updated like status and count from response
+      final data = response['data'];
+      final isLiked = data['isLiked'] as bool;
+      final likeCount = data['likeCount'] as int;
 
-    // Giải pháp: Gọi API like, sau đó fetch lại post detail hoặc trả về status.
-    // Vì hàm này yêu cầu trả về PostModel, ta cần fetch lại post đó.
+      // Fetch posts to get the full post data
+      final posts = await fetchPosts(page: 0, limit: 100);
+      final post = posts.firstWhere(
+        (p) => p.id == postId,
+        orElse: () => throw Exception('Post not found'),
+      );
 
-    throw UnimplementedError(
-      'Like feature not fully implemented with backend yet',
-    );
+      // Create updated post with correct like status from API response
+      return post.copyWith(isLiked: isLiked, likeCount: likeCount);
+    } catch (e) {
+      print('Error toggling like: $e');
+      rethrow;
+    }
   }
 
   /// Check if there are more posts to load

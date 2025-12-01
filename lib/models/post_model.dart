@@ -89,7 +89,7 @@ class PostModel {
       bodyContent: json['content'] ?? '',
       imageUrl: getImageUrl(json['images']),
       likeCount: json['likeCount'] ?? 0,
-      isLiked: false,
+      isLiked: json['isLikedByCurrentUser'] ?? false,
     );
   }
 

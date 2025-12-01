@@ -46,6 +46,35 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// Middleware xác thực tùy chọn - không bắt buộc phải có token
+// Nếu có token hợp lệ thì set req.user, nếu không có thì vẫn cho phép request tiếp tục
+const authenticateOptional = async (req, res, next) => {
+  try {
+    const token = extractBearerToken(req);
+    if (!token) {
+      // Không có token, nhưng vẫn cho phép tiếp tục
+      return next();
+    }
+
+    const payload = verifyToken(token);
+    const userId = payload.sub || payload.id || payload._id;
+    const user = await User.findById(userId).lean();
+
+    if (!user || user.isActive === false) {
+      // Token không hợp lệ hoặc user bị deactivate, nhưng vẫn cho phép tiếp tục
+      return next();
+    }
+
+    // Set user vào request nếu token hợp lệ
+    req.user = user;
+    req.auth = { token, payload };
+    next();
+  } catch (error) {
+    // Có lỗi khi verify token nhưng vẫn cho phép request tiếp tục
+    next();
+  }
+};
+
 const authorize =
   (...allowedRoles) =>
   (req, res, next) => {
@@ -68,5 +97,6 @@ const authorize =
 
 module.exports = {
   authenticate,
+  authenticateOptional,
   authorize,
 };

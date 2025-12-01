@@ -102,10 +102,19 @@ const getArticles = async (req, res, next) => {
       .skip((page - 1) * limit)
       .lean();
 
-    // Thêm thông tin user hiện tại có thích bài viết không
+    // Thêm thông tin user hiện tại có thích bài viết không và convert likedBy
     if (req.user) {
       articles.forEach(article => {
-        article.isLikedByCurrentUser = article.likedBy.includes(req.user._id.toString());
+        article.isLikedByCurrentUser = article.likedBy.some(
+          id => id.toString() === req.user._id.toString()
+        );
+        // Convert ObjectIDs to strings for likedBy array
+        article.likedBy = article.likedBy.map(id => id.toString());
+      });
+    } else {
+      // If no user, still convert likedBy to strings
+      articles.forEach(article => {
+        article.likedBy = article.likedBy.map(id => id.toString());
       });
     }
 
@@ -138,10 +147,14 @@ const getArticleById = async (req, res, next) => {
       throw new AppError('Article not found', 404);
     }
 
-    // Thêm thông tin user hiện tại có thích bài viết không
+    // Thêm thông tin user hiện tại có thích bài viết không và convert likedBy
     if (req.user) {
-      article.isLikedByCurrentUser = article.likedBy.includes(req.user._id.toString());
+      article.isLikedByCurrentUser = article.likedBy.some(
+        id => id.toString() === req.user._id.toString()
+      );
     }
+    // Convert ObjectIDs to strings for likedBy array
+    article.likedBy = article.likedBy.map(id => id.toString());
 
     res.json({
       success: true,

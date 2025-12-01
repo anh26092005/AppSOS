@@ -444,13 +444,22 @@ class _HomePageNewState extends State<HomePageNew> {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(24),
         child: InkWell(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final updatedPost = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => PostDetailScreen(post: post),
               ),
             );
+
+            if (updatedPost != null && mounted) {
+              setState(() {
+                final index = _posts.indexWhere((p) => p.id == post.id);
+                if (index != -1) {
+                  _posts[index] = updatedPost as PostModel;
+                }
+              });
+            }
           },
           borderRadius: BorderRadius.circular(24),
           child: Column(

@@ -242,6 +242,25 @@ class ApiService {
     throw Exception(data['message'] ?? 'Không thể cập nhật hồ sơ');
   }
 
+  static Future<Map<String, dynamic>> togglePostLike(String postId) async {
+    final token = await getToken();
+    if (token == null) {
+      throw Exception('Vui lòng đăng nhập để thích bài viết');
+    }
+
+    final url = Uri.parse('$baseUrl/articles/$postId/like');
+    final headers = await _headers();
+
+    final res = await http.post(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể thích bài viết');
+  }
+
   static Future<List<dynamic>> fetchBlogs({
     int page = 1,
     int limit = 10,
