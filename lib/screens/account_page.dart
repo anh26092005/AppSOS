@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/avatar_upload_dialog.dart';
+import 'create_article_screen.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -94,19 +95,12 @@ class _AccountPageState extends State<AccountPage> {
 
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã cập nhật ảnh đại diện'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _showCustomSnackBar(context, 'Đã cập nhật ảnh đại diện');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-        );
+        _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
       }
     }
   }
@@ -119,12 +113,12 @@ class _AccountPageState extends State<AccountPage> {
 
   String _getBirthYear() {
     final dateOfBirth = _user?['dateOfBirth'];
-    if (dateOfBirth == null) return ' ';
+    if (dateOfBirth == null) return 'Chưa cập nhật năm sinh';
     try {
       final date = DateTime.parse(dateOfBirth);
       return date.year.toString();
     } catch (e) {
-      return 'Cập nhật năm sinh';
+      return 'Chưa cập nhật năm sinh';
     }
   }
 
@@ -177,18 +171,11 @@ class _AccountPageState extends State<AccountPage> {
         await ApiService.updateProfile(bio: newBio);
         await _refreshProfile();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đã cập nhật giới thiệu'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _showCustomSnackBar(context, 'Đã cập nhật giới thiệu');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-          );
+          _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
         }
       }
     }
@@ -473,33 +460,22 @@ class _AccountPageState extends State<AccountPage> {
                                                 _isTogglingReady = false;
                                               });
                                               if (!mounted) return;
-                                              ScaffoldMessenger.of(
+                                              _showCustomSnackBar(
                                                 context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    newReadyStatus
-                                                        ? 'Đã bật nhận yêu cầu SOS'
-                                                        : 'Đã tắt nhận yêu cầu SOS',
-                                                  ),
-                                                  backgroundColor:
-                                                      newReadyStatus
-                                                      ? Colors.green
-                                                      : Colors.grey,
-                                                ),
+                                                newReadyStatus
+                                                    ? 'Đã bật nhận yêu cầu SOS'
+                                                    : 'Đã tắt nhận yêu cầu SOS',
+                                                isError: !newReadyStatus,
                                               );
                                             } catch (e) {
                                               setState(() {
                                                 _isTogglingReady = false;
                                               });
                                               if (!mounted) return;
-                                              ScaffoldMessenger.of(
+                                              _showCustomSnackBar(
                                                 context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Lỗi: $e'),
-                                                  backgroundColor: Colors.red,
-                                                ),
+                                                'Lỗi: $e',
+                                                isError: true,
                                               );
                                             }
                                           },
@@ -598,16 +574,51 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    _buildAccountTile(
-                      context,
-                      icon: Icons.help_outline,
-                      title: 'Trợ giúp & Hỗ trợ',
-                      subtitle: 'Câu hỏi thường gặp',
-                      onTap: () {
-                        // TODO: Navigate to help
+                    // Menu "Đăng bài viết" - chỉ hiển thị cho TNV và ADMIN
+                    Builder(
+                      builder: (context) {
+                        final roles = _user?['roles'];
+                        bool canCreateArticle = false;
+
+                        if (roles is List) {
+                          canCreateArticle =
+                              roles.contains('TNV_CN') ||
+                              roles.contains('TNV_TC') ||
+                              roles.contains('ADMIN');
+                        } else if (roles is String) {
+                          canCreateArticle =
+                              roles == 'TNV_CN' ||
+                              roles == 'TNV_TC' ||
+                              roles == 'ADMIN';
+                        }
+
+                        if (!canCreateArticle) {
+                          return const SizedBox.shrink(); // Không hiển thị gì
+                        }
+
+                        return Column(
+                          children: [
+                            _buildAccountTile(
+                              context,
+                              icon: Icons.create_outlined,
+                              title: 'Đăng bài viết',
+                              subtitle: 'Tạo bài viết mới cho cộng đồng',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const CreateArticleScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
                       },
                     ),
-                    const SizedBox(height: 12),
+
                     _buildAccountTile(
                       context,
                       icon: Icons.info_outline,
@@ -617,7 +628,7 @@ class _AccountPageState extends State<AccountPage> {
                         // TODO: Navigate to about
                       },
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 130),
                   ],
                 ),
               ),
@@ -690,6 +701,32 @@ class _AccountPageState extends State<AccountPage> {
           color: Colors.grey.shade400,
         ),
         onTap: onTap,
+      ),
+    );
+  }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: isError
+            ? Colors.red.withOpacity(0.9)
+            : const Color(0xFF333333).withOpacity(0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

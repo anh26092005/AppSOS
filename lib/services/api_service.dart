@@ -82,6 +82,16 @@ class ApiService {
     await prefs.setBool(_rememberStorageKey, value);
   }
 
+  static Future<void> setSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seen_onboarding', true);
+  }
+
+  static Future<bool> hasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('seen_onboarding') ?? false;
+  }
+
   static Future<bool> getRememberMe() async {
     if (_rememberLogin != null) return _rememberLogin!;
     final prefs = await SharedPreferences.getInstance();
@@ -265,11 +275,15 @@ class ApiService {
     int page = 1,
     int limit = 10,
     String? authorId,
+    String? status,
   }) async {
     String urlString =
         '$baseUrl/articles?page=$page&limit=$limit&sortBy=publishedAt&sortOrder=desc';
     if (authorId != null) {
       urlString += '&author=$authorId';
+    }
+    if (status != null) {
+      urlString += '&status=$status';
     }
     final url = Uri.parse(urlString);
     final headers = await _headers();
@@ -522,6 +536,54 @@ class ApiService {
     }
 
     throw Exception(data['message'] ?? 'Không thể cập nhật trạng thái');
+  }
+
+  /// Tạo bài viết mới
+  static Future<Map<String, dynamic>> createArticle({
+    required String title,
+    required String content,
+    required String category,
+    File? imageFile,
+  }) async {
+    final url = Uri.parse('$baseUrl/articles');
+    final request = http.MultipartRequest('POST', url);
+
+    final token = await getToken();
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    request.fields['title'] = title;
+    request.fields['content'] = content;
+    request.fields['category'] = category;
+
+    if (imageFile != null) {
+      final extension = imageFile.path.split('.').last.toLowerCase();
+      String mimeType = 'image/jpeg';
+      if (extension == 'png') {
+        mimeType = 'image/png';
+      } else if (extension == 'jpg' || extension == 'jpeg') {
+        mimeType = 'image/jpeg';
+      }
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+          contentType: MediaType.parse(mimeType),
+        ),
+      );
+    }
+
+    final streamedRes = await request.send();
+    final res = await http.Response.fromStream(streamedRes);
+    final data = _decode(res);
+
+    if (res.statusCode == 201 || res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể tạo bài viết');
   }
 
   /// Upload/Update user avatar

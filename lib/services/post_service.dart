@@ -21,6 +21,7 @@ class PostService {
         page: page + 1,
         limit: limit,
         authorId: authorId,
+        status: 'APPROVED',
       );
       return data.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {

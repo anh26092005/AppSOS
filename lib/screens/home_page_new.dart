@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import '../models/post_model.dart';
 import '../models/weather_model.dart';
 import '../services/weather_service.dart';
@@ -36,6 +38,7 @@ class _HomePageNewState extends State<HomePageNew> {
 
   String _userName = 'Bạn';
   String? _userAvatar; // Avatar URL from user profile
+  String? _lunarDate; // Ngày âm lịch
 
   @override
   void initState() {
@@ -64,7 +67,35 @@ class _HomePageNewState extends State<HomePageNew> {
       _loadUserProfile(),
       _fetchWeather(),
       _fetchPosts(refresh: true),
+      _fetchLunarDate(),
     ]);
+  }
+
+  Future<void> _fetchLunarDate() async {
+    try {
+      final now = DateTime.now();
+      final response = await http.post(
+        Uri.parse('https://open.oapi.vn/date/convert-to-lunar'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'day': now.day,
+          'month': now.month,
+          'year': now.year,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 'success' && mounted) {
+          final lunarData = data['data'];
+          setState(() {
+            _lunarDate = '${lunarData['day']}/${lunarData['month']}';
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching lunar date: $e');
+    }
   }
 
   Future<void> _loadUserProfile() async {
@@ -183,8 +214,10 @@ class _HomePageNewState extends State<HomePageNew> {
     } catch (e) {
       debugPrint('Error toggling like: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể cập nhật lượt thích')),
+      _showCustomSnackBar(
+        context,
+        'Không thể cập nhật lượt thích',
+        isError: true,
       );
     }
   }
@@ -250,6 +283,7 @@ class _HomePageNewState extends State<HomePageNew> {
                   userAvatar: _userAvatar,
                   greeting: greeting,
                   weatherCard: _buildWeatherCard(),
+                  lunarDate: _lunarDate,
                 ),
               ),
 
@@ -715,9 +749,9 @@ class _HomePageNewState extends State<HomePageNew> {
                     ), // Responsive radius
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1976D2).withValues(alpha: 0.3),
+                        color: const Color(0xFF1976D2).withValues(alpha: 0.2),
                         blurRadius: 8.r,
-                        offset: Offset(0, 3.h),
+                        offset: Offset(0, 0),
                       ),
                     ],
                   ),
@@ -765,6 +799,32 @@ class _HomePageNewState extends State<HomePageNew> {
       ),
     );
   }
+
+  void _showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        backgroundColor: isError
+            ? Colors.red.withOpacity(0.9)
+            : const Color(0xFF333333).withOpacity(0.95),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 }
 
 class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -772,12 +832,14 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String? userAvatar;
   final String greeting;
   final Widget weatherCard;
+  final String? lunarDate;
 
   _HomeHeaderDelegate({
     required this.userName,
     this.userAvatar,
     required this.greeting,
     required this.weatherCard,
+    this.lunarDate,
   });
 
   @override
@@ -786,6 +848,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    final date = DateFormat('dd/MM').format(DateTime.now());
     // 0.0 -> 1.0
     final progress = shrinkOffset / maxExtent;
     final contentOpacity = (1 - (progress * 2)).clamp(0.0, 1.0);
@@ -962,6 +1025,44 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
+
+          // Lunar Date (Âm lịch) - Positioned separately
+          if (lunarDate != null)
+            Positioned(
+              right: 20,
+              bottom: 14, // Align visually with "Bản tin"
+              child: Opacity(
+                opacity: contentOpacity,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.blueAccent.withValues(alpha: 0.2)
+                        : const Color(0xFF0D47A1).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.blueAccent.withValues(alpha: 0.3)
+                          : const Color(0xFF0D47A1).withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'DL: $date - ÂL: $lunarDate',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.blueAccent
+                          : const Color(0xFF0D47A1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -977,6 +1078,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
     return oldDelegate.greeting != greeting ||
         oldDelegate.weatherCard != weatherCard ||
-        oldDelegate.userName != userName;
+        oldDelegate.userName != userName ||
+        oldDelegate.lunarDate != lunarDate;
   }
 }
