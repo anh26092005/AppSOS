@@ -78,7 +78,17 @@ class SOSAlertDialog extends StatelessWidget {
       print('✅ Case $caseId declined, forwarded to next volunteer');
     } catch (e) {
       print('❌ Error declining case: $e');
-      // Show error to user
+
+      // If already declined, just close silently
+      final errorMessage = e.toString();
+      if (errorMessage.contains('already declined')) {
+        print('ℹ️ Case already declined, closing dialog silently');
+        if (!context.mounted) return;
+        Navigator.of(context).pop();
+        return;
+      }
+
+      // Show error to user for other errors
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
