@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/active_sos_provider.dart';
 
 class SosAcceptedScreen extends StatefulWidget {
   final Map<String, dynamic> sosData;
@@ -131,6 +133,10 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
       await ApiService.completeSosCase(caseId);
 
       if (!mounted) return;
+
+      // Clear from provider
+      await context.read<ActiveSosProvider>().clearActiveCase();
+
       Navigator.pop(context); // Close loading
 
       // Show success dialog

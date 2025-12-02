@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const responderStatus = ['NOTIFIED', 'SEEN', 'ACCEPTED', 'DECLINED', 'EXPIRED'];
 
+
 const sosResponderQueueSchema = new mongoose.Schema(
   {
     sosId: {
@@ -41,6 +42,11 @@ const sosResponderQueueSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    seenAt: {
+      type: Date,
+      default: null,
+    },
+
   },
   {
     timestamps: false,

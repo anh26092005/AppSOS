@@ -1,11 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/navigation_service.dart';
 import '../widgets/sos_alert_dialog.dart';
 import '../screens/sos_notification_dialog.dart';
 import '../widgets/sos_accepted_dialog.dart';
 import '../services/api_service.dart';
+import '../providers/active_sos_provider.dart';
 
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -129,6 +131,7 @@ class FCMService {
                   title: message.notification?.title ?? 'SOS Alert',
                   body: message.notification?.body ?? 'Có trường hợp khẩn cấp!',
                   data: message.data,
+                  caseId: message.data['caseId'],
                   onAccept: () {
                     Navigator.of(context).pop(); // Đóng alert dialog
                     print('User accepted SOS alert: ${message.data['caseId']}');
@@ -144,11 +147,14 @@ class FCMService {
                         emergencyType:
                             message.data['emergencyType'] ?? 'EMERGENCY',
                         distance: message.data['distance'] ?? 'Unknown',
+                        onAccepted: (sosData) {
+                          // Save to active SOS provider
+                          context.read<ActiveSosProvider>().setActiveCase(
+                            sosData,
+                          );
+                        },
                       ),
                     );
-                  },
-                  onDecline: () {
-                    Navigator.of(context).pop(); // Đóng dialog
                   },
                 );
               },

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class SOSAlertDialog extends StatelessWidget {
   final String title;
   final String body;
   final Map<String, dynamic> data;
   final VoidCallback onAccept;
-  final VoidCallback onDecline;
+  final String caseId;
 
   const SOSAlertDialog({
     super.key,
@@ -13,8 +14,82 @@ class SOSAlertDialog extends StatelessWidget {
     required this.body,
     required this.data,
     required this.onAccept,
-    required this.onDecline,
+    required this.caseId,
   });
+
+  Future<void> _handleDismiss(BuildContext context) async {
+    // Show confirmation dialog
+    final shouldDecline = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.help_outline, color: Colors.orange, size: 28),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Hủy yêu cầu?',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Yêu cầu này sẽ được chuyển đến tình nguyện viên khác. '
+          'Bạn có chắc chắn muốn hủy?',
+          style: TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Đóng',
+              style: TextStyle(color: Colors.grey, fontSize: 15),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Hủy yêu cầu',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // If user didn't confirm, just return (do nothing)
+    if (shouldDecline != true) return;
+
+    // User confirmed - decline the case and forward to next volunteer
+    try {
+      await ApiService.declineSosCase(
+        caseId,
+        'Không thể hỗ trợ lúc này', // Default reason
+      );
+      print('✅ Case $caseId declined, forwarded to next volunteer');
+    } catch (e) {
+      print('❌ Error declining case: $e');
+      // Show error to user
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+      );
+      return; // Don't close dialog if error
+    }
+
+    // Close the SOS alert dialog
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +111,7 @@ class SOSAlertDialog extends StatelessWidget {
             Align(
               alignment: Alignment.topRight,
               child: GestureDetector(
-                onTap: onDecline,
+                onTap: () => _handleDismiss(context),
                 child: const Icon(Icons.close, color: Colors.black54),
               ),
             ),
@@ -117,7 +192,7 @@ class SOSAlertDialog extends StatelessWidget {
                   child: SizedBox(
                     height: 50,
                     child: OutlinedButton(
-                      onPressed: onDecline,
+                      onPressed: () => _handleDismiss(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.grey,
                         side: const BorderSide(color: Colors.grey),

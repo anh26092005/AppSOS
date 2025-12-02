@@ -369,6 +369,21 @@ class ApiService {
     throw Exception(data['message'] ?? 'Không thể từ chối SOS case');
   }
 
+  /// Đánh dấu đã xem SOS case (soft dismiss - không từ chối)
+  static Future<Map<String, dynamic>> markSosCaseAsSeen(String caseId) async {
+    final url = Uri.parse('$baseUrl/sos/$caseId/seen');
+    final headers = await _headers();
+
+    final res = await http.post(url, headers: headers);
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return data;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể đánh dấu case là seen');
+  }
+
   /// Lấy chi tiết SOS case
   static Future<Map<String, dynamic>> getSosCaseDetails(String caseId) async {
     final url = Uri.parse('$baseUrl/sos/$caseId');

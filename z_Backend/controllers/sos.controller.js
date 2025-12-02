@@ -1121,6 +1121,54 @@ const getActiveSosCase = async (req, res, next) => {
   }
 };
 
+// TNV đánh dấu đã xem case (soft dismiss - không từ chối)
+const markSosCaseAsSeen = async (req, res, next) => {
+  try {
+    const { caseId } = req.params;
+    const volunteerId = req.user._id;
+
+    const sosCase = await findSosCaseByIdOrCode(caseId);
+    if (!sosCase) {
+      throw new AppError('SOS case not found', 404);
+    }
+
+    if (sosCase.status === 'CANCELLED') {
+      throw new AppError('SOS case has been cancelled', 400);
+    }
+
+    // Kiểm tra queue
+    const queueItem = await SosResponderQueue.findOne({
+      sosId: sosCase._id,
+      volunteerId,
+    });
+
+    if (!queueItem) {
+      throw new AppError('You are not in the responder queue for this case', 404);
+    }
+
+    if (queueItem.status === 'ACCEPTED') {
+      throw new AppError('You have already accepted this case', 400);
+    }
+
+    // Cập nhật queue thành SEEN (không phải DECLINED)
+    queueItem.status = 'SEEN';
+    queueItem.seenAt = new Date();
+    await queueItem.save();
+
+    console.log(`✅ Volunteer ${volunteerId} marked case ${caseId} as SEEN (soft dismiss)`);
+
+    res.json({
+      success: true,
+      data: {
+        message: 'Marked as seen',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   createSosCase,
   acceptSosCase,
@@ -1133,4 +1181,6 @@ module.exports = {
   findAndNotifyNearestVolunteers,
   getDirectionsUrl,
   getActiveSosCase,
+  markSosCaseAsSeen,
 };
+
