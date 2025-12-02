@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/avatar_upload_dialog.dart';
@@ -624,9 +625,7 @@ class _AccountPageState extends State<AccountPage> {
                       icon: Icons.info_outline,
                       title: 'Về ứng dụng',
                       subtitle: 'Thông tin phiên bản',
-                      onTap: () {
-                        // TODO: Navigate to about
-                      },
+                      onTap: () => _showAboutDialog(context),
                     ),
                     const SizedBox(height: 130),
                   ],
@@ -702,6 +701,290 @@ class _AccountPageState extends State<AccountPage> {
         ),
         onTap: onTap,
       ),
+    );
+  }
+
+  Future<void> _showAboutDialog(BuildContext context) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                      const Color(0xFF1A237E),
+                      const Color(0xFF0D47A1),
+                    ]
+                  : [
+                      const Color(0xFFFFF8E1),
+                      const Color(0xFFFFE082),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with App Icon
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // App Icon
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.phone_in_talk,
+                        size: 48,
+                        color: Color(0xFFF57F17),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // App Name
+                    Text(
+                      'SOS_App',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF0D47A1),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Version Info
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Phiên bản ${packageInfo.version} (${packageInfo.buildNumber})',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white70
+                              : const Color(0xFF1565C0),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Description
+                    Text(
+                      'Ứng dụng cứu hộ cộng đồng',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF0D47A1),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Kết nối người cần trợ giúp với tình nguyện viên gần nhất trong thời gian thực.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white70
+                            : Colors.grey.shade700,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Features Icons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildFeatureIcon(
+                          context,
+                          Icons.emergency,
+                          'SOS\nNhanh',
+                        ),
+                        _buildFeatureIcon(
+                          context,
+                          Icons.volunteer_activism,
+                          'Tình\nNguyện',
+                        ),
+                        _buildFeatureIcon(
+                          context,
+                          Icons.map,
+                          'Bản đồ\nThực tế',
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Credits
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.favorite,
+                                size: 16,
+                                color: Colors.red.shade400,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Phát triển bởi Team SOS_app:\nHoàng Nhớ,Quang Thi ,Hoàng Anh ',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white70
+                                      : Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '© 2024 SafeConnect. All rights reserved.',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white54
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Close Button
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24, left: 24, right: 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : const Color(0xFF0D47A1),
+                      foregroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF0D47A1)
+                          : Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 5,
+                    ),
+                    child: Text(
+                      'Đóng',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureIcon(BuildContext context, IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 28,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : const Color(0xFFF57F17),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.montserrat(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white70
+                : Colors.grey.shade700,
+            height: 1.2,
+          ),
+        ),
+      ],
     );
   }
 
