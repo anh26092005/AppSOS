@@ -224,7 +224,6 @@ class FCMService {
       if (message.data['type'] == 'SOS_CANCELLED') {
         final context = NavigationService.context;
 
-        // Clear active SOS banner if this volunteer had accepted it
         if (context != null) {
           try {
             final caseId = message.data['caseId'];
@@ -234,67 +233,75 @@ class FCMService {
             );
 
             // Check if this cancelled case is the one volunteer accepted
-            if (activeSosProvider.activeSosCase?['_id'] == caseId) {
+            // activeSosCase structure: { "case": { "_id": "...", ... }, ... }
+            final currentCaseId =
+                activeSosProvider.activeSosCase?['case']?['_id'];
+
+            print(
+              '🔍 Checking cancel match: Notif($caseId) vs Current($currentCaseId)',
+            );
+
+            if (currentCaseId == caseId) {
               print('🧹 Clearing active case from banner (cancelled by user)');
               await activeSosProvider.clearActiveCase();
+
+              // Only show dialog if we were actually working on this case
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: Row(
+                        children: [
+                          Icon(Icons.cancel, color: Colors.orange, size: 28),
+                          SizedBox(width: 12),
+                          Text(
+                            message.notification?.title ?? 'SOS đã bị hủy',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: Text(
+                        message.notification?.body ??
+                            'Người dùng đã hủy yêu cầu SOS',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Đóng dialog
+                            // Navigate về trang chủ
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              '/main',
+                              (route) => false,
+                            );
+                          },
+                          child: Text(
+                            'Đóng',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                print('✅ SOS Cancelled Dialog shown (for active case)');
+              }
+            } else {
+              print('ℹ️ Ignored SOS_CANCELLED for non-active case: $caseId');
             }
           } catch (e) {
-            print('❌ Error clearing active case: $e');
-          }
-        }
-
-        if (context != null) {
-          try {
-            showDialog(
-              context: context,
-              barrierDismissible: true,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  title: Row(
-                    children: [
-                      Icon(Icons.cancel, color: Colors.orange, size: 28),
-                      SizedBox(width: 12),
-                      Text(
-                        message.notification?.title ?? 'SOS đã bị hủy',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                  content: Text(
-                    message.notification?.body ??
-                        'Người dùng đã hủy yêu cầu SOS',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Đóng dialog
-                        // Navigate về trang chủ
-                        Navigator.of(
-                          context,
-                        ).pushNamedAndRemoveUntil('/main', (route) => false);
-                      },
-                      child: Text(
-                        'Đóng',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-            print('✅ SOS Cancelled Dialog shown');
-          } catch (e) {
-            print('❌ Error showing SOS Cancelled Dialog: $e');
+            print('❌ Error handling SOS cancel: $e');
           }
         } else {
           print('❌ Cannot show dialog: Context is null');
