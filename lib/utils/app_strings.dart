@@ -85,6 +85,37 @@ class AppStrings {
     'victimInfo': {'vi': 'Thông tin người cần cứu', 'en': 'Victim information'},
     'cannotOpenMaps': {'vi': 'Không thể mở Google Maps', 'en': 'Cannot open Google Maps'},
     
+    // SOS Emergency Screen
+    'emergencyRescue': {'vi': 'Cứu hộ khẩn cấp', 'en': 'Emergency Rescue'},
+    'emergencyInstructions': {'vi': 'Gửi vị trí và thông tin sự cố ngay lập tức.\nĐội cứu hộ sẽ hỗ trợ bạn.', 'en': 'Send location and incident info immediately.\nThe rescue team will assist you.'},
+    'detailInfo': {'vi': 'Thông tin chi tiết', 'en': 'Detailed Information'},
+    'yourName': {'vi': 'Họ và tên của bạn (*)', 'en': 'Your name (*)'},
+    'describeIncident': {'vi': 'Mô tả sự cố / Ghi chú thêm...', 'en': 'Describe incident / Additional notes...'},
+    'sendNow': {'vi': 'GỬI NGAY', 'en': 'SEND NOW'},
+    'holdToSend': {'vi': 'Giữ 3 giây để gửi', 'en': 'Hold 3 seconds to send'},
+    
+    // Emergency Types
+    'medical': {'vi': 'Y tế', 'en': 'Medical'},
+    'fire': {'vi': 'Cháy nổ', 'en': 'Fire'},
+    'accident': {'vi': 'Tai nạn', 'en': 'Accident'},
+    'crime': {'vi': 'Trộm cắp', 'en': 'Crime'},
+    'naturalDisaster': {'vi': 'Thiên tai', 'en': 'Natural Disaster'},
+    'other': {'vi': 'Khác', 'en': 'Other'},
+    
+    // SOS Validation & Feedback
+    'pleaseEnterName': {'vi': 'Vui lòng nhập tên của bạn', 'en': 'Please enter your name'},
+    'pleaseGetLocation': {'vi': 'Vui lòng lấy vị trí hiện tại trước', 'en': 'Please get current location first'},
+    'enableLocationService': {'vi': 'Vui lòng bật dịch vụ vị trí', 'en': 'Please enable location service'},
+    'locationDenied': {'vi': 'Quyền truy cập vị trí bị từ chối', 'en': 'Location permission denied'},
+    'locationDeniedPermanently': {'vi': 'Quyền truy cập vị trí bị từ chối vĩnh viễn', 'en': 'Location permission permanently denied'},
+    'yourLocation': {'vi': 'Vị trí của bạn', 'en': 'Your Location'},
+    'locationUpdated': {'vi': 'Đã cập nhật vị trí hiện tại', 'en': 'Current location updated'},
+    'locationError': {'vi': 'Lỗi khi lấy vị trí', 'en': 'Error getting location'},
+    'sosSuccess': {'vi': 'Đã gửi tín hiệu SOS thành công!', 'en': 'SOS signal sent successfully!'},
+    'sosError': {'vi': 'Lỗi gửi SOS', 'en': 'Error sending SOS'},
+    'name': {'vi': 'Tên', 'en': 'Name'},
+    
+    
     // Home Page
     'goodMorning': {'vi': 'Chúc bạn sáng vui vẻ', 'en': 'Good morning'},
     'goodAfternoon': {'vi': 'Chúc bạn chiều vui vẻ', 'en': 'Good afternoon'},
@@ -101,6 +132,8 @@ class AppStrings {
     'minutesAgo': {'vi': 'phút trước', 'en': 'minutes ago'},
     'hoursAgo': {'vi': 'giờ trước', 'en': 'hours ago'},
     'daysAgo': {'vi': 'ngày trước', 'en': 'days ago'},
+    'hello': {'vi': 'Xin chào', 'en': 'Hello'},
+    'newsFeed': {'vi': 'Bản tin', 'en': 'News Feed'},
     
     // Account Page Extra
     'underReviewContent': {'vi': 'Hồ sơ đăng ký tình nguyện viên của bạn đang được ban quản trị xem xét. Chúng tôi sẽ thông báo khi có kết quả.', 'en': 'Your volunteer application is being reviewed by the admin. We will notify you when there is a result.'},

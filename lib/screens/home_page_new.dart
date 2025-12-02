@@ -922,7 +922,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Xin chào, $userName',
+                                '${AppStrings.get('hello')}, $userName',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.montserrat(
@@ -1024,7 +1024,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 right: 20 * (1 - progress),
               ),
               child: Text(
-                'Bản tin',
+                AppStrings.get('newsFeed'),
                 style: GoogleFonts.montserrat(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w900,
