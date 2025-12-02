@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/active_sos_provider.dart';
 
 class SosEmergencyScreen extends StatefulWidget {
   const SosEmergencyScreen({super.key});
@@ -241,6 +243,11 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       final caseId = caseData?['_id'];
 
       if (caseId != null) {
+        // Update ActiveSosProvider to show banner
+        if (mounted) {
+          context.read<ActiveSosProvider>().setActiveCase(response['data']);
+        }
+
         // Navigate to searching screen
         Navigator.pushReplacementNamed(
           context,

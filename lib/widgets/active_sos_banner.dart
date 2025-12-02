@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/active_sos_provider.dart';
 import '../screens/sos_accepted_screen.dart';
+import '../screens/sos_found_screen.dart';
+import '../services/api_service.dart';
 
 class ActiveSosBanner extends StatefulWidget {
   const ActiveSosBanner({super.key});
@@ -12,6 +14,22 @@ class ActiveSosBanner extends StatefulWidget {
 
 class _ActiveSosBannerState extends State<ActiveSosBanner> {
   bool _isExpanded = false;
+  String? _currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = await ApiService.getCachedUser();
+    if (mounted && user != null) {
+      setState(() {
+        _currentUserId = user['id'] ?? user['_id'];
+      });
+    }
+  }
 
   String _getEmergencyIcon(String type) {
     switch (type) {
@@ -42,19 +60,56 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
     final sosCase = sosData['case'];
     final reporterInfo = sosCase['reporterId'];
     final emergencyType = sosCase['emergencyType'];
+    final status = sosCase['status'];
 
-    // Calculate distance if available
-    String distance = '---';
-    try {
-      final reporterLoc = sosCase['location']['coordinates'];
-      final volunteerLoc = sosCase['responderLocation']?['coordinates'];
+    // Determine role
+    final isReporter =
+        _currentUserId != null &&
+        (reporterInfo['_id'] == _currentUserId ||
+            reporterInfo['id'] == _currentUserId);
 
-      if (reporterLoc != null && volunteerLoc != null) {
-        // For now, just show placeholder - you can calculate actual distance if needed
-        distance = '1.2';
+    // Volunteer info (if accepted)
+    final acceptedBy = sosCase['acceptedBy'];
+    final volunteerName = acceptedBy != null ? acceptedBy['fullName'] : 'TNV';
+
+    // Display Logic
+    String title = 'ĐANG ỨNG CỨU';
+    String subtitle = '';
+    String distanceDisplay = '';
+    Color bannerColor = Colors.red;
+    IconData statusIcon = Icons.emergency;
+
+    if (isReporter) {
+      if (status == 'SEARCHING') {
+        title = 'ĐANG TÌM KIẾM';
+        subtitle = 'Đang tìm tình nguyện viên gần bạn...';
+        bannerColor = Colors.orange;
+        statusIcon = Icons.search;
+      } else if (status == 'ACCEPTED' || status == 'IN_PROGRESS') {
+        title = 'ĐÃ TÌM THẤY';
+        subtitle = '$volunteerName đang đến hỗ trợ bạn!';
+        bannerColor = Colors.green;
+        statusIcon = Icons.check_circle;
       }
-    } catch (e) {
-      print('Error calculating distance: $e');
+    } else {
+      // Volunteer View
+      title = 'ĐANG ỨNG CỨU';
+      subtitle =
+          '${reporterInfo['fullName']} • ${_getEmergencyIcon(emergencyType)} $emergencyType';
+
+      // Calculate distance if available
+      try {
+        final reporterLoc = sosCase['location']['coordinates'];
+        final volunteerLoc = sosCase['responderLocation']?['coordinates'];
+
+        if (reporterLoc != null && volunteerLoc != null) {
+          // Placeholder distance
+          distanceDisplay = ' • 1.2km';
+        }
+      } catch (e) {
+        print('Error calculating distance: $e');
+      }
+      subtitle += distanceDisplay;
     }
 
     return GestureDetector(
@@ -70,14 +125,14 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.red.shade400, Colors.red.shade600],
+            colors: [bannerColor.withOpacity(0.8), bannerColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.red.withValues(alpha: 0.4),
+              color: bannerColor.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -96,7 +151,7 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.sos, color: Colors.red, size: 24),
+                  child: Icon(Icons.sos, color: bannerColor, size: 24),
                 ),
 
                 const SizedBox(width: 12),
@@ -106,13 +161,13 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.emergency, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
+                          Icon(statusIcon, color: Colors.white, size: 16),
+                          const SizedBox(width: 4),
                           Text(
-                            'ĐANG ỨNG CỨU',
-                            style: TextStyle(
+                            title,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -122,7 +177,7 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${reporterInfo['fullName']} • ${_getEmergencyIcon(emergencyType)} $emergencyType • ${distance}km',
+                        subtitle,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -148,17 +203,38 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
             if (_isExpanded) ...[
               const Divider(color: Colors.white54, height: 24),
 
-              // Phone number
-              Row(
-                children: [
-                  const Icon(Icons.phone, color: Colors.white, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    reporterInfo['phone'] ?? 'N/A',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
+              // Additional Info
+              if (isReporter) ...[
+                // Reporter specific info
+                if (status == 'ACCEPTED' || status == 'IN_PROGRESS')
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, color: Colors.white, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        acceptedBy != null
+                            ? acceptedBy['phone'] ?? 'N/A'
+                            : 'N/A',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+              ] else ...[
+                // Volunteer specific info
+                Row(
+                  children: [
+                    const Icon(Icons.phone, color: Colors.white, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      reporterInfo['phone'] ?? 'N/A',
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: 12),
 
@@ -167,16 +243,30 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SosAcceptedScreen(sosData: sosData),
-                      ),
-                    );
+                    if (isReporter) {
+                      // Navigate to SOS Found Screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SosFoundScreen(
+                            caseId: sosCase['_id'],
+                            caseData: sosCase,
+                          ),
+                        ),
+                      );
+                    } else {
+                      // Navigate to SOS Accepted Screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SosAcceptedScreen(sosData: sosData),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: Colors.red,
+                    foregroundColor: bannerColor,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

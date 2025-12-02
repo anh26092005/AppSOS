@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/active_sos_provider.dart';
 
 class SosFoundScreen extends StatefulWidget {
   final String caseId;
@@ -292,6 +294,11 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
           duration: Duration(seconds: 2),
         ),
       );
+
+      // Clear active case in provider
+      if (mounted) {
+        context.read<ActiveSosProvider>().clearActiveCase();
+      }
 
       await Future.delayed(const Duration(milliseconds: 300));
 
