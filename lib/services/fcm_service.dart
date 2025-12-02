@@ -168,8 +168,9 @@ class FCMService {
         }
       }
 
+      // ❌ DISABLED: Dialog này được thay thế bằng SosFoundScreen (user tự động navigate qua polling)
       // Hiển thị SOS Accepted Dialog nếu TNV chấp nhận case
-      if (message.data['type'] == 'SOS_ACCEPTED') {
+      if (false && message.data['type'] == 'SOS_ACCEPTED') {
         ApiService.getCachedUser().then((user) {
           print('🔍 Checking user role for SOS_ACCEPTED dialog');
           print('User: $user');
