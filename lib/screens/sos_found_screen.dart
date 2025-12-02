@@ -18,6 +18,7 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
   Timer? _pollingTimer;
   Map<String, dynamic>? _currentCaseData;
   bool _isLoading = true;
+  bool _isCancelling = false;
   double? _distanceInKm;
   String? _estimatedTime;
 
@@ -73,24 +74,53 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: const Text(
-                'Tình nguyện viên đã hủy',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Tình nguyện viên đã hủy',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
               content: const Text(
-                'Tình nguyện viên đã hủy. Hệ thống đang tìm người khác hỗ trợ bạn...',
+                'Tình nguyện viên đã hủy yêu cầu. Bạn có muốn tiếp tục tìm kiếm tình nguyện viên khác không?',
               ),
               actions: [
-                ElevatedButton(
+                // Nút "Về trang chủ"
+                OutlinedButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamedAndRemoveUntil('/main', (route) => false);
                   },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    side: BorderSide(color: Colors.grey.shade300, width: 2),
+                  ),
+                  child: const Text('Về trang chủ'),
+                ),
+                // Nút "Tìm TNV khác"
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back to searching screen
+                  },
+                  icon: const Icon(Icons.search),
+                  label: const Text('Tìm TNV khác'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Đồng ý'),
                 ),
               ],
             ),
@@ -198,6 +228,122 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Không thể gọi điện thoại'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _cancelSos() async {
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Hủy yêu cầu SOS',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn hủy yêu cầu SOS này?\n\nTình nguyện viên đang đến hỗ trợ bạn.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Không'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Hủy yêu cầu'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldCancel != true) return;
+
+    // Cancel polling timer FIRST
+    _pollingTimer?.cancel();
+
+    setState(() {
+      _isCancelling = true;
+    });
+
+    try {
+      print('🔄 Cancelling SOS case: ${widget.caseId}');
+      final response = await ApiService.cancelSosCase(
+        widget.caseId,
+        'Người dùng hủy yêu cầu',
+      );
+
+      print('✅ Cancel response: $response');
+
+      if (!mounted) return;
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã hủy yêu cầu SOS'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (!mounted) return;
+
+      // Navigate to main screen
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamedAndRemoveUntil('/main', (route) => false);
+    } catch (e) {
+      print('❌ Error cancelling SOS: $e');
+      if (!mounted) return;
+
+      setState(() {
+        _isCancelling = false;
+      });
+
+      // Restart polling if cancel failed
+      _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        _fetchCaseDetails();
+      });
+
+      final errorMessage = e.toString();
+
+      // Check for specific error messages
+      if (errorMessage.contains('Cannot cancel SOS case in current status')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Không thể hủy yêu cầu lúc này. Tình nguyện viên có thể đã hoàn thành hoặc đang xử lý.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else if (errorMessage.contains('401') ||
+          errorMessage.contains('Unauthorized')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi hủy: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -540,6 +686,41 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
+                  ),
+                ),
+
+              const SizedBox(height: 12),
+
+              // Cancel button - only show if case is still ACCEPTED (not RESOLVED yet)
+              if (_currentCaseData?['status'] == 'ACCEPTED')
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _isCancelling ? null : _cancelSos,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red, width: 2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _isCancelling
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.red,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Hủy yêu cầu',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
 

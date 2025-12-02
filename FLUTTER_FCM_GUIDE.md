@@ -13,6 +13,8 @@ Tài liệu này hướng dẫn chi tiết cách tích hợp FCM vào Flutter ap
 5. [Test và Troubleshooting](#5-test-và-troubleshooting)
 
 ---
+dart run flutter_launcher_icons
+pun get
 
 ## 1. Cài đặt và cấu hình
 
