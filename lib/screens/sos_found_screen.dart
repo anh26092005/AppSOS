@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 
 class SosFoundScreen extends StatefulWidget {
@@ -18,6 +19,8 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
   Map<String, dynamic>? _currentCaseData;
   bool _isLoading = true;
   bool _isCancelling = false;
+  double? _distanceInKm;
+  String? _estimatedTime;
 
   @override
   void initState() {
@@ -54,6 +57,9 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         _currentCaseData = caseData;
         _isLoading = false;
       });
+
+      // Calculate distance
+      _calculateDistance();
 
       final status = caseData['status'];
 
@@ -150,9 +156,7 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
             ),
           ],
         ),
-        content: const Text(
-          'Ứng cứu đã hoàn thành! Cảm ơn bạn đã sử dụng dịch vụ Safe Connect.',
-        ),
+        content: const Text('Ứng cứu đã hoàn thành! .'),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -168,6 +172,50 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _calculateDistance() async {
+    try {
+      // Get user's current position
+      Position userPosition = await Geolocator.getCurrentPosition();
+
+      // Get volunteer's position from caseData
+      final volunteerLoc =
+          _currentCaseData?['responderLocation']?['coordinates'];
+
+      if (volunteerLoc != null &&
+          volunteerLoc is List &&
+          volunteerLoc.length >= 2) {
+        final volunteerLat = volunteerLoc[1];
+        final volunteerLng = volunteerLoc[0];
+
+        // Calculate distance in meters
+        double distanceInMeters = Geolocator.distanceBetween(
+          userPosition.latitude,
+          userPosition.longitude,
+          volunteerLat,
+          volunteerLng,
+        );
+
+        // Convert to kilometers
+        double distanceKm = distanceInMeters / 1000;
+
+        // Calculate ETA (assuming 40 km/h average speed)
+        double timeInHours = distanceKm / 40;
+        int timeInMinutes = (timeInHours * 60).round();
+
+        if (mounted) {
+          setState(() {
+            _distanceInKm = distanceKm;
+            _estimatedTime = timeInMinutes > 0
+                ? '~$timeInMinutes phút'
+                : 'Đang đến';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error calculating distance: $e');
+    }
   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
@@ -343,6 +391,15 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+            tooltip: 'Về trang chủ',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -535,6 +592,75 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
                   ],
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // Distance and ETA card
+              if (_distanceInKm != null)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.blue.shade50, Colors.blue.shade100],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.shade300, width: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: Colors.blue.shade700,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cách bạn: ${_distanceInKm!.toStringAsFixed(1)} km',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (_estimatedTime != null) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.timer_outlined,
+                                    color: Colors.grey.shade600,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Dự kiến: $_estimatedTime',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
               const Spacer(),
 
