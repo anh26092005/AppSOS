@@ -102,7 +102,7 @@ class FCMService {
   /// Setup notification handlers
   static void setupNotificationHandlers() {
     // Xử lý notification khi app đang foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       if (kDebugMode) {
         print(
           '═══════════════════════════════════════════════════════════════',
@@ -222,6 +222,26 @@ class FCMService {
       // Hiển thị Alert khi SOS bị hủy
       if (message.data['type'] == 'SOS_CANCELLED') {
         final context = NavigationService.context;
+
+        // Clear active SOS banner if this volunteer had accepted it
+        if (context != null) {
+          try {
+            final caseId = message.data['caseId'];
+            final activeSosProvider = Provider.of<ActiveSosProvider>(
+              context,
+              listen: false,
+            );
+
+            // Check if this cancelled case is the one volunteer accepted
+            if (activeSosProvider.activeSosCase?['_id'] == caseId) {
+              print('🧹 Clearing active case from banner (cancelled by user)');
+              await activeSosProvider.clearActiveCase();
+            }
+          } catch (e) {
+            print('❌ Error clearing active case: $e');
+          }
+        }
+
         if (context != null) {
           try {
             showDialog(
