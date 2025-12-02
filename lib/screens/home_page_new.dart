@@ -305,7 +305,7 @@ class _HomePageNewState extends State<HomePageNew> {
                   ),
                 )
               else if (_posts.isEmpty && !_isLoadingPosts)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
                     child: Text(
                       AppStrings.get('noPosts'),

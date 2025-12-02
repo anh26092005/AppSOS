@@ -640,12 +640,10 @@ class _AccountPageState extends State<AccountPage> {
           ),
         ),
       ),
-      ),
         );
       },
     );
   }
-}
 
   Widget _buildAccountTile(
     BuildContext context, {
