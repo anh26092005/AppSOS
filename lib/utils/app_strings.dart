@@ -84,6 +84,26 @@ class AppStrings {
     'backToHome': {'vi': 'Về trang chủ', 'en': 'Back to home'},
     'victimInfo': {'vi': 'Thông tin người cần cứu', 'en': 'Victim information'},
     'cannotOpenMaps': {'vi': 'Không thể mở Google Maps', 'en': 'Cannot open Google Maps'},
+    
+    // Home Page
+    'goodMorning': {'vi': 'Chúc bạn sáng vui vẻ', 'en': 'Good morning'},
+    'goodAfternoon': {'vi': 'Chúc bạn chiều vui vẻ', 'en': 'Good afternoon'},
+    'goodEvening': {'vi': 'Chúc bạn tối vui vẻ', 'en': 'Good evening'},
+    'noPosts': {'vi': 'Chưa có bài viết nào', 'en': 'No posts yet'},
+    'weatherError': {'vi': 'Không thể tải thông tin thời tiết', 'en': 'Cannot load weather info'},
+    'weatherAt': {'vi': 'Thời tiết tại', 'en': 'Weather at'},
+    'rain': {'vi': 'Mưa', 'en': 'Rain'},
+    'wind': {'vi': 'Gió', 'en': 'Wind'},
+    'imageError': {'vi': 'Lỗi tải ảnh', 'en': 'Image load error'},
+    'readDetails': {'vi': 'Xem chi tiết', 'en': 'Read details'},
+    'likeError': {'vi': 'Không thể cập nhật lượt thích', 'en': 'Cannot update like'},
+    'justNow': {'vi': 'Vừa xong', 'en': 'Just now'},
+    'minutesAgo': {'vi': 'phút trước', 'en': 'minutes ago'},
+    'hoursAgo': {'vi': 'giờ trước', 'en': 'hours ago'},
+    'daysAgo': {'vi': 'ngày trước', 'en': 'days ago'},
+    
+    // Account Page Extra
+    'underReviewContent': {'vi': 'Hồ sơ đăng ký tình nguyện viên của bạn đang được ban quản trị xem xét. Chúng tôi sẽ thông báo khi có kết quả.', 'en': 'Your volunteer application is being reviewed by the admin. We will notify you when there is a result.'},
   };
   
   // Lấy string theo key

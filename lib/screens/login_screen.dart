@@ -6,6 +6,9 @@ import '../services/fcm_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_api.dart';
 import '../widgets/permission_dialog.dart';
+import '../utils/app_strings.dart';
+import '../providers/locale_provider.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -80,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await ApiService.setRememberMe(_rememberMe);
 
         if (!mounted) return;
-        _showCustomSnackBar(context, 'Đăng nhập thành công ✅');
+        _showCustomSnackBar(context, AppStrings.get('loginSuccess'));
 
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/main');
@@ -94,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         _showCustomSnackBar(
           context,
-          'Sai thông tin đăng nhập ❌',
+          AppStrings.get('loginError'),
           isError: true,
         );
       }
@@ -152,310 +155,314 @@ class _LoginScreenState extends State<LoginScreen> {
       Color(0xFF00C6FB), // Light Blue
     ];
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Background Gradient
-          Container(
-            width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.55,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: gradientColors,
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Pattern Overlay (Image)
-                Positioned.fill(
-                  child: Opacity(
-                    opacity: 0.08, // Adjust opacity as needed
-                    child: Image.asset(
-                      'assets/images/login_pattern.png',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const SizedBox(), // Hide if image not found
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              // Background Gradient
+              Container(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.55,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradientColors,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Pattern Overlay (Image)
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.08, // Adjust opacity as needed
+                        child: Image.asset(
+                          'assets/images/login_pattern.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const SizedBox(), // Hide if image not found
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                // Content
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.shield_rounded,
-                          size: 64,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Đăng Nhập',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Chào mừng bạn!',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 15,
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 140,
-                      ), // Increased space to move content up
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // White Card
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.65,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(32),
-                  topRight: Radius.circular(32),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Google Login Button (Modern Style)
-                      OutlinedButton.icon(
-                        onPressed: _handleGoogleSignIn,
-                        icon: Image.asset(
-                          'assets/images/google.png',
-                          height: 24,
-                        ),
-                        label: Text(
-                          'Đăng nhập với Google',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: Colors.grey.shade200),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          backgroundColor: Colors.white,
-                          elevation: 0,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Divider
-                      Row(
+                    // Content
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(child: Divider(color: Colors.grey.shade200)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'Hoặc',
-                              style: GoogleFonts.montserrat(
-                                color: Colors.grey.shade400,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.shield_rounded,
+                              size: 64,
+                              color: Colors.white,
                             ),
                           ),
-                          Expanded(child: Divider(color: Colors.grey.shade200)),
+                          const SizedBox(height: 20),
+                          Text(
+                            AppStrings.get('login'),
+                            style: GoogleFonts.montserrat(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            AppStrings.get('welcome'),
+                            style: GoogleFonts.montserrat(
+                              fontSize: 15,
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 140,
+                          ), // Increased space to move content up
                         ],
                       ),
-                      const SizedBox(height: 24),
+                    ),
+                  ],
+                ),
+              ),
 
-                      // Email/Phone Input
-                      _buildModernInput(
-                        controller: _emailOrPhoneController,
-                        hint: 'Email hoặc số điện thoại',
-                        icon: Icons.email_outlined,
+              // White Card
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * 0.65,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, -5),
                       ),
-                      const SizedBox(height: 16),
+                    ],
+                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Google Login Button (Modern Style)
+                          OutlinedButton.icon(
+                            onPressed: _handleGoogleSignIn,
+                            icon: Image.asset(
+                              'assets/images/google.png',
+                              height: 24,
+                            ),
+                            label: Text(
+                              AppStrings.get('loginWithGoogle'),
+                              style: GoogleFonts.montserrat(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: Colors.grey.shade200),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              backgroundColor: Colors.white,
+                              elevation: 0,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
 
-                      // Password Input
-                      _buildModernInput(
-                        controller: _passwordController,
-                        hint: 'Mật khẩu',
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                        obscureText: _obscurePassword,
-                        onTogglePassword: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-
-                      // Remember Me & Forgot Password
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: Checkbox(
-                                    value: _rememberMe,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _rememberMe = value ?? false;
-                                      });
-                                    },
-                                    activeColor: const Color(0xFF005BEA),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    side: BorderSide(
-                                      color: Colors.grey.shade300,
-                                      width: 1.5,
-                                    ),
+                          // Divider
+                          Row(
+                            children: [
+                              Expanded(child: Divider(color: Colors.grey.shade200)),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  AppStrings.get('or'),
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.grey.shade400,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Ghi nhớ',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade600,
-                                    fontWeight: FontWeight.w500,
+                              ),
+                              Expanded(child: Divider(color: Colors.grey.shade200)),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Email/Phone Input
+                          _buildModernInput(
+                            controller: _emailOrPhoneController,
+                            hint: AppStrings.get('emailOrPhone'),
+                            icon: Icons.email_outlined,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Password Input
+                          _buildModernInput(
+                            controller: _passwordController,
+                            hint: AppStrings.get('password'),
+                            icon: Icons.lock_outline,
+                            isPassword: true,
+                            obscureText: _obscurePassword,
+                            onTogglePassword: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+
+                          // Remember Me & Forgot Password
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 24,
+                                      width: 24,
+                                      child: Checkbox(
+                                        value: _rememberMe,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _rememberMe = value ?? false;
+                                          });
+                                        },
+                                        activeColor: const Color(0xFF005BEA),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        side: BorderSide(
+                                          color: Colors.grey.shade300,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      AppStrings.get('rememberMe'),
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                TextButton(
+                                  onPressed: () {},
+                                  child: Text(
+                                    AppStrings.get('forgotPassword'),
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 14,
+                                      color: const Color(0xFF005BEA),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            TextButton(
-                              onPressed: () {},
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Login Button (Gradient)
+                          Container(
+                            height: 54,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: gradientColors,
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF005BEA,
+                                  ).withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _handleLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
                               child: Text(
-                                'Quên mật khẩu?',
+                                AppStrings.get('login'),
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 14,
-                                  color: const Color(0xFF005BEA),
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                          ),
+                          const SizedBox(height: 24),
 
-                      // Login Button (Gradient)
-                      Container(
-                        height: 54,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: gradientColors,
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF005BEA,
-                              ).withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Text(
-                            'Đăng Nhập',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Sign Up Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Chưa có tài khoản? ',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacementNamed(
-                                context,
-                                '/signup',
-                              );
-                            },
-                            child: Text(
-                              'Đăng ký ngay',
-                              style: GoogleFonts.montserrat(
-                                color: const Color(0xFF005BEA),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                          // Sign Up Link
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                AppStrings.get('noAccount'),
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 14,
+                                ),
                               ),
-                            ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/signup',
+                                  );
+                                },
+                                child: Text(
+                                  AppStrings.get('signupNow'),
+                                  style: GoogleFonts.montserrat(
+                                    color: const Color(0xFF005BEA),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -505,7 +512,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Vui lòng nhập thông tin';
+            return AppStrings.get('pleaseEnterInfo');
           }
           return null;
         },
