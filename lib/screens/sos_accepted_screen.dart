@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
+import '../providers/active_sos_provider.dart';
 
 class SosAcceptedScreen extends StatefulWidget {
   final Map<String, dynamic> sosData;
@@ -18,6 +22,9 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
   late final Map<String, dynamic> _reporterInfo;
   late final LatLng _reporterPosition;
   late final LatLng _volunteerPosition;
+  Timer? _distanceTimer;
+  double? _distanceInKm;
+  String? _estimatedTime;
 
   @override
   void initState() {
@@ -45,6 +52,51 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
     _volunteerPosition = LatLng(volunteerLoc[1], volunteerLoc[0]);
     print('Volunteer position: $_volunteerPosition');
     print('═══════════════════════════════════════');
+
+    // Calculate distance initially and every 10 seconds
+    _calculateDistance();
+    _distanceTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _calculateDistance();
+    });
+  }
+
+  @override
+  void dispose() {
+    _distanceTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _calculateDistance() async {
+    try {
+      // Get volunteer's current position
+      Position volunteerCurrentPosition = await Geolocator.getCurrentPosition();
+
+      // Calculate distance between volunteer and reporter
+      double distanceInMeters = Geolocator.distanceBetween(
+        volunteerCurrentPosition.latitude,
+        volunteerCurrentPosition.longitude,
+        _reporterPosition.latitude,
+        _reporterPosition.longitude,
+      );
+
+      // Convert to kilometers
+      double distanceKm = distanceInMeters / 1000;
+
+      // Calculate ETA (assuming 40 km/h average speed)
+      double timeInHours = distanceKm / 40;
+      int timeInMinutes = (timeInHours * 60).round();
+
+      if (mounted) {
+        setState(() {
+          _distanceInKm = distanceKm;
+          _estimatedTime = timeInMinutes > 0
+              ? '~$timeInMinutes phút'
+              : 'Đã đến';
+        });
+      }
+    } catch (e) {
+      print('Error calculating distance: $e');
+    }
   }
 
   Future<void> _openDirections() async {
@@ -131,6 +183,10 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
       await ApiService.completeSosCase(caseId);
 
       if (!mounted) return;
+
+      // Clear from provider
+      await context.read<ActiveSosProvider>().clearActiveCase();
+
       Navigator.pop(context); // Close loading
 
       // Show success dialog
@@ -354,6 +410,78 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                       label: 'Pin thiết bị',
                       value: '${_case['batteryLevel']}%',
                     ),
+
+                  // Distance and ETA card
+                  if (_distanceInKm != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.blue.shade50, Colors.blue.shade100],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.blue.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.navigation,
+                              color: Colors.blue.shade700,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Khoảng cách: ${_distanceInKm!.toStringAsFixed(1)} km',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                if (_estimatedTime != null) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.timer_outlined,
+                                        color: Colors.grey.shade600,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Dự kiến: $_estimatedTime',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 

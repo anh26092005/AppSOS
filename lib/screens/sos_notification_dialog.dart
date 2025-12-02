@@ -7,6 +7,7 @@ class SosNotificationDialog extends StatefulWidget {
   final String caseCode;
   final String emergencyType;
   final String distance;
+  final Function(Map<String, dynamic>)? onAccepted;
 
   const SosNotificationDialog({
     super.key,
@@ -14,6 +15,7 @@ class SosNotificationDialog extends StatefulWidget {
     required this.caseCode,
     required this.emergencyType,
     required this.distance,
+    this.onAccepted,
   });
 
   @override
@@ -56,6 +58,11 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
       print('═══════════════════════════════════════');
 
       if (!mounted) return;
+
+      // Call callback to save to provider
+      if (widget.onAccepted != null) {
+        widget.onAccepted!(response['data']);
+      }
 
       setState(() => _isLoading = false);
 

@@ -13,6 +13,7 @@ import '../services/post_service.dart';
 import '../services/api_service.dart';
 import '../widgets/skeleton_widgets.dart';
 import '../widgets/skeleton_post.dart';
+import '../widgets/active_sos_banner.dart';
 import 'post_detail_screen.dart';
 
 class HomePageNew extends StatefulWidget {
@@ -286,6 +287,9 @@ class _HomePageNewState extends State<HomePageNew> {
                   lunarDate: _lunarDate,
                 ),
               ),
+
+              // Active SOS Banner
+              const SliverToBoxAdapter(child: ActiveSosBanner()),
 
               // Posts Feed
               if (_posts.isEmpty && _isLoadingPosts)

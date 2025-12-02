@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
+import '../providers/active_sos_provider.dart';
 
 class SosFoundScreen extends StatefulWidget {
   final String caseId;
@@ -17,6 +20,9 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
   Timer? _pollingTimer;
   Map<String, dynamic>? _currentCaseData;
   bool _isLoading = true;
+  bool _isCancelling = false;
+  double? _distanceInKm;
+  String? _estimatedTime;
 
   @override
   void initState() {
@@ -54,6 +60,9 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         _isLoading = false;
       });
 
+      // Calculate distance
+      _calculateDistance();
+
       final status = caseData['status'];
 
       // Check if volunteer cancelled
@@ -67,24 +76,53 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: const Text(
-                'Tình nguyện viên đã hủy',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Tình nguyện viên đã hủy',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
               content: const Text(
-                'Tình nguyện viên đã hủy. Hệ thống đang tìm người khác hỗ trợ bạn...',
+                'Tình nguyện viên đã hủy yêu cầu. Bạn có muốn tiếp tục tìm kiếm tình nguyện viên khác không?',
               ),
               actions: [
-                ElevatedButton(
+                // Nút "Về trang chủ"
+                OutlinedButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamedAndRemoveUntil('/main', (route) => false);
                   },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    side: BorderSide(color: Colors.grey.shade300, width: 2),
+                  ),
+                  child: const Text('Về trang chủ'),
+                ),
+                // Nút "Tìm TNV khác"
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back to searching screen
+                  },
+                  icon: const Icon(Icons.search),
+                  label: const Text('Tìm TNV khác'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Đồng ý'),
                 ),
               ],
             ),
@@ -120,9 +158,7 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
             ),
           ],
         ),
-        content: const Text(
-          'Ứng cứu đã hoàn thành! Cảm ơn bạn đã sử dụng dịch vụ Safe Connect.',
-        ),
+        content: const Text('Ứng cứu đã hoàn thành! .'),
         actions: [
           ElevatedButton(
             onPressed: () {
@@ -140,6 +176,50 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
     );
   }
 
+  Future<void> _calculateDistance() async {
+    try {
+      // Get user's current position
+      Position userPosition = await Geolocator.getCurrentPosition();
+
+      // Get volunteer's position from caseData
+      final volunteerLoc =
+          _currentCaseData?['responderLocation']?['coordinates'];
+
+      if (volunteerLoc != null &&
+          volunteerLoc is List &&
+          volunteerLoc.length >= 2) {
+        final volunteerLat = volunteerLoc[1];
+        final volunteerLng = volunteerLoc[0];
+
+        // Calculate distance in meters
+        double distanceInMeters = Geolocator.distanceBetween(
+          userPosition.latitude,
+          userPosition.longitude,
+          volunteerLat,
+          volunteerLng,
+        );
+
+        // Convert to kilometers
+        double distanceKm = distanceInMeters / 1000;
+
+        // Calculate ETA (assuming 40 km/h average speed)
+        double timeInHours = distanceKm / 40;
+        int timeInMinutes = (timeInHours * 60).round();
+
+        if (mounted) {
+          setState(() {
+            _distanceInKm = distanceKm;
+            _estimatedTime = timeInMinutes > 0
+                ? '~$timeInMinutes phút'
+                : 'Đang đến';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error calculating distance: $e');
+    }
+  }
+
   Future<void> _makePhoneCall(String phoneNumber) async {
     final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
 
@@ -150,6 +230,127 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Không thể gọi điện thoại'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _cancelSos() async {
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Hủy yêu cầu SOS',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn hủy yêu cầu SOS này?\n\nTình nguyện viên đang đến hỗ trợ bạn.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Không'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Hủy yêu cầu'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldCancel != true) return;
+
+    // Cancel polling timer FIRST
+    _pollingTimer?.cancel();
+
+    setState(() {
+      _isCancelling = true;
+    });
+
+    try {
+      print('🔄 Cancelling SOS case: ${widget.caseId}');
+      final response = await ApiService.cancelSosCase(
+        widget.caseId,
+        'Người dùng hủy yêu cầu',
+      );
+
+      print('✅ Cancel response: $response');
+
+      if (!mounted) return;
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã hủy yêu cầu SOS'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Clear active case in provider
+      if (mounted) {
+        context.read<ActiveSosProvider>().clearActiveCase();
+      }
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (!mounted) return;
+
+      // Navigate to main screen
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamedAndRemoveUntil('/main', (route) => false);
+    } catch (e) {
+      print('❌ Error cancelling SOS: $e');
+      if (!mounted) return;
+
+      setState(() {
+        _isCancelling = false;
+      });
+
+      // Restart polling if cancel failed
+      _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        _fetchCaseDetails();
+      });
+
+      final errorMessage = e.toString();
+
+      // Check for specific error messages
+      if (errorMessage.contains('Cannot cancel SOS case in current status')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Không thể hủy yêu cầu lúc này. Tình nguyện viên có thể đã hoàn thành hoặc đang xử lý.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else if (errorMessage.contains('401') ||
+          errorMessage.contains('Unauthorized')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi hủy: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -197,6 +398,15 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home_outlined),
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+            tooltip: 'Về trang chủ',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -390,6 +600,75 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
                 ),
               ),
 
+              const SizedBox(height: 16),
+
+              // Distance and ETA card
+              if (_distanceInKm != null)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.blue.shade50, Colors.blue.shade100],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.shade300, width: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: Colors.blue.shade700,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cách bạn: ${_distanceInKm!.toStringAsFixed(1)} km',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (_estimatedTime != null) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.timer_outlined,
+                                    color: Colors.grey.shade600,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Dự kiến: $_estimatedTime',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
               const Spacer(),
 
               // Call button
@@ -414,6 +693,41 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
+                  ),
+                ),
+
+              const SizedBox(height: 12),
+
+              // Cancel button - only show if case is still ACCEPTED (not RESOLVED yet)
+              if (_currentCaseData?['status'] == 'ACCEPTED')
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton(
+                    onPressed: _isCancelling ? null : _cancelSos,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red, width: 2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _isCancelling
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.red,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Hủy yêu cầu',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
 

@@ -9,6 +9,7 @@ const {
   getSosCases,
   getDirections,
   getActiveSosCase,
+  markSosCaseAsSeen,
 } = require('../controllers/sos.controller');
 const { authenticate } = require('../middleware/auth');
 
@@ -37,6 +38,9 @@ router.post('/:caseId/cancel', cancelSosCase);
 
 // TNV từ chối case
 router.post('/:caseId/decline', declineSosCase);
+
+// TNV đánh dấu đã xem case (soft dismiss)
+router.post('/:caseId/seen', markSosCaseAsSeen);
 
 // TNV hoàn thành case
 router.post('/:caseId/complete', completeSosCase);

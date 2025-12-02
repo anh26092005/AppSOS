@@ -12,6 +12,7 @@ import 'utils/navigation_service.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
+import 'providers/active_sos_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 Future<void> main() async {
@@ -38,6 +39,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => ActiveSosProvider()),
       ],
       child: const SOSApp(),
     ),
@@ -90,6 +92,14 @@ class _AppEntryState extends State<_AppEntry> {
     super.initState();
     _sessionFuture = _checkSession();
     _registerTokenIfLoggedIn();
+    _loadActiveCase();
+  }
+
+  // Load active SOS case from storage
+  Future<void> _loadActiveCase() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ActiveSosProvider>().loadActiveCaseFromStorage();
+    });
   }
 
   Future<int> _checkSession() async {
