@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/active_sos_provider.dart';
+import '../utils/app_strings.dart';
+import '../providers/locale_provider.dart';
 
 class SosEmergencyScreen extends StatefulWidget {
   const SosEmergencyScreen({super.key});
@@ -21,7 +23,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
   late AnimationController _holdController;
   Position? _currentPosition;
   bool _isLoadingLocation = false;
-  String _selectedEmergencyType = 'Y tế';
+  late String _selectedEmergencyType;
 
   LatLng _initialPosition = const LatLng(
     10.8231,
@@ -30,14 +32,14 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
 
   List<Marker> _markers = [];
 
-  // Map từ giá trị hiển thị (tiếng Việt) sang giá trị API (tiếng Anh)
-  final Map<String, String> _emergencyTypesMap = {
-    'Y tế': 'MEDICAL',
-    'Cháy nổ': 'FIRE',
-    'Tai nạn': 'ACCIDENT',
-    'Trộm cắp': 'CRIME',
-    'Thiên tai': 'NATURAL_DISASTER',
-    'Khác': 'OTHER',
+  // Map từ giá trị hiển thị sang giá trị API (tiếng Anh)
+  Map<String, String> get _emergencyTypesMap => {
+    AppStrings.get('medical'): 'MEDICAL',
+    AppStrings.get('fire'): 'FIRE',
+    AppStrings.get('accident'): 'ACCIDENT',
+    AppStrings.get('crime'): 'CRIME',
+    AppStrings.get('naturalDisaster'): 'NATURAL_DISASTER',
+    AppStrings.get('other'): 'OTHER',
   };
 
   // List of emergency types for dropdown
@@ -46,6 +48,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
   @override
   void initState() {
     super.initState();
+    _selectedEmergencyType = AppStrings.get('medical');
     _getCurrentLocation();
     _holdController = AnimationController(
       vsync: this,
@@ -329,9 +332,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                           size: 32,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Cứu hộ khẩn cấp',
-                          style: TextStyle(
+                        Text(
+                          AppStrings.get('emergencyRescue'),
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -340,9 +343,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Gửi vị trí và thông tin sự cố ngay lập tức.\nĐội cứu hộ sẽ hỗ trợ bạn.',
-                      style: TextStyle(
+                    Text(
+                      AppStrings.get('emergencyInstructions'),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
@@ -434,9 +437,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Thông tin chi tiết',
-                              style: TextStyle(
+                            Text(
+                              AppStrings.get('detailInfo'),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFF333333),
@@ -447,7 +450,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                             // Name Input
                             _buildTextField(
                               controller: _nameController,
-                              hintText: 'Họ và tên của bạn (*)',
+                              hintText: AppStrings.get('yourName'),
                               icon: Icons.person_outline,
                             ),
                             const SizedBox(height: 16),
@@ -480,27 +483,26 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                                   items: _emergencyTypes.map((String type) {
                                     IconData icon;
                                     Color color;
-                                    switch (type) {
-                                      case 'Y tế':
-                                        icon = Icons.medical_services_outlined;
-                                        color = Colors.red;
-                                        break;
-                                      case 'Tai nạn':
-                                        icon = Icons.car_crash_outlined;
-                                        color = Colors.orange;
-                                        break;
-                                      case 'Cháy nổ':
-                                        icon = Icons
-                                            .local_fire_department_outlined;
-                                        color = Colors.deepOrange;
-                                        break;
-                                      case 'Trộm cắp':
-                                        icon = Icons.security_outlined;
-                                        color = Colors.purple;
-                                        break;
-                                      default:
-                                        icon = Icons.warning_amber_rounded;
-                                        color = Colors.grey;
+                                    
+                                    // Match against localized strings
+                                    if (type == AppStrings.get('medical')) {
+                                      icon = Icons.medical_services_outlined;
+                                      color = Colors.red;
+                                    } else if (type == AppStrings.get('accident')) {
+                                      icon = Icons.car_crash_outlined;
+                                      color = Colors.orange;
+                                    } else if (type == AppStrings.get('fire')) {
+                                      icon = Icons.local_fire_department_outlined;
+                                      color = Colors.deepOrange;
+                                    } else if (type == AppStrings.get('crime')) {
+                                      icon = Icons.security_outlined;
+                                      color = Colors.purple;
+                                    } else if (type == AppStrings.get('naturalDisaster')) {
+                                      icon = Icons.tsunami_outlined;
+                                      color = Colors.blue;
+                                    } else {
+                                      icon = Icons.warning_amber_rounded;
+                                      color = Colors.grey;
                                     }
                                     return DropdownMenuItem<String>(
                                       value: type,
@@ -549,7 +551,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                             // Description Input
                             _buildTextField(
                               controller: _descriptionController,
-                              hintText: 'Mô tả sự cố / Ghi chú thêm...',
+                              hintText: AppStrings.get('describeIncident'),
                               icon: Icons.notes_rounded,
                               maxLines: 3,
                             ),
@@ -658,9 +660,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                                               size: 48,
                                               color: Colors.white,
                                             ),
-                                            const Text(
-                                              'GỬI NGAY',
-                                              style: TextStyle(
+                                            Text(
+                                              AppStrings.get('sendNow'),
+                                              style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w900,
                                                 color: Colors.white,
@@ -676,9 +678,9 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'Giữ 3 giây để gửi',
-                              style: TextStyle(
+                            Text(
+                              AppStrings.get('holdToSend'),
+                              style: const TextStyle(
                                 color: Colors.grey,
                                 fontStyle: FontStyle.italic,
                               ),
