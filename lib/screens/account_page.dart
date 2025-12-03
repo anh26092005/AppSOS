@@ -900,7 +900,7 @@ class _AccountPageState extends State<AccountPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'êu mấy cưng'
+                            'êu mấy cưng',
                             style: GoogleFonts.montserrat(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
