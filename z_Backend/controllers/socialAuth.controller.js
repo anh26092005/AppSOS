@@ -127,7 +127,7 @@ const socialLogin = async (req, res, next) => {
             }
         }
 
-        // Create new user
+        // Create new user - handle race condition with try-catch
         const newUserData = {
             firebaseUid,
             fullName: displayName,
@@ -148,7 +148,32 @@ const socialLogin = async (req, res, next) => {
             };
         }
 
-        const newUser = await User.create(newUserData);
+        let newUser;
+        try {
+            // Try to create user directly (fastest path)
+            newUser = await User.create(newUserData);
+        } catch (error) {
+            // If duplicate key error (race condition), find the existing user
+            if (error.code === 11000) {
+                console.log('⚠️  Race condition detected, finding existing user...');
+                newUser = await User.findOne({ firebaseUid });
+
+                if (!newUser) {
+                    // This shouldn't happen, but if it does, try by email
+                    if (email) {
+                        newUser = await User.findOne({ email });
+                    }
+                }
+
+                if (!newUser) {
+                    // Still not found? Re-throw error
+                    throw error;
+                }
+            } else {
+                // Other error, re-throw
+                throw error;
+            }
+        }
 
         // Generate token
         const token = signAccessToken({ id: newUser._id, roles: newUser.roles });

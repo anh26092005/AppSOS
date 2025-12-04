@@ -29,6 +29,18 @@ class AppStrings {
     'signupNow': {'vi': 'Đăng ký ngay', 'en': 'Sign up now'},
     'pleaseEnterInfo': {'vi': 'Vui lòng nhập thông tin', 'en': 'Please enter information'},
     
+    // Signup
+    'signUp': {'vi': 'Đăng Ký', 'en': 'Sign Up'},
+    'alreadyHaveAccount': {'vi': 'Bạn đã có tài khoản?', 'en': 'Already have an account?'},
+    'signUpButton': {'vi': 'Đăng Ký', 'en': 'Sign Up'},
+    'or': {'vi': 'Hoặc', 'en': 'Or'},
+    'signInWithGoogle': {'vi': 'Đăng nhập với Google', 'en': 'Sign in with Google'},
+    'signupSuccess': {'vi': 'Đăng ký thành công ✅', 'en': 'Sign up successful ✅'},
+    'signupFailed': {'vi': 'Đăng ký thất bại!', 'en': 'Sign up failed!'},
+    'signupError': {'vi': 'Lỗi đăng ký', 'en': 'Sign up error'},
+    'phoneLength': {'vi': 'Số điện thoại phải có 10 chữ số', 'en': 'Phone must be 10 digits'},
+    'phoneStartZero': {'vi': 'Số điện thoại phải bắt đầu bằng số 0', 'en': 'Phone must start with 0'},
+    
     // Settings
     'settings': {'vi': 'Cài đặt', 'en': 'Settings'},
     'darkMode': {'vi': 'Chế độ tối', 'en': 'Dark Mode'},
