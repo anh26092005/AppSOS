@@ -173,7 +173,12 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
           ),
           actions: [
             TextButton(
-              onPressed: () {
+              onPressed: () async {
+                // Clear active SOS case from provider first
+                await context.read<ActiveSosProvider>().clearActiveCase();
+
+                if (!mounted) return;
+
                 Navigator.of(
                   context,
                 ).pushNamedAndRemoveUntil('/main', (route) => false);

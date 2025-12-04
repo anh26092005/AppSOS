@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
@@ -48,7 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final input = _emailOrPhoneController.text.trim();
     final password = _passwordController.text.trim();
 
-    final isPhone = RegExp(r'^[0-9]+$').hasMatch(input);
+    // Check if input is Vietnamese phone number (10 digits starting with 0)
+    final isPhone = RegExp(r'^0[0-9]{9}$').hasMatch(input);
 
     try {
       showDialog(
@@ -467,6 +469,9 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscureText = false,
     VoidCallback? onTogglePassword,
   }) {
+    // For email/phone field, allow phone number input
+    final bool isEmailOrPhoneField = hint.contains('Email');
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -476,6 +481,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
+        inputFormatters: isEmailOrPhoneField
+            ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9@._a-zA-Z]'))]
+            : null,
         style: GoogleFonts.montserrat(
           fontSize: 15,
           color: Colors.black87,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 
@@ -377,6 +378,9 @@ class _SignupScreenState extends State<SignupScreen> {
     VoidCallback? onTogglePassword,
     TextInputType? keyboardType,
   }) {
+    // Check if this is phone field
+    final bool isPhoneField = hint.contains('Số điện thoại');
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -387,6 +391,10 @@ class _SignupScreenState extends State<SignupScreen> {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        maxLength: isPhoneField ? 10 : null,
+        inputFormatters: isPhoneField
+            ? [FilteringTextInputFormatter.digitsOnly]
+            : null,
         style: GoogleFonts.montserrat(
           fontSize: 15,
           color: Colors.black87,
@@ -396,6 +404,7 @@ class _SignupScreenState extends State<SignupScreen> {
           hintText: hint,
           hintStyle: GoogleFonts.montserrat(color: Colors.grey.shade400),
           prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 22),
+          counterText: isPhoneField ? '' : null, // Hide counter for phone
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
@@ -418,6 +427,17 @@ class _SignupScreenState extends State<SignupScreen> {
           if (value == null || value.isEmpty) {
             return 'Vui lòng nhập thông tin';
           }
+
+          // Phone-specific validation
+          if (isPhoneField) {
+            if (value.length != 10) {
+              return 'Số điện thoại phải có 10 chữ số';
+            }
+            if (!value.startsWith('0')) {
+              return 'Số điện thoại phải bắt đầu bằng số 0';
+            }
+          }
+
           return null;
         },
       ),
