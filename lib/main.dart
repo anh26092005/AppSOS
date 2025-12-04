@@ -11,6 +11,7 @@ import 'utils/navigation_service.dart';
 
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/locale_provider.dart';
 import 'providers/active_sos_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -37,6 +38,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => ActiveSosProvider()),
       ],
       child: const SOSApp(),
