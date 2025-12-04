@@ -112,7 +112,7 @@ const sosCaseSchema = new mongoose.Schema(
     },
     cancelledByRole: {
       type: String,
-      enum: ['REPORTER', 'VOLUNTEER', 'ADMIN'],
+      enum: ['REPORTER', 'VOLUNTEER', 'ADMIN', 'SYSTEM'],
       default: null,
     },
     channelId: {

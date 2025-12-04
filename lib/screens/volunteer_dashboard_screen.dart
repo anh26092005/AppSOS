@@ -155,9 +155,35 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     });
 
     try {
-      await ApiService.toggleVolunteerReady();
-      // Fetch again to confirm
-      // await _fetchStatus();
+      final res = await ApiService.toggleVolunteerReady();
+
+      // Verify actual status from server response
+      if (res['data'] != null && res['data']['ready'] != null) {
+        final serverReady = res['data']['ready'];
+        if (serverReady != value) {
+          // If server mismatch, revert
+          setState(() {
+            _isReady = serverReady;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Không thể thay đổi trạng thái. Server: $serverReady',
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                value ? 'Đã bật chế độ Sẵn sàng' : 'Đã chuyển sang Tạm nghỉ',
+              ),
+              backgroundColor: value ? Colors.green : Colors.grey,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      }
     } catch (e) {
       // Revert on error
       if (mounted) {

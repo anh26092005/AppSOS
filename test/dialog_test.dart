@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:appsos/main.dart';
-import 'package:appsos/services/api_service.dart';
 import 'package:appsos/widgets/sos_alert_dialog.dart';
 
 void main() {
-  group('SOS Alert Dialog Tests', () {
-    testWidgets('should display SOS alert dialog with correct title and body', (
+  group('🧪 Kiểm tra Dialog Cảnh Báo SOS', () {
+    testWidgets('✅ Hiển thị dialog đúng tiêu đề và nội dung', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -19,15 +17,15 @@ void main() {
                     showDialog(
                       context: context,
                       builder: (_) => SOSAlertDialog(
-                        title: 'Test SOS Alert',
-                        body: 'This is a test emergency',
+                        title: 'Cảnh Báo SOS',
+                        body: 'Có trường hợp khẩn cấp',
                         data: {'caseId': '123'},
                         caseId: '123',
                         onAccept: () {},
                       ),
                     );
                   },
-                  child: const Text('Show Dialog'),
+                  child: const Text('Hiện Dialog'),
                 );
               },
             ),
@@ -35,21 +33,21 @@ void main() {
         ),
       );
 
-      // Tap the button to show dialog
-      await tester.tap(find.text('Show Dialog'));
+      // Bấm nút để hiện dialog
+      await tester.tap(find.text('Hiện Dialog'));
       await tester.pumpAndSettle();
 
-      // Verify dialog content
-      expect(find.text('Test SOS Alert'), findsOneWidget);
-      expect(find.text('This is a test emergency'), findsOneWidget);
+      // Kiểm tra nội dung
+      expect(find.text('Cảnh Báo SOS'), findsOneWidget);
+      expect(find.text('Có trường hợp khẩn cấp'), findsOneWidget);
       expect(find.text('Chấp nhận'), findsOneWidget);
       expect(find.text('Bỏ qua'), findsOneWidget);
     });
 
-    testWidgets('should call onAccept when accept button is tapped', (
+    testWidgets('✅ Gọi callback khi bấm Chấp Nhận', (
       WidgetTester tester,
     ) async {
-      bool acceptCalled = false;
+      bool daChapNhan = false;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -66,12 +64,12 @@ void main() {
                         data: {'caseId': '123'},
                         caseId: '123',
                         onAccept: () {
-                          acceptCalled = true;
+                          daChapNhan = true;
                         },
                       ),
                     );
                   },
-                  child: const Text('Show'),
+                  child: const Text('Hiện'),
                 );
               },
             ),
@@ -79,34 +77,13 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Show'));
+      await tester.tap(find.text('Hiện'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Chấp nhận'));
       await tester.pumpAndSettle();
 
-      expect(acceptCalled, true);
-    });
-  });
-
-  group('API Service Tests', () {
-    test('should throw SosBannedException on 429 status code', () async {
-      // Mock test - requires proper mocking setup
-      // Example structure:
-      expect(() async {
-        // This would need a mock HTTP client
-        // await ApiService.sendSOS(...);
-      }, throwsA(isA<SosBannedException>()));
-    });
-  });
-
-  group('Volunteer Dashboard Tests', () {
-    testWidgets('should display ready toggle switch', (
-      WidgetTester tester,
-    ) async {
-      // This test would require proper app initialization
-      // and navigation to volunteer dashboard
-      // Example structure for UI verification
+      expect(daChapNhan, true);
     });
   });
 }

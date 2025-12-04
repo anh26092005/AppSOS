@@ -341,9 +341,11 @@ const toggleVolunteerReady = async (req, res, next) => {
               distanceField: 'distance',
               maxDistance: 50000, // 50km in meters
               spherical: true,
-              key: 'location', // Explicitly specify index key
-              query: { status: 'SEARCHING' } // Filter for pending cases
+              key: 'location' // Explicitly specify index key
             }
+          },
+          {
+            $match: { status: 'SEARCHING' } // Filter for pending cases AFTER $geoNear
           },
           {
             $sort: { createdAt: 1 } // Oldest first

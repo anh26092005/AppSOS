@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
+import '../utils/navigation_service.dart';
 
 class SOSAlertDialog extends StatefulWidget {
   final String title;
@@ -25,25 +26,36 @@ class SOSAlertDialog extends StatefulWidget {
 
 class _SOSAlertDialogState extends State<SOSAlertDialog> {
   StreamSubscription? _cancelSubscription;
+  bool _isDismissed = false;
 
   @override
   void initState() {
     super.initState();
     // Listen for cancellation events
     _cancelSubscription = FCMService.cancelStream.listen((cancelledCaseId) {
-      if (cancelledCaseId == widget.caseId) {
+      if (cancelledCaseId == widget.caseId && !_isDismissed) {
         print('🔔 Dialog received cancel event for case ${widget.caseId}');
         if (mounted) {
-          Navigator.of(context).pop(); // Close the dialog
+          // Check if this route is actually the current one before popping
+          final isCurrent = ModalRoute.of(context)?.isCurrent ?? false;
+          if (isCurrent && Navigator.of(context).canPop()) {
+            _isDismissed = true;
+            Navigator.of(context).pop(); // Close the dialog
 
-          // Show cancellation snackbar/dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Người dùng đã hủy yêu cầu này'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
-          );
+            // Show cancellation snackbar/dialog
+            // Use a slight delay to ensure context is valid or use global key if needed
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (NavigationService.context != null) {
+                ScaffoldMessenger.of(NavigationService.context!).showSnackBar(
+                  const SnackBar(
+                    content: Text('Đã hủy yêu cầu'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            });
+          }
         }
       }
     });
@@ -56,6 +68,8 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
   }
 
   Future<void> _handleDismiss(BuildContext context) async {
+    if (_isDismissed) return;
+
     // Show confirmation dialog
     final shouldDecline = await showDialog<bool>(
       context: context,
@@ -107,6 +121,8 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
     // If user didn't confirm, just return (do nothing)
     if (shouldDecline != true) return;
 
+    _isDismissed = true;
+
     // User confirmed - decline the case and forward to next volunteer
     try {
       await ApiService.declineSosCase(
@@ -128,6 +144,7 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
       // Show error to user for other errors
       if (!mounted) return;
+      _isDismissed = false; // Reset flag if error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
       );

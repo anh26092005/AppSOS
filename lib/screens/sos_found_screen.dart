@@ -143,6 +143,11 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
   }
 
   void _showCompletionDialog() {
+    // Clear banner FIRST
+    if (mounted) {
+      context.read<ActiveSosProvider>().clearActiveCase();
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -162,8 +167,9 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         actions: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/main', (route) => false);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
@@ -178,23 +184,28 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
 
   Future<void> _calculateDistance() async {
     try {
-      // Get user's current position
-      Position userPosition = await Geolocator.getCurrentPosition();
+      // Get reporter's position from caseData (static at time of SOS creation)
+      final reporterLoc = _currentCaseData?['location']?['coordinates'];
 
-      // Get volunteer's position from caseData
+      // Get volunteer's position from caseData (static at time of accept)
       final volunteerLoc =
           _currentCaseData?['responderLocation']?['coordinates'];
 
-      if (volunteerLoc != null &&
+      if (reporterLoc != null &&
+          reporterLoc is List &&
+          reporterLoc.length >= 2 &&
+          volunteerLoc != null &&
           volunteerLoc is List &&
           volunteerLoc.length >= 2) {
+        final reporterLat = reporterLoc[1];
+        final reporterLng = reporterLoc[0];
         final volunteerLat = volunteerLoc[1];
         final volunteerLng = volunteerLoc[0];
 
-        // Calculate distance in meters
+        // Calculate distance in meters (between static positions)
         double distanceInMeters = Geolocator.distanceBetween(
-          userPosition.latitude,
-          userPosition.longitude,
+          reporterLat,
+          reporterLng,
           volunteerLat,
           volunteerLng,
         );
@@ -381,8 +392,9 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
     String acceptedTime = '';
     if (acceptedAt != null) {
       try {
-        final dt = DateTime.parse(acceptedAt);
-        acceptedTime = '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+        final dt = DateTime.parse(acceptedAt).toLocal(); // Convert UTC to local
+        acceptedTime =
+            '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       } catch (e) {
         print('Error parsing acceptedAt: $e');
       }
@@ -587,7 +599,7 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              'Đã chấp nhận lúc $acceptedTime',
+                              'Đã chấp nhận lúc ${acceptedTime.isNotEmpty ? acceptedTime : "N/A"}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.black87,

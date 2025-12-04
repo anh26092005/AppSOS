@@ -288,7 +288,14 @@ const createSosCase = async (req, res, next) => {
     });
 
     // Tìm TNV gần nhất
-    await findAndNotifyNearestVolunteers(sosCase);
+    const volunteers = await findAndNotifyNearestVolunteers(sosCase);
+
+    // [INFO] Nếu không có TNV ngay lúc này, case vẫn ở SEARCHING
+    // Cleanup job sẽ auto-cancel sau 10s nếu không có ai nhận
+    if (volunteers.length === 0) {
+      console.log(`⚠️ No volunteers available for case ${sosCase.code} at creation time`);
+      console.log(`   Case will auto-cancel after 10s if no volunteer becomes available`);
+    }
 
     // Populate reporter info
     await sosCase.populate('reporterId', 'fullName phone avatar');

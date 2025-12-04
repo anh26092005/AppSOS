@@ -7,9 +7,10 @@ let intervalId = null;
 /**
  * Cleanup Queue Job
  * Chạy mỗi 10 giây để:
- * 1. Tìm TNV timeout (không phản hồi sau 30s)
- * 2. Expire queue items
- * 3. Notify TNV tiếp theo HOẶC auto-cancel case
+ * 1. Check và auto-cancel cases với queue rỗng sau 10s
+ * 2. Tìm TNV timeout (không phản hồi sau 30s)
+ * 3. Expire queue items
+ * 4. Notify TNV tiếp theo HOẶC auto-cancel case
  */
 const cleanupQueue = async () => {
     if (isProcessing) {
@@ -22,6 +23,23 @@ const cleanupQueue = async () => {
     try {
         const now = new Date();
         const thirtySecondsAgo = new Date(now.getTime() - 30000); // 30 seconds
+        const tenSecondsAgo = new Date(now.getTime() - 10000); // 10 seconds
+
+        // [NEW] Check for SEARCHING cases older than 10s with NO queue items (volunteers)
+        const emptyQueueCases = await SosCase.find({
+            status: 'SEARCHING',
+            createdAt: { $lte: tenSecondsAgo }, // Older than 10s
+        });
+
+        for (const sosCase of emptyQueueCases) {
+            // Check if queue is actually empty
+            const queueCount = await SosResponderQueue.countDocuments({ sosId: sosCase._id });
+
+            if (queueCount === 0) {
+                console.log(`⏰ Empty queue case ${sosCase.code} older than 10s - Auto-cancelling`);
+                await autoCancelCase(sosCase);
+            }
+        }
 
         // Tìm queue items đã timeout (status NOTIFIED, notifiedAt > 30s ago)
         // Chỉ xử lý cases gần đây (trong 10 phút) để tối ưu performance
@@ -44,7 +62,6 @@ const cleanupQueue = async () => {
         // Group by sosId để xử lý từng case
         const caseGroups = {};
         for (const item of expiredItems) {
-            // Check if sosId exists (populated)
             // Check if sosId exists (populated)
             if (!item.sosId) {
                 console.log(`⚠️  Deleting orphan queue item ${item._id} (missing sosId)`);
@@ -103,7 +120,25 @@ const processCaseTimeout = async (sosCase, expiredItems) => {
             }
         );
 
-        console.log(`⏰  Expired ${expiredItems.length} items for case ${sosCase.code}`);
+        console.log(`⏰ Expired ${expiredItems.length} items for case ${sosCase.code}`);
+
+        // Gửi thông báo cho TNV bị timeout
+        for (const item of expiredItems) {
+            try {
+                await sendNotificationToUser(
+                    item.volunteerId,
+                    '⏱️ Yêu cầu đã hết hạn',
+                    'Yêu cầu cứu hộ đã được chuyển sang tình nguyện viên khác',
+                    {
+                        type: 'SOS_EXPIRED',
+                        caseId: sosCase._id.toString(),
+                        caseCode: sosCase.code
+                    }
+                );
+            } catch (notifError) {
+                console.error(`Failed to notify expired volunteer ${item.volunteerId}:`, notifError);
+            }
+        }
 
         // Tìm TNV tiếp theo trong queue (chưa expired, status NOTIFIED)
         const nextVolunteer = await findNextValidVolunteer(sosCase._id);

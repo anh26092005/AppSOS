@@ -316,6 +316,38 @@ class FCMService {
           print('❌ Cannot show dialog: Context is null');
         }
       }
+
+      // Xử lý khi SOS hết hạn (TNV timeout)
+      if (message.data['type'] == 'SOS_EXPIRED') {
+        final caseId = message.data['caseId'];
+
+        // Broadcast expired event to close dialog
+        _cancelController.add(caseId.toString());
+
+        // Show snackbar
+        final context = NavigationService.context;
+        if (context != null && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '⏱️ Yêu cầu đã được chuyển sang tình nguyện viên khác',
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          // Navigate về trang chủ sau khi snackbar hiện
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (context.mounted) {
+              Navigator.of(
+                context,
+                rootNavigator: true,
+              ).pushNamedAndRemoveUntil('/main', (route) => false);
+            }
+          });
+        }
+      }
     });
 
     // Xử lý khi user tap vào notification (app đang background)

@@ -174,8 +174,9 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Close screen
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/main', (route) => false);
               },
               child: const Text('Đóng'),
             ),
@@ -542,7 +543,7 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
                     if (createdAt != null) ...[
                       const SizedBox(height: 12),
                       Text(
-                        'Thời gian gửi: ${DateTime.parse(createdAt).hour}:${DateTime.parse(createdAt).minute.toString().padLeft(2, '0')}',
+                        'Thời gian gửi: ${DateTime.parse(createdAt).toLocal().hour.toString().padLeft(2, '0')}:${DateTime.parse(createdAt).toLocal().minute.toString().padLeft(2, '0')}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
