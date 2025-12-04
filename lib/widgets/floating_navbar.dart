@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class FloatingNavbar extends StatefulWidget {
   final int selectedIndex;
@@ -23,6 +25,7 @@ class FloatingNavbar extends StatefulWidget {
 class _FloatingNavbarState extends State<FloatingNavbar>
     with SingleTickerProviderStateMixin {
   late AnimationController _sosPulseController;
+  bool _isVolunteer = false;
 
   @override
   void initState() {
@@ -31,6 +34,23 @@ class _FloatingNavbarState extends State<FloatingNavbar>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('user');
+      if (userJson != null) {
+        final user = json.decode(userJson);
+        final roles = user['roles'] as List<dynamic>? ?? [];
+        setState(() {
+          _isVolunteer = roles.contains('TNV_CN') || roles.contains('TNV_TC');
+        });
+      }
+    } catch (e) {
+      print('Error loading user role: $e');
+    }
   }
 
   @override
@@ -165,19 +185,23 @@ class _FloatingNavbarState extends State<FloatingNavbar>
                 iconSize: 28,
                 onPressed: widget.onHomePressed,
               ),
-              // Activity icon
-              IconButton(
-                icon: Icon(
-                  Icons.history,
-                  color: widget.selectedIndex == 1
-                      ? const Color(0xFF1976D2)
-                      : Theme.of(context).unselectedWidgetColor,
+
+              // Activity icon - ONLY for TNV (ẩn với USER thường)
+              if (_isVolunteer)
+                IconButton(
+                  icon: Icon(
+                    Icons.history,
+                    color: widget.selectedIndex == 1
+                        ? const Color(0xFF1976D2)
+                        : Theme.of(context).unselectedWidgetColor,
+                  ),
+                  iconSize: 28,
+                  onPressed: widget.onActivityPressed,
                 ),
-                iconSize: 28,
-                onPressed: widget.onActivityPressed,
-              ),
-              // SOS button
-              _buildSOSButton(),
+
+              // SOS button - ONLY for USER (ẩn với TNV)
+              if (!_isVolunteer) _buildSOSButton(),
+
               // Profile icon
               IconButton(
                 icon: Icon(

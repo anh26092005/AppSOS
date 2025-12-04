@@ -1202,6 +1202,76 @@ const markSosCaseAsSeen = async (req, res, next) => {
 
     console.log(`✅ Volunteer ${volunteerId} marked case ${caseId} as SEEN (soft dismiss)`);
 
+    // IMPORTANT: Tìm và notify TNV tiếp theo NGAY
+    const { findAndNotifyNearestVolunteers } = require('../controllers/sos.controller');
+
+    // Tìm TNV tiếp theo từ queue (đã được tạo sẵn, chỉ cần notify)
+    const nextQueue = await SosResponderQueue.findOne({
+      sosId: sosCase._id,
+      status: 'NOTIFIED',  // TNV đang chờ (chưa seen, chưa expired)
+    }).sort({ distanceKm: 1 });
+
+    if (nextQueue) {
+      // Đã có TNV tiếp theo trong queue, send notification
+      const { sendNotificationToUser } = require('../services/fcm.service');
+
+      try {
+        await sendNotificationToUser(
+          nextQueue.volunteerId,
+          '🚨 Có trường hợp khẩn cấp cần hỗ trợ',
+          `${sosCase.emergencyType} - ${sosCase.description}`,
+          {
+            type: 'SOS_REQUEST',
+            caseId: sosCase._id.toString(),
+            caseCode: sosCase.code,
+            emergencyType: sosCase.emergencyType,
+          }
+        );
+        console.log(`📢 Notified next volunteer ${nextQueue.volunteerId} after SEEN`);
+      } catch (notifError) {
+        console.error(`Failed to notify next volunteer:`, notifError);
+      }
+    } else {
+      // Không còn TNV trong queue → Auto-cancel
+      console.log(`⚠️ No more volunteers available for case ${sosCase.code} after SEEN`);
+
+      sosCase.status = 'CANCELLED';
+      sosCase.cancelReason = 'Không tìm thấy tình nguyện viên trong khu vực';
+      sosCase.cancelledByRole = 'SYSTEM';
+      sosCase.cancelledAt = new Date();
+      sosCase.meta.autoCancelledDueToTimeout = true;
+      await sosCase.save();
+
+      // Notify reporter
+      const { Notification } = require('../models');
+      await Notification.create({
+        userId: sosCase.reporterId,
+        type: 'SOS_AUTO_CANCELLED',
+        title: '❌ Không tìm thấy tình nguyện viên',
+        body: 'Rất tiếc, không có tình nguyện viên nào trong khu vực của bạn lúc này.',
+        data: {
+          type: 'SOS_AUTO_CANCELLED',
+          caseId: sosCase._id.toString(),
+          caseCode: sosCase.code,
+          emergencyType: sosCase.emergencyType,
+        },
+        deliveredAt: new Date(),
+      });
+
+      const { sendNotificationToUser } = require('../services/fcm.service');
+      await sendNotificationToUser(
+        sosCase.reporterId,
+        '❌ Không tìm thấy tình nguyện viên',
+        'Không có tình nguyện viên nào trong khu vực. Vui lòng liên hệ số khẩn cấp.',
+        {
+          type: 'SOS_AUTO_CANCELLED',
+          caseId: sosCase._id.toString(),
+        }
+      );
+
+      console.log(`❌ Auto-cancelled case ${sosCase.code} - no more volunteers`);
+    }
+
     res.json({
       success: true,
       data: {
