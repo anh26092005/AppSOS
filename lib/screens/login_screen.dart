@@ -46,8 +46,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final input = _emailOrPhoneController.text.trim();
+    var input = _emailOrPhoneController.text.trim();
     final password = _passwordController.text.trim();
+
+    // Normalize phone number:
+    // 1. Replace +84 with 0
+    if (input.startsWith('+84')) {
+      input = '0${input.substring(3)}';
+    }
+    // 2. Replace 84 with 0 (if length is 11, e.g., 84912345678 -> 0912345678)
+    else if (input.startsWith('84') && input.length == 11) {
+      input = '0${input.substring(2)}';
+    }
 
     // Check if input is Vietnamese phone number (10 digits starting with 0)
     final isPhone = RegExp(r'^0[0-9]{9}$').hasMatch(input);
