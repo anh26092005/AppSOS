@@ -587,7 +587,7 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:5000/api",
+			"value": "http://42.116.145.85:5000/api",
 			"type": "string"
 		}
 	]

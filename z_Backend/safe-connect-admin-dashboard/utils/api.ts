@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://42.116.145.85:5000/api';
 
 // Tạo axios instance
 const api: AxiosInstance = axios.create({
@@ -33,7 +33,7 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response) {
       const status = error.response.status;
-      
+
       // 401 Unauthorized - Token expired hoặc invalid
       if (status === 401) {
         localStorage.removeItem('token');
@@ -41,13 +41,13 @@ api.interceptors.response.use(
         // Redirect to login sẽ được xử lý ở App.tsx
         window.location.href = '/';
       }
-      
+
       // 403 Forbidden - Không có quyền
       if (status === 403) {
         console.error('Access forbidden');
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

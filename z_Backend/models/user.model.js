@@ -111,6 +111,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    sosBanUntil: {
+      type: Date,
+      default: null,
+      index: true, // For quick queries to check ban status
+    },
   },
   {
     timestamps: true,

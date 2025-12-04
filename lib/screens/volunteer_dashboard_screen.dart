@@ -39,6 +39,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   LatLng? _victimLocation;
   bool _isLocationLoaded = false;
   Set<Marker> _markers = {};
+  bool _isReady = false;
 
   // Check if Google Maps is supported on current platform
   // Google Maps Flutter only supports Android, iOS, and Web
@@ -55,6 +56,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     // Check platform support for Google Maps
     _checkPlatformSupport();
     _requestLocationPermission();
+    _fetchStatus();
   }
 
   void _checkPlatformSupport() {
@@ -130,6 +132,42 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
         _isLocationLoaded = true;
         _updateMarkers();
       });
+    }
+  }
+
+  Future<void> _fetchStatus() async {
+    try {
+      final profile = await ApiService.fetchMyVolunteerProfile();
+      if (profile != null && mounted) {
+        setState(() {
+          _isReady = profile['ready'] ?? false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching volunteer status: $e');
+    }
+  }
+
+  Future<void> _toggleReady(bool value) async {
+    // Optimistic update
+    setState(() {
+      _isReady = value;
+    });
+
+    try {
+      await ApiService.toggleVolunteerReady();
+      // Fetch again to confirm
+      // await _fetchStatus();
+    } catch (e) {
+      // Revert on error
+      if (mounted) {
+        setState(() {
+          _isReady = !value;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi cập nhật trạng thái: $e')));
+      }
     }
   }
 
@@ -479,23 +517,25 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                             color: const Color(0xFF333333),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF8E1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            'Đang chờ xử lý',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFFF57F17),
+                        Row(
+                          children: [
+                            Text(
+                              _isReady ? 'Sẵn sàng' : 'Tạm nghỉ',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: _isReady
+                                    ? const Color(0xFF4CAF50)
+                                    : Colors.grey,
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Switch(
+                              value: _isReady,
+                              onChanged: _toggleReady,
+                              activeColor: const Color(0xFF4CAF50),
+                            ),
+                          ],
                         ),
                       ],
                     ),

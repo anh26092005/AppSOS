@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,10 @@ import '../providers/active_sos_provider.dart';
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String? _fcmToken;
+
+  // Stream controller for cancellation events
+  static final _cancelController = StreamController<String>.broadcast();
+  static Stream<String> get cancelStream => _cancelController.stream;
 
   /// Lấy FCM token
   static Future<String?> getFCMToken() async {
@@ -227,6 +232,10 @@ class FCMService {
         if (context != null) {
           try {
             final caseId = message.data['caseId'];
+
+            // Broadcast cancellation event to close any open dialogs
+            _cancelController.add(caseId.toString());
+
             final activeSosProvider = Provider.of<ActiveSosProvider>(
               context,
               listen: false,

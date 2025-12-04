@@ -266,6 +266,29 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
 
       _nameController.clear();
       _descriptionController.clear();
+    } on SosBannedException catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Yêu cầu bị từ chối'),
+            ],
+          ),
+          content: Text(e.message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // Close loading

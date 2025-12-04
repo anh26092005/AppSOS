@@ -229,6 +229,44 @@ const createSosCase = async (req, res, next) => {
       throw new AppError('Emergency type and description are required', 400);
     }
 
+    // ========== PROGRESSIVE BAN SYSTEM ==========
+    const { SosRateLimitLog, User } = require('../models');
+
+    // Check if user is currently banned
+    const user = await User.findById(reporterId);
+    if (user.sosBanUntil && user.sosBanUntil > new Date()) {
+      const minutesRemaining = Math.ceil((user.sosBanUntil - new Date()) / 60000);
+      throw new AppError(
+        `Bạn đã gửi quá nhiều yêu cầu. Vui lòng đợi ${minutesRemaining} phút.`,
+        429
+      );
+    }
+
+    // Count spam attempts in last 10 minutes
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60000);
+    const logCount = await SosRateLimitLog.countDocuments({
+      userId: reporterId,
+      createdAt: { $gte: tenMinutesAgo },
+    });
+
+    // If >= 3 attempts → Ban for 10 minutes
+    if (logCount >= 3) {
+      const banUntil = new Date(Date.now() + 10 * 60000);
+      await User.updateOne({ _id: reporterId }, { sosBanUntil: banUntil });
+
+      console.log(`🚫 User ${reporterId} banned until ${banUntil.toISOString()} (spam: ${logCount + 1} attempts)`);
+
+      throw new AppError(
+        'Bạn đã gửi quá nhiều yêu cầu. Vui lòng đợi 10 phút.',
+        429
+      );
+    }
+
+    // Log this attempt
+    await SosRateLimitLog.create({ userId: reporterId });
+    // ========== END PROGRESSIVE BAN ==========
+
+
     // Tạo mã SOS unique
     const code = `SOS${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
 

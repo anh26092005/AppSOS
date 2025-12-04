@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/fcm_service.dart';
 
-class SOSAlertDialog extends StatelessWidget {
+class SOSAlertDialog extends StatefulWidget {
   final String title;
   final String body;
   final Map<String, dynamic> data;
@@ -16,6 +18,42 @@ class SOSAlertDialog extends StatelessWidget {
     required this.onAccept,
     required this.caseId,
   });
+
+  @override
+  State<SOSAlertDialog> createState() => _SOSAlertDialogState();
+}
+
+class _SOSAlertDialogState extends State<SOSAlertDialog> {
+  StreamSubscription? _cancelSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for cancellation events
+    _cancelSubscription = FCMService.cancelStream.listen((cancelledCaseId) {
+      if (cancelledCaseId == widget.caseId) {
+        print('🔔 Dialog received cancel event for case ${widget.caseId}');
+        if (mounted) {
+          Navigator.of(context).pop(); // Close the dialog
+
+          // Show cancellation snackbar/dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Người dùng đã hủy yêu cầu này'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _cancelSubscription?.cancel();
+    super.dispose();
+  }
 
   Future<void> _handleDismiss(BuildContext context) async {
     // Show confirmation dialog
@@ -72,10 +110,10 @@ class SOSAlertDialog extends StatelessWidget {
     // User confirmed - decline the case and forward to next volunteer
     try {
       await ApiService.declineSosCase(
-        caseId,
+        widget.caseId,
         'Không thể hỗ trợ lúc này', // Default reason
       );
-      print('✅ Case $caseId declined, forwarded to next volunteer');
+      print('✅ Case ${widget.caseId} declined, forwarded to next volunteer');
     } catch (e) {
       print('❌ Error declining case: $e');
 
@@ -83,13 +121,13 @@ class SOSAlertDialog extends StatelessWidget {
       final errorMessage = e.toString();
       if (errorMessage.contains('already declined')) {
         print('ℹ️ Case already declined, closing dialog silently');
-        if (!context.mounted) return;
+        if (!mounted) return;
         Navigator.of(context).pop();
         return;
       }
 
       // Show error to user for other errors
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
       );
@@ -97,15 +135,15 @@ class SOSAlertDialog extends StatelessWidget {
     }
 
     // Close the SOS alert dialog
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     // Parse data
-    final emergencyType = data['emergencyType'] ?? 'Khẩn cấp';
-    final distance = data['distance'] ?? '---';
+    final emergencyType = widget.data['emergencyType'] ?? 'Khẩn cấp';
+    final distance = widget.data['distance'] ?? '---';
     // final caseCode = data['caseCode'];
 
     return Dialog(
@@ -225,7 +263,7 @@ class SOSAlertDialog extends StatelessWidget {
                   child: SizedBox(
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: onAccept,
+                      onPressed: widget.onAccept,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(
                           0xFF4CAF50,

@@ -6,6 +6,7 @@ module.exports = {
   SosChannel: require('./sosChannel.model'),
   SosMessage: require('./sosMessage.model'),
   SosResponderQueue: require('./sosResponderQueue.model'),
+  SosRateLimitLog: require('./sosRateLimitLog.model'),
   Device: require('./device.model'),
   Notification: require('./notification.model'),
   Article: require('./article.model'),

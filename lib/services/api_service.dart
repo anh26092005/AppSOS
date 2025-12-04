@@ -12,7 +12,7 @@ class ApiService {
   // Development: Local emulator
   // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  static const String baseUrl = 'http://42.116.145.85:5000/api';
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';
   static const String _rememberStorageKey = 'remember_login';
@@ -185,6 +185,12 @@ class ApiService {
       return data;
     }
 
+    if (res.statusCode == 429) {
+      throw SosBannedException(
+        data['message'] ?? 'Bạn đã gửi quá nhiều yêu cầu',
+      );
+    }
+
     throw Exception(data['message'] ?? 'Gửi SOS thất bại');
   }
 
@@ -318,6 +324,25 @@ class ApiService {
       return null;
     } catch (e) {
       print('Error fetching volunteer profile: $e');
+      return null;
+    }
+  }
+
+  /// Lấy profile TNV của chính mình
+  static Future<Map<String, dynamic>?> fetchMyVolunteerProfile() async {
+    final url = Uri.parse('$baseUrl/volunteers/me');
+    final headers = await _headers();
+
+    try {
+      final res = await http.get(url, headers: headers);
+      final data = _decode(res);
+
+      if (res.statusCode == 200) {
+        return data['data'];
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching my volunteer profile: $e');
       return null;
     }
   }
@@ -687,4 +712,11 @@ class ApiService {
       return null;
     }
   }
+}
+
+class SosBannedException implements Exception {
+  final String message;
+  SosBannedException(this.message);
+  @override
+  String toString() => message;
 }

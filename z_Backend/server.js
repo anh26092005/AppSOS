@@ -71,6 +71,10 @@ const startServer = async () => {
       console.log('Server will continue without Firebase push notifications');
     }
 
+    // Start SOS Queue Cleanup Job
+    const cleanupQueueJob = require('./jobs/cleanupQueue.job');
+    cleanupQueueJob.start();
+
     app.listen(PORT, HOST, () => {
       const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
       // eslint-disable-next-line no-console

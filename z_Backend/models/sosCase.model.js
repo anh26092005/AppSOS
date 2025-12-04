@@ -123,6 +123,9 @@ const sosCaseSchema = new mongoose.Schema(
     meta: {
       radiusKmNotified: { type: Number, default: 0, min: 0 },
       notifyCount: { type: Number, default: 0, min: 0 },
+      retryCount: { type: Number, default: 0, min: 0 },
+      lastRetryAt: { type: Date, default: null },
+      autoCancelledDueToTimeout: { type: Boolean, default: false },
     },
   },
   {

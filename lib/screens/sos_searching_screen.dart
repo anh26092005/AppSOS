@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/active_sos_provider.dart';
 import 'sos_found_screen.dart';
 
 class SosSearchingScreen extends StatefulWidget {
@@ -84,20 +87,168 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
         // Case đã bị hủy
         print('⚠️ Status CANCELLED');
         _pollingTimer?.cancel();
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Yêu cầu SOS đã bị hủy'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          Navigator.pop(context);
+          // Check if auto-cancelled due to timeout
+          final isAutoCancel =
+              caseData['meta']?['autoCancelledDueToTimeout'] == true;
+
+          if (isAutoCancel) {
+            _showEmergencyNumbersDialog(caseData['emergencyType']);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Yêu cầu SOS đã bị hủy'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            Navigator.pop(context);
+          }
         }
       }
       // Nếu status == 'SEARCHING', tiếp tục polling
     } catch (e) {
       print('❌ Error checking case status: $e');
       // Vẫn tiếp tục polling nếu có lỗi
+    }
+  }
+
+  void _showEmergencyNumbersDialog(String? emergencyType) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Không tìm thấy TNV',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Rất tiếc, không có tình nguyện viên nào trong khu vực của bạn lúc này.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Vui lòng liên hệ khẩn cấp:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildEmergencyButton(
+                number: '113',
+                label: 'Công An / Cảnh Sát',
+                color: Colors.blue,
+                icon: Icons.local_police,
+                isHighlighted: emergencyType == 'CRIME',
+              ),
+              const SizedBox(height: 8),
+              _buildEmergencyButton(
+                number: '114',
+                label: 'Cứu Hỏa / Cứu Nạn',
+                color: Colors.red,
+                icon: Icons.local_fire_department,
+                isHighlighted: emergencyType == 'FIRE',
+              ),
+              const SizedBox(height: 8),
+              _buildEmergencyButton(
+                number: '115',
+                label: 'Cấp Cứu Y Tế',
+                color: Colors.teal,
+                icon: Icons.medical_services,
+                isHighlighted:
+                    emergencyType == 'MEDICAL' || emergencyType == 'ACCIDENT',
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Close screen
+              },
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmergencyButton({
+    required String number,
+    required String label,
+    required Color color,
+    required IconData icon,
+    bool isHighlighted = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => _makePhoneCall(number),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isHighlighted ? color : Colors.white,
+          foregroundColor: isHighlighted ? Colors.white : color,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          side: BorderSide(color: color, width: 2),
+          elevation: isHighlighted ? 4 : 0,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    number,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isHighlighted ? Colors.white70 : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.call),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        throw 'Could not launch $launchUri';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể gọi số $phoneNumber: $e')),
+        );
+      }
     }
   }
 
@@ -147,6 +298,9 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
       print('✅ Cancel response: $response');
 
       if (!mounted) return;
+
+      // Clear active case in provider
+      context.read<ActiveSosProvider>().clearActiveCase();
 
       // Show success message before navigating
       ScaffoldMessenger.of(context).showSnackBar(
