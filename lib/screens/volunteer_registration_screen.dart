@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../utils/app_strings.dart';
 
 class VolunteerRegistrationScreen extends StatefulWidget {
   const VolunteerRegistrationScreen({super.key});
@@ -25,14 +26,16 @@ class _VolunteerRegistrationScreenState
   bool _agreedToTerms = false;
 
   final List<String> _availableSkills = [
-    'Y tế',
-    'Cứu hộ',
-    'Sửa xe',
-    'Vận chuyển',
-    'Nhu yếu phẩm',
-    'Tư vấn tâm lý',
-    'Khác',
+    'medical',
+    'rescue',
+    'vehicleRepair',
+    'transport',
+    'essentials',
+    'counseling',
+    'other',
   ];
+  
+  String _getSkillName(String key) => AppStrings.get(key);
 
   final ImagePicker _picker = ImagePicker();
 
@@ -54,7 +57,7 @@ class _VolunteerRegistrationScreenState
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi chọn ảnh: $e')));
+      ).showSnackBar(SnackBar(content: Text('${AppStrings.get('errorPickingImage')}: $e')));
     }
   }
 
@@ -62,19 +65,19 @@ class _VolunteerRegistrationScreenState
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSkills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ít nhất 1 kỹ năng')),
+        SnackBar(content: Text(AppStrings.get('selectAtLeastOneSkill'))),
       );
       return;
     }
     if (_idCardFront == null || _idCardBack == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng tải lên đủ 2 mặt giấy tờ')),
+        SnackBar(content: Text(AppStrings.get('uploadBothSides'))),
       );
       return;
     }
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng đồng ý với điều khoản')),
+        SnackBar(content: Text(AppStrings.get('agreeToTerms'))),
       );
       return;
     }
@@ -97,7 +100,7 @@ class _VolunteerRegistrationScreenState
 
       // 3. Lấy userId (đã có trong cached user hoặc backend tự lấy từ token)
       final user = await ApiService.getCachedUser();
-      if (user == null) throw Exception('Không tìm thấy thông tin user');
+      if (user == null) throw Exception(AppStrings.get('userNotFound'));
 
       // 4. Gọi API đăng ký
       final body = {
@@ -127,9 +130,9 @@ class _VolunteerRegistrationScreenState
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: const Text('Đăng ký thành công'),
-          content: const Text(
-            'Hồ sơ của bạn đã được gửi và đang chờ duyệt. Chúng tôi sẽ thông báo cho bạn sớm nhất.',
+          title: Text(AppStrings.get('registrationSuccess')),
+          content: Text(
+            AppStrings.get('registrationPending'),
           ),
           actions: [
             TextButton(
@@ -137,7 +140,7 @@ class _VolunteerRegistrationScreenState
                 Navigator.of(ctx).pop(); // Close dialog
                 Navigator.of(context).pop(); // Back to Account screen
               },
-              child: const Text('Đóng'),
+              child: Text(AppStrings.get('close')),
             ),
           ],
         ),
@@ -146,7 +149,7 @@ class _VolunteerRegistrationScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+      ).showSnackBar(SnackBar(content: Text('${AppStrings.get('error')}: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -198,7 +201,7 @@ class _VolunteerRegistrationScreenState
                                 child: Container(
                                   margin: const EdgeInsets.only(left: 0),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.8),
+                                    color: Colors.white.withOpacity(0.8),
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
@@ -211,8 +214,8 @@ class _VolunteerRegistrationScreenState
                                   ),
                                 ),
                               ),
-                              const Text(
-                                'Đăng ký Tình nguyện viên',
+                              Text(
+                              AppStrings.get('volunteerRegistration'),
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -222,8 +225,8 @@ class _VolunteerRegistrationScreenState
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text(
-                          'Thông tin cơ bản',
+                        Text(
+                          AppStrings.get('basicInfo'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -233,18 +236,18 @@ class _VolunteerRegistrationScreenState
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: _type,
-                          decoration: const InputDecoration(
-                            labelText: 'Loại hình tham gia',
+                          decoration: InputDecoration(
+                            labelText: AppStrings.get('participationType'),
                             border: OutlineInputBorder(),
                           ),
                           items: [
                             DropdownMenuItem(
                               value: 'CN',
-                              child: Text('Cá nhân'),
+                            child: Text(AppStrings.get('individual')),
                             ),
                             DropdownMenuItem(
                               value: 'TC',
-                              child: Text('Tổ chức'),
+                            child: Text(AppStrings.get('organization')),
                             ),
                           ],
                           onChanged: (val) {
@@ -255,22 +258,22 @@ class _VolunteerRegistrationScreenState
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _orgNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Tên tổ chức',
+                            decoration: InputDecoration(
+                              labelText: AppStrings.get('organizationName'),
                               border: OutlineInputBorder(),
                             ),
                             validator: (val) {
                               if (_type == 'TC' &&
                                   (val == null || val.isEmpty)) {
-                                return 'Vui lòng nhập tên tổ chức';
+                                return AppStrings.get('pleaseEnterOrgName');
                               }
                               return null;
                             },
                           ),
                         ],
                         const SizedBox(height: 24),
-                        const Text(
-                          'Kỹ năng hỗ trợ',
+                        Text(
+                          AppStrings.get('supportSkills'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -283,7 +286,7 @@ class _VolunteerRegistrationScreenState
                           children: _availableSkills.map((skill) {
                             final isSelected = _selectedSkills.contains(skill);
                             return FilterChip(
-                              label: Text(skill),
+                              label: Text(_getSkillName(skill)),
                               selected: isSelected,
                               onSelected: (selected) {
                                 setState(() {
@@ -300,8 +303,8 @@ class _VolunteerRegistrationScreenState
                           }).toList(),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'Xác minh danh tính',
+                        Text(
+                          AppStrings.get('identityVerification'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -309,8 +312,8 @@ class _VolunteerRegistrationScreenState
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Vui lòng tải lên ảnh CCCD/CMND hoặc giấy tờ liên quan',
+                        Text(
+                          AppStrings.get('uploadIdInstruction'),
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         const SizedBox(height: 16),
@@ -318,7 +321,7 @@ class _VolunteerRegistrationScreenState
                           children: [
                             Expanded(
                               child: _buildImageUpload(
-                                'Mặt trước',
+                                AppStrings.get('frontSide'),
                                 _idCardFront,
                                 () => _pickImage(true),
                               ),
@@ -326,7 +329,7 @@ class _VolunteerRegistrationScreenState
                             const SizedBox(width: 16),
                             Expanded(
                               child: _buildImageUpload(
-                                'Mặt sau',
+                                AppStrings.get('backSide'),
                                 _idCardBack,
                                 () => _pickImage(false),
                               ),
@@ -338,8 +341,8 @@ class _VolunteerRegistrationScreenState
                           value: _agreedToTerms,
                           onChanged: (val) =>
                               setState(() => _agreedToTerms = val!),
-                          title: const Text(
-                            'Tôi cam kết các thông tin trên là chính xác và chịu trách nhiệm về hoạt động tình nguyện của mình.',
+                          title: Text(
+                            AppStrings.get('commitment'),
                             style: TextStyle(fontSize: 14),
                           ),
                           controlAffinity: ListTileControlAffinity.leading,
@@ -358,8 +361,8 @@ class _VolunteerRegistrationScreenState
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text(
-                              'Gửi Đăng Ký',
+                            child: Text(
+                              AppStrings.get('submitRegistration'),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -412,7 +415,7 @@ class _VolunteerRegistrationScreenState
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Tải ảnh lên',
+                        AppStrings.get('uploadPhoto'),
                         style: GoogleFonts.montserrat(
                           color: Colors.grey.shade600,
                           fontSize: 12,

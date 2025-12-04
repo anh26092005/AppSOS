@@ -38,7 +38,13 @@ class ActiveSosProvider extends ChangeNotifier {
         final caseId = caseData['case']?['_id'];
         if (caseId != null) {
           try {
-            final response = await ApiService.getSosCaseDetails(caseId);
+            final response = await ApiService.getSosCaseDetails(caseId).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                print('⏱️ API timeout - using cached data');
+                return {'data': caseData};
+              },
+            );
             final currentCase = response['data']['case'];
 
             // Check if case is still ACCEPTED or IN_PROGRESS

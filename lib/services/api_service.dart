@@ -10,9 +10,10 @@ class ApiService {
   //     'https://mai-lake-indoor-teeth.trycloudflare.com/api';
 
   // Development: Local emulator
-  // static const String baseUrl = 'http://10.0.2.2:5000/api';
+  static const String baseUrl = 'http://10.0.2.2:5000/api';
 
-  static const String baseUrl = 'http://42.116.145.85:5000/api';
+  // Production server (currently unreachable)
+  // static const String baseUrl = 'http://42.116.145.85:5000/api';
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';
   static const String _rememberStorageKey = 'remember_login';
@@ -195,10 +196,18 @@ class ApiService {
   }
 
   static Future<bool> hasActiveSession() async {
-    final remember = await getRememberMe();
-    if (!remember) return false;
-    final token = await getToken();
-    return token != null;
+    try {
+      final remember = await getRememberMe().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => true, // Default to true to check token
+      );
+      if (!remember) return false;
+      final token = await getToken();
+      return token != null;
+    } catch (e) {
+      print('Error in hasActiveSession: $e');
+      return false;
+    }
   }
 
   static Future<Map<String, dynamic>> fetchProfile() async {

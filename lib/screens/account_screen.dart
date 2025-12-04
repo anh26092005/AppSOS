@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/avatar_upload_dialog.dart';
 import '../services/social_auth_api.dart';
+import '../utils/app_strings.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -49,12 +50,12 @@ class _AccountScreenState extends State<AccountScreen> {
 
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        _showCustomSnackBar(context, 'Đã cập nhật ảnh đại diện');
+        _showCustomSnackBar(context, AppStrings.get('avatarUpdated'));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
+        _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
       }
     }
   }
@@ -126,7 +127,7 @@ class _AccountScreenState extends State<AccountScreen> {
     final phone = _stringValue(_user?['phone']).trim();
     if (phone.isNotEmpty) return phone;
 
-    return 'User';
+    return AppStrings.get('user');
   }
 
   String _displayEmail() {
@@ -144,12 +145,12 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   String _formatDateOfBirth(dynamic dateOfBirth) {
-    if (dateOfBirth == null) return 'Chưa cập nhật';
+    if (dateOfBirth == null) return AppStrings.get('notUpdated');
     try {
       final date = DateTime.parse(dateOfBirth.toString());
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (e) {
-      return 'Chưa cập nhật';
+      return AppStrings.get('notUpdated');
     }
   }
 
@@ -175,11 +176,11 @@ class _AccountScreenState extends State<AccountScreen> {
         await ApiService.updateProfile(dateOfBirth: picked);
         await _refreshProfile();
         if (mounted) {
-          _showCustomSnackBar(context, 'Đã cập nhật ngày sinh');
+          _showCustomSnackBar(context, AppStrings.get('dobUpdated'));
         }
       } catch (e) {
         if (mounted) {
-          _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
+          _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
         }
       }
     }
@@ -203,21 +204,21 @@ class _AccountScreenState extends State<AccountScreen> {
         const SizedBox(height: 80),
         const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
         const SizedBox(height: 16),
-        const Text(
-          'Không thể tải thông tin hồ sơ',
+        Text(
+          AppStrings.get('cannotLoadProfile'),
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
-          _error ?? 'Lỗi không xác định',
+          _error ?? AppStrings.get('unknownError'),
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.grey),
         ),
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: _refreshProfile,
-          child: const Text('Thử lại'),
+          child: Text(AppStrings.get('retry')),
         ),
       ],
     );
@@ -227,14 +228,14 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     if (_isLoading && _user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Hồ sơ')),
+        appBar: AppBar(title: Text(AppStrings.get('profile'))),
         body: _buildLoading(),
       );
     }
 
     if (_error != null && _user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Hồ sơ')),
+        appBar: AppBar(title: Text(AppStrings.get('profile'))),
         body: RefreshIndicator(
           onRefresh: _refreshProfile,
           child: _buildError(),
@@ -249,7 +250,7 @@ class _AccountScreenState extends State<AccountScreen> {
     var role = _stringValue(_user?['role']);
     if (role.isEmpty) role = _stringValue(_user?['roles']);
     if (role.isEmpty) role = _stringValue(_user?['type']);
-    if (role.isEmpty) role = 'Người dùng';
+    if (role.isEmpty) role = AppStrings.get('user');
 
     final userId = _stringValue(_user?['id']);
 
@@ -351,7 +352,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    email.isNotEmpty ? email : 'Email chưa cập nhật',
+                    email.isNotEmpty ? email : AppStrings.get('emailNotUpdated'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
                       fontSize: 14,
@@ -368,11 +369,11 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('Thông tin cá nhân'),
+                  _buildSectionTitle(AppStrings.get('personalInfo')),
                   const SizedBox(height: 12),
                   _buildInfoTile(
                     icon: Icons.person_outline,
-                    title: 'Họ và tên',
+                    title: AppStrings.get('fullName'),
                     value: name,
                     onTap: () {},
                     showEdit: false,
@@ -380,23 +381,23 @@ class _AccountScreenState extends State<AccountScreen> {
                   const SizedBox(height: 12),
                   _buildInfoTile(
                     icon: Icons.email_outlined,
-                    title: 'Email',
-                    value: email.isNotEmpty ? email : 'Chưa cập nhật',
+                    title: AppStrings.get('email'),
+                    value: email.isNotEmpty ? email : AppStrings.get('notUpdated'),
                     onTap: () {},
                     showEdit: false,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoTile(
                     icon: Icons.phone_outlined,
-                    title: 'Số điện thoại',
-                    value: phone.isNotEmpty ? phone : 'Chưa cập nhật',
+                    title: AppStrings.get('phoneNumber'),
+                    value: phone.isNotEmpty ? phone : AppStrings.get('notUpdated'),
                     onTap: () {},
                     showEdit: false,
                   ),
                   const SizedBox(height: 12),
                   _buildInfoTile(
                     icon: Icons.cake_outlined,
-                    title: 'Ngày sinh',
+                    title: AppStrings.get('dateOfBirth'),
                     value: _formatDateOfBirth(_user?['dateOfBirth']),
                     onTap: _showDatePicker,
                     showEdit: true,
@@ -404,7 +405,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   const SizedBox(height: 12),
                   _buildInfoTile(
                     icon: Icons.verified_user_outlined,
-                    title: 'Vai trò',
+                    title: AppStrings.get('role'),
                     value: role,
                     showEdit: false,
                   ),
@@ -412,18 +413,18 @@ class _AccountScreenState extends State<AccountScreen> {
                     const SizedBox(height: 12),
                     _buildInfoTile(
                       icon: Icons.fingerprint,
-                      title: 'User ID',
+                      title: AppStrings.get('userId'),
                       value: userId,
                       showEdit: false,
                     ),
                   ],
 
                   const SizedBox(height: 24),
-                  _buildSectionTitle('Bảo mật'),
+                  _buildSectionTitle(AppStrings.get('security')),
                   const SizedBox(height: 12),
                   _buildInfoTile(
                     icon: Icons.lock_outline,
-                    title: 'Đổi mật khẩu',
+                    title: AppStrings.get('changePassword'),
                     value: '••••••••',
                     isAction: true,
                     onTap: () {},
@@ -459,7 +460,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         ),
                       ),
                       title: Text(
-                        'Xóa tài khoản',
+                        AppStrings.get('deleteAccount'),
                         style: GoogleFonts.montserrat(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -487,7 +488,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       },
                       icon: const Icon(Icons.logout, color: Colors.red),
                       label: Text(
-                        'Đăng xuất',
+                        AppStrings.get('logout'),
                         style: GoogleFonts.montserrat(
                           color: Colors.red,
                           fontWeight: FontWeight.bold,
