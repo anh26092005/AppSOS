@@ -15,6 +15,7 @@ import '../widgets/skeleton_widgets.dart';
 import '../widgets/skeleton_post.dart';
 import '../widgets/active_sos_banner.dart';
 import 'post_detail_screen.dart';
+import '../utils/app_strings.dart';
 
 class HomePageNew extends StatefulWidget {
   const HomePageNew({super.key});
@@ -37,7 +38,7 @@ class _HomePageNewState extends State<HomePageNew> {
   bool _hasMorePosts = true;
   final int _pageSize = 10;
 
-  String _userName = 'Bạn';
+  String _userName = AppStrings.get('you');
   String? _userAvatar; // Avatar URL from user profile
   String? _lunarDate; // Ngày âm lịch
 
@@ -104,7 +105,7 @@ class _HomePageNewState extends State<HomePageNew> {
       final user = await ApiService.getCachedUser();
       if (user != null && mounted) {
         setState(() {
-          _userName = user['fullName'] ?? 'Bạn';
+          _userName = user['fullName'] ?? AppStrings.get('you');
           _userAvatar = _getAvatarUrl(user['avatar']);
         });
       } else {
@@ -112,7 +113,7 @@ class _HomePageNewState extends State<HomePageNew> {
         final newUser = await ApiService.fetchProfile();
         if (mounted) {
           setState(() {
-            _userName = newUser['fullName'] ?? 'Bạn';
+            _userName = newUser['fullName'] ?? AppStrings.get('you');
             _userAvatar = _getAvatarUrl(newUser['avatar']);
           });
         }
@@ -217,7 +218,7 @@ class _HomePageNewState extends State<HomePageNew> {
       if (!mounted) return;
       _showCustomSnackBar(
         context,
-        'Không thể cập nhật lượt thích',
+        AppStrings.get('cannotUpdateLike'),
         isError: true,
       );
     }
@@ -226,11 +227,11 @@ class _HomePageNewState extends State<HomePageNew> {
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) {
-      return 'Chúc bạn sáng vui vẻ';
+      return AppStrings.get('goodMorning');
     } else if (hour >= 12 && hour < 18) {
-      return 'Chúc bạn chiều vui vẻ';
+      return AppStrings.get('goodAfternoon');
     } else {
-      return 'Chúc bạn tối vui vẻ';
+      return AppStrings.get('goodEvening');
     }
   }
 
@@ -239,13 +240,16 @@ class _HomePageNewState extends State<HomePageNew> {
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return 'Vừa xong';
+      return AppStrings.get('justNow');
     } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
+      final minutes = difference.inMinutes;
+      return '$minutes ${minutes == 1 ? AppStrings.get('minuteAgo') : AppStrings.get('minutesAgo')}';
     } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
+      final hours = difference.inHours;
+      return '$hours ${hours == 1 ? AppStrings.get('hourAgo') : AppStrings.get('hoursAgo')}';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} ngày trước';
+      final days = difference.inDays;
+      return '$days ${days == 1 ? AppStrings.get('dayAgo') : AppStrings.get('daysAgo')}';
     } else {
       return DateFormat('dd/MM/yyyy').format(dateTime);
     }
@@ -300,11 +304,11 @@ class _HomePageNewState extends State<HomePageNew> {
                   ),
                 )
               else if (_posts.isEmpty && !_isLoadingPosts)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
                     child: Text(
-                      'Chưa có bài viết nào',
-                      style: TextStyle(color: Color(0xFF777777)),
+                      AppStrings.get('noPosts'),
+                      style: const TextStyle(color: Color(0xFF777777)),
                     ),
                   ),
                 )
@@ -349,7 +353,7 @@ class _HomePageNewState extends State<HomePageNew> {
             ),
           ],
         ),
-        child: const Text('Không thể tải thông tin thời tiết'),
+        child: Text(AppStrings.get('cannotLoadWeather')),
       );
     }
 
@@ -401,7 +405,7 @@ class _HomePageNewState extends State<HomePageNew> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Thời tiết tại',
+                        AppStrings.get('weatherAt'),
                         style: GoogleFonts.montserrat(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -430,7 +434,7 @@ class _HomePageNewState extends State<HomePageNew> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Mưa: ${_weather!.humidity}%, Gió: ${_weather!.windSpeed.toStringAsFixed(0)} km/h',
+                '${AppStrings.get('rain')}: ${_weather!.humidity}%, ${AppStrings.get('wind')}: ${_weather!.windSpeed.toStringAsFixed(0)} km/h',
                 style: GoogleFonts.montserrat(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -720,7 +724,7 @@ class _HomePageNewState extends State<HomePageNew> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Lỗi tải ảnh',
+                                AppStrings.get('errorLoadingImage'),
                                 style: TextStyle(
                                   color: Colors.grey.shade700,
                                   fontSize: 12,
@@ -777,7 +781,7 @@ class _HomePageNewState extends State<HomePageNew> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Xem chi tiết',
+                              AppStrings.get('viewDetails'),
                               style: GoogleFonts.montserrat(
                                 fontSize: 10.sp, // Responsive font size
                                 fontWeight: FontWeight.w600,
@@ -915,7 +919,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Xin chào, $userName',
+                                '${AppStrings.get('hello')}, $userName',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.montserrat(
@@ -1017,7 +1021,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 right: 20 * (1 - progress),
               ),
               child: Text(
-                'Bản tin',
+                AppStrings.get('news'),
                 style: GoogleFonts.montserrat(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w900,
@@ -1055,7 +1059,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                   child: Text(
-                    'DL: $date - ÂL: $lunarDate',
+                    '${AppStrings.get('solarDate')}: $date - ${AppStrings.get('lunarDate')}: $lunarDate',
                     style: GoogleFonts.montserrat(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w600,

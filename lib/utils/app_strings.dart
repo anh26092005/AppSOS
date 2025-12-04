@@ -84,6 +84,31 @@ class AppStrings {
     'backToHome': {'vi': 'Về trang chủ', 'en': 'Back to home'},
     'victimInfo': {'vi': 'Thông tin người cần cứu', 'en': 'Victim information'},
     'cannotOpenMaps': {'vi': 'Không thể mở Google Maps', 'en': 'Cannot open Google Maps'},
+    
+    // Home Page
+    'you': {'vi': 'Bạn', 'en': 'You'},
+    'hello': {'vi': 'Xin chào', 'en': 'Hello'},
+    'goodMorning': {'vi': 'Chúc bạn sáng vui vẻ', 'en': 'Good morning'},
+    'goodAfternoon': {'vi': 'Chúc bạn chiều vui vẻ', 'en': 'Good afternoon'},
+    'goodEvening': {'vi': 'Chúc bạn tối vui vẻ', 'en': 'Good evening'},
+    'justNow': {'vi': 'Vừa xong', 'en': 'Just now'},
+    'minutesAgo': {'vi': 'phút trước', 'en': 'minutes ago'},
+    'minuteAgo': {'vi': 'phút trước', 'en': 'minute ago'},
+    'hoursAgo': {'vi': 'giờ trước', 'en': 'hours ago'},
+    'hourAgo': {'vi': 'giờ trước', 'en': 'hour ago'},
+    'daysAgo': {'vi': 'ngày trước', 'en': 'days ago'},
+    'dayAgo': {'vi': 'ngày trước', 'en': 'day ago'},
+    'weatherAt': {'vi': 'Thời tiết tại', 'en': 'Weather at'},
+    'rain': {'vi': 'Mưa', 'en': 'Rain'},
+    'wind': {'vi': 'Gió', 'en': 'Wind'},
+    'news': {'vi': 'Bản tin', 'en': 'News'},
+    'solarDate': {'vi': 'DL', 'en': 'Solar'},
+    'lunarDate': {'vi': 'ÂL', 'en': 'Lunar'},
+    'noPosts': {'vi': 'Chưa có bài viết nào', 'en': 'No posts yet'},
+    'cannotLoadWeather': {'vi': 'Không thể tải thông tin thời tiết', 'en': 'Cannot load weather'},
+    'viewDetails': {'vi': 'Xem chi tiết', 'en': 'View details'},
+    'cannotUpdateLike': {'vi': 'Không thể cập nhật lượt thích', 'en': 'Cannot update like'},
+    'errorLoadingImage': {'vi': 'Lỗi tải ảnh', 'en': 'Error loading image'},
   };
   
   // Lấy string theo key

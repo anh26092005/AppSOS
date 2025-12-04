@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/avatar_upload_dialog.dart';
 import 'create_article_screen.dart';
+import '../utils/app_strings.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -96,12 +97,12 @@ class _AccountPageState extends State<AccountPage> {
 
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        _showCustomSnackBar(context, 'Đã cập nhật ảnh đại diện');
+        _showCustomSnackBar(context, AppStrings.get('avatarUpdated'));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
+        _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
       }
     }
   }
@@ -109,17 +110,17 @@ class _AccountPageState extends State<AccountPage> {
   String _getBio() {
     final bio = _stringValue(_user?['bio']).trim();
     if (bio.isNotEmpty) return bio;
-    return 'Chưa có giới thiệu bản thân';
+    return AppStrings.get('noBioYet');
   }
 
   String _getBirthYear() {
     final dateOfBirth = _user?['dateOfBirth'];
-    if (dateOfBirth == null) return 'Chưa cập nhật năm sinh';
+    if (dateOfBirth == null) return AppStrings.get('noYearOfBirth');
     try {
       final date = DateTime.parse(dateOfBirth);
       return date.year.toString();
     } catch (e) {
-      return 'Chưa cập nhật năm sinh';
+      return AppStrings.get('noYearOfBirth');
     }
   }
 
@@ -131,14 +132,14 @@ class _AccountPageState extends State<AccountPage> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Chỉnh sửa giới thiệu'),
+        title: Text(AppStrings.get('editBio')),
         backgroundColor: Theme.of(context).cardColor,
         content: TextField(
           controller: bioController,
           maxLines: 3,
           maxLength: 25,
           decoration: InputDecoration(
-            hintText: 'Nhập giới thiệu về bạn...',
+            hintText: AppStrings.get('enterBio'),
             border: OutlineInputBorder(
               borderSide: const BorderSide(color: Colors.cyan, width: 2),
               borderRadius: BorderRadius.circular(8),
@@ -156,11 +157,11 @@ class _AccountPageState extends State<AccountPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text(AppStrings.get('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Lưu'),
+            child: Text(AppStrings.get('save')),
           ),
         ],
       ),
@@ -172,11 +173,11 @@ class _AccountPageState extends State<AccountPage> {
         await ApiService.updateProfile(bio: newBio);
         await _refreshProfile();
         if (mounted) {
-          _showCustomSnackBar(context, 'Đã cập nhật giới thiệu');
+          _showCustomSnackBar(context, AppStrings.get('bioUpdated'));
         }
       } catch (e) {
         if (mounted) {
-          _showCustomSnackBar(context, 'Lỗi: $e', isError: true);
+          _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
         }
       }
     }
@@ -320,8 +321,8 @@ class _AccountPageState extends State<AccountPage> {
                           const SizedBox(width: 4),
                           Text(
                             _isUploadingAvatar
-                                ? "Đang tải lên..."
-                                : "Đổi ảnh đại diện",
+                                ? AppStrings.get('uploading')
+                                : AppStrings.get('changeAvatar'),
                             style: GoogleFonts.montserrat(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -345,8 +346,8 @@ class _AccountPageState extends State<AccountPage> {
                     _buildAccountTile(
                       context,
                       icon: Icons.person_outline,
-                      title: 'Hồ sơ',
-                      subtitle: 'Xem và chỉnh sửa thông tin',
+                      title: AppStrings.get('myProfile'),
+                      subtitle: AppStrings.get('viewEditInfo'),
                       onTap: () {
                         Navigator.pushNamed(context, '/account');
                       },
@@ -412,7 +413,7 @@ class _AccountPageState extends State<AccountPage> {
                                     ),
                                   ),
                                   title: Text(
-                                    'Trạng thái hoạt động',
+                                    AppStrings.get('volunteerStatus'),
                                     style: GoogleFonts.montserrat(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -425,8 +426,8 @@ class _AccountPageState extends State<AccountPage> {
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(
                                       _isReady
-                                          ? 'Đang sẵn sàng nhận yêu cầu'
-                                          : 'Tắt nhận yêu cầu SOS',
+                                          ? AppStrings.get('readyForRequests')
+                                          : AppStrings.get('notReceivingSOS'),
                                       style: GoogleFonts.montserrat(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
@@ -464,8 +465,8 @@ class _AccountPageState extends State<AccountPage> {
                                               _showCustomSnackBar(
                                                 context,
                                                 newReadyStatus
-                                                    ? 'Đã bật nhận yêu cầu SOS'
-                                                    : 'Đã tắt nhận yêu cầu SOS',
+                                                    ? AppStrings.get('sosRequestOn')
+                                                    : AppStrings.get('sosRequestOff'),
                                                 isError: !newReadyStatus,
                                               );
                                             } catch (e) {
@@ -475,7 +476,7 @@ class _AccountPageState extends State<AccountPage> {
                                               if (!mounted) return;
                                               _showCustomSnackBar(
                                                 context,
-                                                'Lỗi: $e',
+                                                '${AppStrings.get('error')}: $e',
                                                 isError: true,
                                               );
                                             }
@@ -488,8 +489,8 @@ class _AccountPageState extends State<AccountPage> {
                               _buildAccountTile(
                                 context,
                                 icon: Icons.badge_outlined,
-                                title: 'Xem hồ sơ tình nguyện viên',
-                                subtitle: 'Quản lý hồ sơ TNV của bạn',
+                                title: AppStrings.get('viewVolunteerProfile'),
+                                subtitle: AppStrings.get('manageVolunteerProfile'),
                                 onTap: () {
                                   Navigator.pushNamed(
                                     context,
@@ -507,21 +508,21 @@ class _AccountPageState extends State<AccountPage> {
                           return _buildAccountTile(
                             context,
                             icon: Icons.hourglass_empty,
-                            title: 'Hồ sơ đang chờ duyệt',
-                            subtitle: 'Vui lòng chờ quản trị viên xác nhận',
+                            title: AppStrings.get('pendingApproval'),
+                            subtitle: AppStrings.get('waitForAdmin'),
                             // iconColor: Colors.orange, // Helper chưa hỗ trợ iconColor, cần sửa helper hoặc bỏ qua
                             onTap: () {
                               showDialog(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
-                                  title: const Text('Đang xét duyệt'),
+                                  title: Text(AppStrings.get('underReview')),
                                   content: const Text(
                                     'Hồ sơ đăng ký tình nguyện viên của bạn đang được ban quản trị xem xét. Chúng tôi sẽ thông báo khi có kết quả.',
                                   ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(ctx),
-                                      child: const Text('Đóng'),
+                                      child: Text(AppStrings.get('close')),
                                     ),
                                   ],
                                 ),
@@ -535,8 +536,8 @@ class _AccountPageState extends State<AccountPage> {
                           return _buildAccountTile(
                             context,
                             icon: Icons.error_outline,
-                            title: 'Đăng ký bị từ chối',
-                            subtitle: 'Nhấn để đăng ký lại',
+                            title: AppStrings.get('registrationRejected'),
+                            subtitle: AppStrings.get('tapToReregister'),
                             // iconColor: Colors.red,
                             onTap: () {
                               Navigator.pushNamed(
@@ -551,8 +552,8 @@ class _AccountPageState extends State<AccountPage> {
                         return _buildAccountTile(
                           context,
                           icon: Icons.volunteer_activism,
-                          title: 'Đăng ký làm tình nguyện viên',
-                          subtitle: 'Tham gia cứu hộ cộng đồng',
+                          title: AppStrings.get('becomeVolunteer'),
+                          subtitle: AppStrings.get('joinRescueCommunity'),
                           onTap: () {
                             Navigator.pushNamed(
                               context,
@@ -567,8 +568,8 @@ class _AccountPageState extends State<AccountPage> {
                     _buildAccountTile(
                       context,
                       icon: Icons.settings_outlined,
-                      title: 'Cài đặt',
-                      subtitle: 'Tùy chỉnh ứng dụng',
+                      title: AppStrings.get('settings'),
+                      subtitle: AppStrings.get('customizeApp'),
                       onTap: () {
                         Navigator.pushNamed(context, '/settings');
                       },
@@ -602,8 +603,8 @@ class _AccountPageState extends State<AccountPage> {
                             _buildAccountTile(
                               context,
                               icon: Icons.create_outlined,
-                              title: 'Đăng bài viết',
-                              subtitle: 'Tạo bài viết mới cho cộng đồng',
+                              title: AppStrings.get('createPost'),
+                              subtitle: AppStrings.get('createPostSubtitle'),
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -623,8 +624,8 @@ class _AccountPageState extends State<AccountPage> {
                     _buildAccountTile(
                       context,
                       icon: Icons.info_outline,
-                      title: 'Về ứng dụng',
-                      subtitle: 'Thông tin phiên bản',
+                      title: AppStrings.get('aboutApp'),
+                      subtitle: AppStrings.get('versionInfo'),
                       onTap: () => _showAboutDialog(context),
                     ),
                     const SizedBox(height: 130),

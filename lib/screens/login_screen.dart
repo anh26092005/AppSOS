@@ -7,6 +7,7 @@ import '../services/fcm_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_api.dart';
 import '../widgets/permission_dialog.dart';
+import '../utils/app_strings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -84,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
           try {
             await ApiService.registerDeviceToken(token);
           } catch (e) {
-            print('❌ Lỗi đăng ký FCM token: $e');
+            debugPrint('❌ Lỗi đăng ký FCM token: $e');
           }
         }
 
@@ -92,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await ApiService.setRememberMe(_rememberMe);
 
         if (!mounted) return;
-        _showCustomSnackBar(context, 'Đăng nhập thành công ✅');
+        _showCustomSnackBar(context, AppStrings.get('loginSuccess'));
 
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/main');
@@ -106,14 +107,14 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         _showCustomSnackBar(
           context,
-          'Sai thông tin đăng nhập ❌',
+          AppStrings.get('loginError'),
           isError: true,
         );
       }
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      _showCustomSnackBar(context, 'Lỗi đăng nhập: $e', isError: true);
+      _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
     }
   }
 
@@ -212,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Đăng Nhập',
+                        AppStrings.get('login'),
                         style: GoogleFonts.montserrat(
                           fontSize: 34,
                           fontWeight: FontWeight.w800,
@@ -222,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Chào mừng bạn!',
+                        AppStrings.get('welcome'),
                         style: GoogleFonts.montserrat(
                           fontSize: 15,
                           color: Colors.white.withValues(alpha: 0.9),
@@ -274,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 24,
                         ),
                         label: Text(
-                          'Đăng nhập với Google',
+                          AppStrings.get('loginWithGoogle'),
                           style: GoogleFonts.montserrat(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -300,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'Hoặc',
+                              AppStrings.get('or'),
                               style: GoogleFonts.montserrat(
                                 color: Colors.grey.shade400,
                                 fontSize: 13,
@@ -316,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Email/Phone Input
                       _buildModernInput(
                         controller: _emailOrPhoneController,
-                        hint: 'Email hoặc số điện thoại',
+                        hint: AppStrings.get('emailOrPhone'),
                         icon: Icons.email_outlined,
                       ),
                       const SizedBox(height: 16),
@@ -324,7 +325,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Password Input
                       _buildModernInput(
                         controller: _passwordController,
-                        hint: 'Mật khẩu',
+                        hint: AppStrings.get('password'),
                         icon: Icons.lock_outline,
                         isPassword: true,
                         obscureText: _obscurePassword,
@@ -365,7 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Ghi nhớ',
+                                  AppStrings.get('rememberMe'),
                                   style: GoogleFonts.montserrat(
                                     fontSize: 14,
                                     color: Colors.grey.shade600,
@@ -377,7 +378,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextButton(
                               onPressed: () {},
                               child: Text(
-                                'Quên mật khẩu?',
+                                AppStrings.get('forgotPassword'),
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14,
                                   color: const Color(0xFF005BEA),
@@ -420,7 +421,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           child: Text(
-                            'Đăng Nhập',
+                            AppStrings.get('login'),
                             style: GoogleFonts.montserrat(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -436,7 +437,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Chưa có tài khoản? ',
+                            AppStrings.get('noAccount'),
                             style: GoogleFonts.montserrat(
                               color: Colors.grey.shade600,
                               fontSize: 14,
@@ -450,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                             child: Text(
-                              'Đăng ký ngay',
+                              AppStrings.get('signupNow'),
                               style: GoogleFonts.montserrat(
                                 color: const Color(0xFF005BEA),
                                 fontWeight: FontWeight.bold,
@@ -523,7 +524,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Vui lòng nhập thông tin';
+            return AppStrings.get('pleaseEnterInfo');
           }
           return null;
         },
