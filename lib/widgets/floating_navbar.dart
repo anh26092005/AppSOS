@@ -40,16 +40,31 @@ class _FloatingNavbarState extends State<FloatingNavbar>
   Future<void> _loadUserRole() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString('user');
+      final userJson = prefs.getString(
+        'auth_user',
+      ); // ← FIX: Match ApiService key
+      print('🔍 FloatingNavbar - userJson: $userJson');
+
       if (userJson != null) {
         final user = json.decode(userJson);
         final roles = user['roles'] as List<dynamic>? ?? [];
+
+        print('🔍 FloatingNavbar - User roles: $roles');
+
+        final isVol = roles.contains('TNV_CN') || roles.contains('TNV_TC');
+
+        print('🔍 FloatingNavbar - Is Volunteer: $isVol');
+
         setState(() {
-          _isVolunteer = roles.contains('TNV_CN') || roles.contains('TNV_TC');
+          _isVolunteer = isVol;
         });
+
+        print('🔍 FloatingNavbar - _isVolunteer set to: $_isVolunteer');
+      } else {
+        print('⚠️ FloatingNavbar - No user data in SharedPreferences');
       }
     } catch (e) {
-      print('Error loading user role: $e');
+      print('❌ Error loading user role: $e');
     }
   }
 
@@ -146,6 +161,9 @@ class _FloatingNavbarState extends State<FloatingNavbar>
 
   @override
   Widget build(BuildContext context) {
+    // Debug: Print EVERY time build is called
+    print('🎨 FloatingNavbar BUILD - _isVolunteer: $_isVolunteer');
+
     return Positioned(
       left: 16,
       right: 16,
