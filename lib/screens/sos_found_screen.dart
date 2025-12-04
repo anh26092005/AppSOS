@@ -413,8 +413,16 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.home_outlined),
-            onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
+            onPressed: () async {
+              // Clear active case first
+              await context.read<ActiveSosProvider>().clearActiveCase();
+
+              if (!mounted) return;
+
+              // Navigate to main screen
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/main', (route) => false);
             },
             tooltip: 'Về trang chủ',
           ),

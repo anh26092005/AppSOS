@@ -250,7 +250,7 @@ const createSosCase = async (req, res, next) => {
     });
 
     // If >= 3 attempts → Ban for 10 minutes
-    if (logCount >= 3) {
+    if (logCount >= 100) {
       const banUntil = new Date(Date.now() + 10 * 60000);
       await User.updateOne({ _id: reporterId }, { sosBanUntil: banUntil });
 

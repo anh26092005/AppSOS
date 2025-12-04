@@ -68,13 +68,15 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
 
   Future<void> _calculateDistance() async {
     try {
-      // Get volunteer's current position
-      Position volunteerCurrentPosition = await Geolocator.getCurrentPosition();
+      // Use STATIC volunteer position (at accept time) instead of real-time
+      // This ensures consistent distance with what the reporter sees
+      final volunteerLat = _volunteerPosition.latitude;
+      final volunteerLng = _volunteerPosition.longitude;
 
-      // Calculate distance between volunteer and reporter
+      // Calculate distance between STATIC positions
       double distanceInMeters = Geolocator.distanceBetween(
-        volunteerCurrentPosition.latitude,
-        volunteerCurrentPosition.longitude,
+        volunteerLat,
+        volunteerLng,
         _reporterPosition.latitude,
         _reporterPosition.longitude,
       );
