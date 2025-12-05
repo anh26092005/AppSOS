@@ -8,6 +8,7 @@ import '../widgets/sos_alert_dialog.dart';
 import '../screens/sos_notification_dialog.dart';
 import '../widgets/sos_accepted_dialog.dart';
 import '../services/api_service.dart';
+import '../services/notification_sound_service.dart';
 import '../providers/active_sos_provider.dart';
 
 class FCMService {
@@ -21,20 +22,21 @@ class FCMService {
   /// Lấy FCM token
   static Future<String?> getFCMToken() async {
     try {
-      // Yêu cầu quyền notification
+      // Yêu cầu quyền notification (không cho phép Firebase tự phát sound)
       NotificationSettings settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
-        sound: true,
+        sound: false, // Tắt sound của Firebase, chỉ dùng custom sound
         provisional: false,
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        // Cấu hình để hiện thông báo hệ thống ngay cả khi app đang foreground (iOS/Android 13+)
+        // Cấu hình để hiện thông báo hệ thống khi app đang foreground (iOS/Android 13+)
+        // QUAN TRỌNG: Tắt sound để không phát âm thanh system, chỉ dùng custom sound
         await _messaging.setForegroundNotificationPresentationOptions(
           alert: true,
           badge: true,
-          sound: true,
+          sound: false, // Tắt âm thanh system để dùng custom sound
         );
 
         // Lấy token
@@ -125,6 +127,9 @@ class FCMService {
 
       // Hiển thị SOS Alert Dialog nếu là tin nhắn SOS
       if (message.data['type'] == 'SOS_CASE') {
+        // Phát âm thanh thông báo
+        NotificationSoundService.playNotificationSound();
+
         final context = NavigationService.context;
         if (context != null) {
           try {
@@ -227,6 +232,9 @@ class FCMService {
 
       // Hiển thị Alert khi SOS bị hủy
       if (message.data['type'] == 'SOS_CANCELLED') {
+        // Phát âm thanh thông báo
+        NotificationSoundService.playNotificationSound();
+
         final context = NavigationService.context;
 
         if (context != null) {
@@ -319,6 +327,9 @@ class FCMService {
 
       // Xử lý khi SOS hết hạn (TNV timeout)
       if (message.data['type'] == 'SOS_EXPIRED') {
+        // Phát âm thanh thông báo
+        NotificationSoundService.playNotificationSound();
+
         final caseId = message.data['caseId'];
 
         // Broadcast expired event to close dialog
