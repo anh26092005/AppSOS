@@ -28,7 +28,8 @@ class SOSAlertDialog extends StatefulWidget {
 class _SOSAlertDialogState extends State<SOSAlertDialog> {
   StreamSubscription? _cancelSubscription;
   bool _isDismissed = false;
-  String? _calculatedDistance; // [NEW] Real-time distance
+  String? _calculatedDistance;
+  bool _isCalculatingDistance = true; // [NEW] Loading state
 
   @override
   void initState() {
@@ -77,6 +78,7 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
         setState(() {
           _calculatedDistance =
               widget.data['distance']; // Fallback to backend distance
+          _isCalculatingDistance = false;
         });
         return;
       }
@@ -98,6 +100,7 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
       setState(() {
         _calculatedDistance = distanceKm.toStringAsFixed(1);
+        _isCalculatingDistance = false;
       });
 
       print('📏 Calculated real distance: ${distanceKm.toStringAsFixed(1)}km');
@@ -107,6 +110,7 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
       print('❌ Error calculating distance: $e');
       setState(() {
         _calculatedDistance = widget.data['distance']; // Fallback
+        _isCalculatingDistance = false;
       });
     }
   }
@@ -313,50 +317,51 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
             const SizedBox(height: 20),
 
-            // Distance
-            Text(
-              "Cách bạn ${distance}km",
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-
-            // Manual address if available
-            if (manualAddress != null &&
-                manualAddress.toString().isNotEmpty) ...{
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.place, size: 16, color: Colors.blue.shade700),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        manualAddress.toString(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.blue.shade900,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+            // Distance with skeleton loading
+            _isCalculatingDistance
+                ? _buildDistanceSkeleton()
+                : Text(
+                    "Cách bạn ${_calculatedDistance ?? distance}km",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                  ],
-                ),
-              ),
-            },
+                  ),
 
+            // // Manual address if available
+            // if (manualAddress != null &&
+            //     manualAddress.toString().isNotEmpty) ...{
+            //   const SizedBox(height: 8),
+            //   Container(
+            //     padding: const EdgeInsets.symmetric(
+            //       horizontal: 16,
+            //       vertical: 8,
+            //     ),
+            //     decoration: BoxDecoration(
+            //       color: Colors.blue.shade50,
+            //       borderRadius: BorderRadius.circular(8),
+            //       border: Border.all(color: Colors.blue.shade200),
+            //     ),
+            //     child: Row(
+            //       children: [
+            //         Icon(Icons.place, size: 16, color: Colors.blue.shade700),
+            //         const SizedBox(width: 8),
+            //         Expanded(
+            //           child: Text(
+            //             manualAddress.toString(),
+            //             style: TextStyle(
+            //               fontSize: 13,
+            //               color: Colors.blue.shade900,
+            //             ),
+            //             maxLines: 2,
+            //             overflow: TextOverflow.ellipsis,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // },
             const SizedBox(height: 25),
 
             // Buttons
@@ -415,6 +420,28 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
             const SizedBox(height: 10),
           ],
+        ),
+      ),
+    );
+  }
+
+  // [NEW] Build skeleton loading for distance
+  Widget _buildDistanceSkeleton() {
+    return Container(
+      height: 24,
+      width: 150,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+          ),
         ),
       ),
     );

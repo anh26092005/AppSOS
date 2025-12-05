@@ -32,7 +32,8 @@ class SosNotificationDialog extends StatefulWidget {
 
 class _SosNotificationDialogState extends State<SosNotificationDialog> {
   bool _isLoading = false;
-  String? _calculatedDistance; // [NEW] Real-time calculated distance
+  String? _calculatedDistance;
+  bool _isCalculatingDistance = true; // [NEW] Loading state for distance
 
   @override
   void initState() {
@@ -44,7 +45,12 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
   Future<void> _calculateRealDistance() async {
     if (widget.reporterLatitude == null || widget.reporterLongitude == null) {
       print('⚠️ Reporter coordinates not provided');
-      _calculatedDistance = widget.distance;
+      if (mounted) {
+        setState(() {
+          _calculatedDistance = widget.distance;
+          _isCalculatingDistance = false;
+        });
+      }
       return;
     }
 
@@ -65,6 +71,7 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
       if (mounted) {
         setState(() {
           _calculatedDistance = distanceKm.toStringAsFixed(1);
+          _isCalculatingDistance = false;
         });
       }
 
@@ -73,7 +80,12 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
       );
     } catch (e) {
       print('❌ Error calculating distance: $e');
-      _calculatedDistance = widget.distance;
+      if (mounted) {
+        setState(() {
+          _calculatedDistance = widget.distance;
+          _isCalculatingDistance = false;
+        });
+      }
     }
   }
 
@@ -299,10 +311,54 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
                     _getEmergencyText(widget.emergencyType),
                   ),
                   const Divider(height: 20),
-                  _buildInfoRow(
-                    Icons.location_on,
-                    'Khoảng cách',
-                    '${_calculatedDistance ?? widget.distance} km', // Use calculated distance
+                  // Distance with skeleton loading
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Khoảng cách',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      _isCalculatingDistance
+                          ? Container(
+                              height: 18,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Text(
+                              '${_calculatedDistance ?? widget.distance} km',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                    ],
                   ),
                   // [NEW] Show manual address if available
                   if (widget.manualAddress != null &&
