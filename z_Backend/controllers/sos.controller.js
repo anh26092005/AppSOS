@@ -52,7 +52,7 @@ const getDirectionsUrl = (reporterLocation, responderLocation) => {
 
 // Tìm TNV gần nhất trong bán kính
 const findAndNotifyNearestVolunteers = async (sosCase) => {
-  const { location } = sosCase;
+  const { location, reporterId } = sosCase;
   const maxRadius = 50; // km
   const maxVolunteers = 10;
 
@@ -71,11 +71,12 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       status: 'NOTIFIED',
     }).distinct('volunteerId');
 
+    // [FIX] Exclude reporter to prevent self-notification
     // Gộp danh sách loại trừ và convert sang ObjectId
-    const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers])]
+    const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers, reporterId])]
       .map(id => new mongoose.Types.ObjectId(id));
 
-    console.log(`🔍 Finding volunteers. Excluded: ${excludedVolunteerIds.length}, Radius: ${maxRadius}km`);
+    console.log(`🔍 Finding volunteers. Excluded: ${excludedVolunteerIds.length} (including reporter), Radius: ${maxRadius}km`);
 
     // Tìm TNV trong bán kính, không bận, đã approved và ready
     // Sử dụng $geoNear làm stage đầu tiên (bắt buộc)
@@ -529,14 +530,20 @@ const cancelSosCase = async (req, res, next) => {
 
       // Gửi thông báo cho tất cả TNV trong queue khi REPORTER/ADMIN hủy
       try {
+        // [FIX] ONLY get volunteers, NOT the report who created the SOS
         const queueItems = await SosResponderQueue.find({
           sosId: sosCase._id,
           status: 'DECLINED',
         }).distinct('volunteerId');
 
-        console.log(`📢 Notifying ${queueItems.length} volunteers about SOS cancellation`);
+        // [FIX] Filter out the reporter to prevent them from receiving TNV notifications
+        const reporterId = sosCase.reporterId._id || sosCase.reporterId;
+        const reporterIdStr = reporterId.toString();
+        const volunteerIdsToNotify = queueItems.filter(vid => vid.toString() !== reporterIdStr);
 
-        const notificationPromises = queueItems.map(async (volunteerId) => {
+        console.log(`📢 Notifying ${volunteerIdsToNotify.length} volunteers about SOS cancellation (excluded reporter)`);
+
+        const notificationPromises = volunteerIdsToNotify.map(async (volunteerId) => {
           try {
             const title = '❌ Yêu cầu SOS đã bị hủy';
             const body = `Người dùng đã hủy yêu cầu ${sosCase.emergencyType}`;
@@ -573,9 +580,9 @@ const cancelSosCase = async (req, res, next) => {
         console.log('✅ Cancellation notifications sent to all volunteers');
 
         // NOTIFY NEXT SOS: Find and notify each volunteer of their next oldest pending SOS
-        console.log(`🔍 Finding next pending SOS for ${queueItems.length} volunteers...`);
+        console.log(`🔍 Finding next pending SOS for ${volunteerIdsToNotify.length} volunteers...`);
 
-        const nextSosPromises = queueItems.map(async (volunteerId) => {
+        const nextSosPromises = volunteerIdsToNotify.map(async (volunteerId) => {
           try {
             // Get volunteer profile for homeBase location
             const volunteerProfile = await VolunteerProfile.findOne({

@@ -60,6 +60,11 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
         _isLoading = false;
       });
 
+      // [FIX] Update provider so banner shows correct status
+      if (mounted) {
+        context.read<ActiveSosProvider>().setActiveCase(response['data']);
+      }
+
       // Calculate distance
       _calculateDistance();
 
@@ -418,6 +423,7 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
               // Banner phải vẫn hiển thị để user biết TNV đang đến
               Navigator.of(
                 context,
+                rootNavigator: true,
               ).pushNamedAndRemoveUntil('/main', (route) => false);
             },
             tooltip: 'Về trang chủ',
