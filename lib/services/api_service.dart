@@ -722,6 +722,37 @@ class ApiService {
       return null;
     }
   }
+
+  /// Đổi mật khẩu
+  static Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final token = await getToken();
+    if (token == null) {
+      throw Exception('Vui lòng đăng nhập để đổi mật khẩu');
+    }
+
+    final url = Uri.parse('$baseUrl/auth/change-password');
+    final headers = await _headers();
+
+    final res = await http.put(
+      url,
+      headers: headers,
+      body: jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    final data = _decode(res);
+
+    if (res.statusCode == 200) {
+      return;
+    }
+
+    throw Exception(data['message'] ?? 'Không thể đổi mật khẩu');
+  }
 }
 
 class SosBannedException implements Exception {
