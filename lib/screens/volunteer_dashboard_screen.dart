@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -20,12 +21,13 @@ class VolunteerDashboardScreen extends StatefulWidget {
 class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   GoogleMapController? _mapController;
 
-  // Current location (default to Ho Chi Minh City)
+  // Current location (default fallback to Ho Chi Minh City if GPS fails)
   LatLng _currentLocation = const LatLng(10.8500, 106.6500);
   LatLng? _victimLocation;
   bool _isLocationLoaded = false;
   Set<Marker> _markers = {};
   bool _isReady = false;
+  Timer? _locationUpdateTimer; // [NEW] Timer for periodic location updates
 
   // Check if Google Maps is supported on current platform
   bool _isGoogleMapsSupported = true;
@@ -36,6 +38,11 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
     _checkPlatformSupport();
     _requestLocationPermission();
     _fetchStatus();
+
+    // [NEW] Start periodic location updates every 10 seconds
+    _locationUpdateTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _getCurrentLocation();
+    });
 
     // Load active case if any
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -94,6 +101,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   @override
   void dispose() {
     _mapController?.dispose();
+    _locationUpdateTimer?.cancel(); // [NEW] Cancel periodic updates
     super.dispose();
   }
 
@@ -135,6 +143,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
               .then((_) {
                 print(
                   '✅ Location updated to backend: ${position.latitude}, ${position.longitude}',
+                );
+                print(
+                  '📍 TNV current location: ${position.latitude}, ${position.longitude}',
                 );
               })
               .catchError((e) {
