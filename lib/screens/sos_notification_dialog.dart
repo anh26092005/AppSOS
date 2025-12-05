@@ -7,8 +7,10 @@ class SosNotificationDialog extends StatefulWidget {
   final String caseCode;
   final String emergencyType;
   final String distance;
-  final String? reporterName; // [NEW] Tên người gặp nạn
-  final String? manualAddress; // [NEW] Địa chỉ (nếu có)
+  final String? reporterName;
+  final String? manualAddress;
+  final double? reporterLatitude; // [NEW]
+  final double? reporterLongitude; // [NEW]
   final Function(Map<String, dynamic>)? onAccepted;
 
   const SosNotificationDialog({
@@ -17,8 +19,10 @@ class SosNotificationDialog extends StatefulWidget {
     required this.caseCode,
     required this.emergencyType,
     required this.distance,
-    this.reporterName, // [NEW]
-    this.manualAddress, // [NEW]
+    this.reporterName,
+    this.manualAddress,
+    this.reporterLatitude, // [NEW]
+    this.reporterLongitude, // [NEW]
     this.onAccepted,
   });
 
@@ -28,6 +32,50 @@ class SosNotificationDialog extends StatefulWidget {
 
 class _SosNotificationDialogState extends State<SosNotificationDialog> {
   bool _isLoading = false;
+  String? _calculatedDistance; // [NEW] Real-time calculated distance
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateRealDistance(); // Calculate distance on init
+  }
+
+  // [NEW] Calculate real distance from TNV GPS
+  Future<void> _calculateRealDistance() async {
+    if (widget.reporterLatitude == null || widget.reporterLongitude == null) {
+      print('⚠️ Reporter coordinates not provided');
+      _calculatedDistance = widget.distance;
+      return;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final distanceMeters = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        widget.reporterLatitude!,
+        widget.reporterLongitude!,
+      );
+
+      final distanceKm = distanceMeters / 1000;
+
+      if (mounted) {
+        setState(() {
+          _calculatedDistance = distanceKm.toStringAsFixed(1);
+        });
+      }
+
+      print(
+        '📏 Notification Dialog - Calculated distance: ${distanceKm.toStringAsFixed(1)}km',
+      );
+    } catch (e) {
+      print('❌ Error calculating distance: $e');
+      _calculatedDistance = widget.distance;
+    }
+  }
 
   Future<void> _handleAccept() async {
     setState(() => _isLoading = true);
@@ -254,7 +302,7 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
                   _buildInfoRow(
                     Icons.location_on,
                     'Khoảng cách',
-                    '${widget.distance} km',
+                    '${_calculatedDistance ?? widget.distance} km', // Use calculated distance
                   ),
                   // [NEW] Show manual address if available
                   if (widget.manualAddress != null &&

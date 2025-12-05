@@ -190,6 +190,16 @@ class FCMService {
                         distance: message.data['distance'] ?? 'Unknown',
                         reporterName: message.data['reporterName'],
                         manualAddress: message.data['manualAddress'],
+                        reporterLatitude: message.data['latitude'] != null
+                            ? double.tryParse(
+                                message.data['latitude'].toString(),
+                              )
+                            : null,
+                        reporterLongitude: message.data['longitude'] != null
+                            ? double.tryParse(
+                                message.data['longitude'].toString(),
+                              )
+                            : null,
                         onAccepted: (sosData) {
                           context.read<ActiveSosProvider>().setActiveCase(
                             sosData,

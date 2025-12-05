@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
 import '../utils/navigation_service.dart';
@@ -27,10 +28,13 @@ class SOSAlertDialog extends StatefulWidget {
 class _SOSAlertDialogState extends State<SOSAlertDialog> {
   StreamSubscription? _cancelSubscription;
   bool _isDismissed = false;
+  String? _calculatedDistance; // [NEW] Real-time distance
 
   @override
   void initState() {
     super.initState();
+    _calculateRealDistance(); // [NEW] Calculate real distance on init
+
     // Listen for cancellation events
     _cancelSubscription = FCMService.cancelStream.listen((cancelledCaseId) {
       if (cancelledCaseId == widget.caseId && !_isDismissed) {
@@ -59,6 +63,52 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
         }
       }
     });
+  }
+
+  // [NEW] Calculate real distance from TNV GPS to reporter
+  Future<void> _calculateRealDistance() async {
+    try {
+      // Get reporter coordinates from FCM data
+      final reporterLat = widget.data['latitude'];
+      final reporterLng = widget.data['longitude'];
+
+      if (reporterLat == null || reporterLng == null) {
+        print('⚠️ Reporter coordinates not in notification data');
+        setState(() {
+          _calculatedDistance =
+              widget.data['distance']; // Fallback to backend distance
+        });
+        return;
+      }
+
+      // Get TNV current GPS location
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Calculate distance
+      final distanceMeters = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        double.parse(reporterLat.toString()),
+        double.parse(reporterLng.toString()),
+      );
+
+      final distanceKm = distanceMeters / 1000;
+
+      setState(() {
+        _calculatedDistance = distanceKm.toStringAsFixed(1);
+      });
+
+      print('📏 Calculated real distance: ${distanceKm.toStringAsFixed(1)}km');
+      print('   TNV: [${position.latitude}, ${position.longitude}]');
+      print('   Reporter: [$reporterLat, $reporterLng]');
+    } catch (e) {
+      print('❌ Error calculating distance: $e');
+      setState(() {
+        _calculatedDistance = widget.data['distance']; // Fallback
+      });
+    }
   }
 
   @override
@@ -160,17 +210,19 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
   Widget build(BuildContext context) {
     // Parse data
     final emergencyType = widget.data['emergencyType'] ?? 'Khẩn cấp';
-    final distance = widget.data['distance'] ?? '---';
+    final distance =
+        _calculatedDistance ??
+        widget.data['distance'] ??
+        '---'; // [CHANGED] Use calculated distance
     final reporterName = widget.data['reporterName'] ?? 'Người gặp nạn';
     final manualAddress = widget.data['manualAddress'];
 
     // [DEBUG] Log to check distance value
     print('═══════════════════════════════════════');
     print('🔍 SOS ALERT DIALOG DATA:');
-    print('   Full data: ${widget.data}');
-    print('   Distance from data: $distance');
-    print('   Emergency type: $emergencyType');
-    print('   Reporter name: $reporterName');
+    print('   Backend distance: ${widget.data['distance']}');
+    print('   Calculated distance: $_calculatedDistance');
+    print('   Displaying: $distance');
     print('═══════════════════════════════════════');
 
     return Dialog(
