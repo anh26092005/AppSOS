@@ -80,14 +80,14 @@ const sendPushNotification = async (pushToken, title, body, data = {}) => {
       android: {
         priority: 'high',
         notification: {
-          sound: 'default',
+          // Đã tắt sound - sử dụng custom sound trong app
           channelId: 'sos_emergency',
         },
       },
       apns: {
         payload: {
           aps: {
-            sound: 'default',
+            // Đã tắt sound - sử dụng custom sound trong app
             badge: 1,
           },
         },
@@ -151,14 +151,14 @@ const sendMulticastNotification = async (pushTokens, title, body, data = {}) => 
       android: {
         priority: 'high',
         notification: {
-          sound: 'default',
+          // Đã tắt sound - sử dụng custom sound trong app
           channelId: 'sos_emergency',
         },
       },
       apns: {
         payload: {
           aps: {
-            sound: 'default',
+            // Đã tắt sound - sử dụng custom sound trong app
             badge: 1,
           },
         },
