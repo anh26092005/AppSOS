@@ -4,6 +4,7 @@ import '../providers/active_sos_provider.dart';
 import '../screens/sos_accepted_screen.dart';
 import '../screens/sos_found_screen.dart';
 import '../services/api_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ActiveSosBanner extends StatefulWidget {
   const ActiveSosBanner({super.key});
@@ -15,11 +16,26 @@ class ActiveSosBanner extends StatefulWidget {
 class _ActiveSosBannerState extends State<ActiveSosBanner> {
   bool _isExpanded = false;
   String? _currentUserId;
+  Position? _currentPosition;
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUser();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+        });
+      }
+    } catch (e) {
+      print('Error getting location: $e');
+    }
   }
 
   Future<void> _loadCurrentUser() async {
@@ -100,11 +116,22 @@ class _ActiveSosBannerState extends State<ActiveSosBanner> {
       // Calculate distance if available
       try {
         final reporterLoc = sosCase['location']['coordinates'];
-        final volunteerLoc = sosCase['responderLocation']?['coordinates'];
+        // Note: sosCase['responderLocation'] is not used for distance calc here,
+        // we use current user's location vs reporter location
 
-        if (reporterLoc != null && volunteerLoc != null) {
-          // Placeholder distance
-          distanceDisplay = ' • 1.2km';
+        if (reporterLoc != null && _currentPosition != null) {
+          final double distMeters = Geolocator.distanceBetween(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            reporterLoc[1], // lat
+            reporterLoc[0], // lng
+          );
+
+          if (distMeters < 1000) {
+            distanceDisplay = ' • ${distMeters.toStringAsFixed(0)}m';
+          } else {
+            distanceDisplay = ' • ${(distMeters / 1000).toStringAsFixed(1)}km';
+          }
         }
       } catch (e) {
         print('Error calculating distance: $e');

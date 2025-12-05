@@ -13,19 +13,16 @@ class ApiService {
 
   // static const String baseUrl = 'http://42.116.145.85:5000/api';
 
-<<<<<<< HEAD
   static const String baseUrl = 'http://42.115.15.110:5000/api';
-=======
+
   // static const String baseUrl = 'http://42.116.145.85:5000/api';
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
->>>>>>> 035e59bfdd1ca9cdfa459c666c5379ea850f56af
+
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';
   static const String _rememberStorageKey = 'remember_login';
   static String? _token;
   static Map<String, dynamic>? _cachedUser;
   static bool? _rememberLogin;
-
   static Future<Map<String, String>> _headers() async {
     final headers = {'Content-Type': 'application/json'};
     final token = await getToken();

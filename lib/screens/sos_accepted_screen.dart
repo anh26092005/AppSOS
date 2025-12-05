@@ -506,11 +506,14 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                         children: [
                           Icon(Icons.navigation, size: 24),
                           SizedBox(width: 12),
-                          Text(
-                            'Mở Google Maps chỉ đường',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              'Mở Google Maps chỉ đường',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ],
@@ -539,11 +542,14 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                         children: [
                           Icon(Icons.check_circle, size: 24),
                           SizedBox(width: 12),
-                          Text(
-                            'Hoàn thành ứng cứu',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              'Hoàn thành ứng cứu',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ],
