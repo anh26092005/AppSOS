@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
+import '../utils/app_strings.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -55,16 +56,16 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (res.containsKey('token')) {
         if (!mounted) return;
-        _showCustomSnackBar(context, 'Đăng ký thành công ✅');
+        _showCustomSnackBar(context, AppStrings.get('signupSuccess'));
         Navigator.pushReplacementNamed(context, '/login');
       } else {
         if (!mounted) return;
-        _showCustomSnackBar(context, 'Đăng ký thất bại!', isError: true);
+        _showCustomSnackBar(context, AppStrings.get('signupFailed'), isError: true);
       }
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      _showCustomSnackBar(context, 'Lỗi đăng ký: $e', isError: true);
+      _showCustomSnackBar(context, '${AppStrings.get('signupError')}: $e', isError: true);
     }
   }
 
@@ -128,7 +129,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: Column(
                             children: [
                               Text(
-                                'Đăng Ký',
+                              AppStrings.get('signUp'),
                                 style: GoogleFonts.montserrat(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -140,7 +141,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'Bạn đã có tài khoản? ',
+                                    AppStrings.get('alreadyHaveAccount') + ' ',
                                     style: GoogleFonts.montserrat(
                                       fontSize: 14,
                                       color: Colors.white.withValues(
@@ -154,7 +155,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       '/login',
                                     ),
                                     child: Text(
-                                      'Đăng nhập',
+                                      AppStrings.get('login'),
                                       style: GoogleFonts.montserrat(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -207,7 +208,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       // Full Name
                       _buildModernInput(
                         controller: _nameController,
-                        hint: 'Họ và tên',
+                        hint: AppStrings.get('fullName'),
                         icon: Icons.person_outline,
                       ),
                       const SizedBox(height: 16),
@@ -215,7 +216,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       // Email
                       _buildModernInput(
                         controller: _emailController,
-                        hint: 'Email',
+                        hint: AppStrings.get('email'),
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                       ),
@@ -247,7 +248,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           Expanded(
                             child: _buildModernInput(
                               controller: _phoneController,
-                              hint: 'Số điện thoại',
+                              hint: AppStrings.get('phoneNumber'),
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                             ),
@@ -259,7 +260,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       // Password
                       _buildModernInput(
                         controller: _passwordController,
-                        hint: 'Mật khẩu',
+                        hint: AppStrings.get('password'),
                         icon: Icons.lock_outline,
                         isPassword: true,
                         obscureText: _obscurePassword,
@@ -299,7 +300,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           ),
                           child: Text(
-                            'Đăng Ký',
+                            AppStrings.get('signUpButton'),
                             style: GoogleFonts.montserrat(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -317,7 +318,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'Hoặc',
+                              AppStrings.get('or'),
                               style: GoogleFonts.montserrat(
                                 color: Colors.grey.shade400,
                                 fontSize: 13,
@@ -340,7 +341,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           height: 24,
                         ),
                         label: Text(
-                          'Đăng nhập với Google',
+                          AppStrings.get('signInWithGoogle'),
                           style: GoogleFonts.montserrat(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -425,16 +426,16 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Vui lòng nhập thông tin';
+            return AppStrings.get('pleaseEnterInfo');
           }
 
           // Phone-specific validation
           if (isPhoneField) {
             if (value.length != 10) {
-              return 'Số điện thoại phải có 10 chữ số';
+              return AppStrings.get('phoneLength');
             }
             if (!value.startsWith('0')) {
-              return 'Số điện thoại phải bắt đầu bằng số 0';
+              return AppStrings.get('phoneStartZero');
             }
           }
 

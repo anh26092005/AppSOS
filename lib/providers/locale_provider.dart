@@ -29,9 +29,10 @@ class LocaleProvider extends ChangeNotifier {
       AppStrings.setLocale(newLocale);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localeKey, newLocale);
+      debugPrint('✅ Locale changed to: $newLocale');
       notifyListeners();
     } catch (e) {
-      print('Error saving locale: $e');
+      debugPrint('❌ Error saving locale: $e');
     }
   }
 }

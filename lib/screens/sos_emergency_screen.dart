@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/active_sos_provider.dart';
+import '../utils/app_strings.dart';
 
 class SosEmergencyScreen extends StatefulWidget {
   const SosEmergencyScreen({super.key});
@@ -21,7 +22,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
   late AnimationController _holdController;
   Position? _currentPosition;
   bool _isLoadingLocation = false;
-  String _selectedEmergencyType = 'Y tế';
+  String _selectedEmergencyType = 'medical'; // Use key instead of Vietnamese
 
   LatLng _initialPosition = const LatLng(
     10.8231,
@@ -30,16 +31,19 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
 
   List<Marker> _markers = [];
 
-  // Map từ giá trị hiển thị (tiếng Việt) sang giá trị API (tiếng Anh)
+  // Map from key to API value
   final Map<String, String> _emergencyTypesMap = {
-    'Y tế': 'MEDICAL',
-    'Cháy nổ': 'FIRE',
-    'Tai nạn': 'ACCIDENT',
-    'Trộm cắp': 'CRIME',
-    'Thiên tai': 'NATURAL_DISASTER',
-    'Khác': 'OTHER',
+    'medical': 'MEDICAL',
+    'fire': 'FIRE',
+    'accident': 'ACCIDENT',
+    'crime': 'CRIME',
+    'naturalDisaster': 'NATURAL_DISASTER',
+    'other': 'OTHER',
   };
 
+  // Get localized emergency type name
+  String _getEmergencyTypeName(String key) => AppStrings.get(key);
+  
   // List of emergency types for dropdown
   List<String> get _emergencyTypes => _emergencyTypesMap.keys.toList();
 
@@ -84,8 +88,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       if (!serviceEnabled) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Vui lòng bật dịch vụ vị trí'),
+            SnackBar(
+              content: Text(AppStrings.get('pleaseEnableLoc')),
               backgroundColor: Colors.orange,
             ),
           );
@@ -102,8 +106,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
         if (permission == LocationPermission.denied) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Quyền truy cập vị trí bị từ chối'),
+              SnackBar(
+                content: Text(AppStrings.get('locPermissionDenied')),
                 backgroundColor: Colors.red,
               ),
             );
@@ -118,8 +122,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Quyền truy cập vị trí bị từ chối vĩnh viễn'),
+            SnackBar(
+              content: Text(AppStrings.get('locPermissionPermanent')),
               backgroundColor: Colors.red,
             ),
           );
@@ -153,8 +157,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                       BoxShadow(color: Colors.black26, blurRadius: 4),
                     ],
                   ),
-                  child: const Text(
-                    'Vị trí của bạn',
+                  child: Text(
+                    AppStrings.get('yourLocation'),
                     style: TextStyle(fontSize: 10, color: Colors.black),
                   ),
                 ),
@@ -168,8 +172,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã cập nhật vị trí hiện tại'),
+          SnackBar(
+            content: Text(AppStrings.get('locUpdated')),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
@@ -179,7 +183,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi khi lấy vị trí: $e'),
+            content: Text('${AppStrings.get('errorGettingLoc')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -194,8 +198,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
   bool _validateInputs() {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập tên của bạn'),
+        SnackBar(
+          content: Text(AppStrings.get('pleaseEnterName')),
           backgroundColor: Colors.red,
         ),
       );
@@ -204,8 +208,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
 
     if (_currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng lấy vị trí hiện tại trước'),
+        SnackBar(
+          content: Text(AppStrings.get('pleaseGetLocFirst')),
           backgroundColor: Colors.orange,
         ),
       );
@@ -257,8 +261,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       } else {
         // Fallback: just show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã gửi tín hiệu SOS thành công!'),
+          SnackBar(
+            content: Text(AppStrings.get('sosSentSuccess')),
             backgroundColor: Colors.green,
           ),
         );
@@ -273,18 +277,18 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Row(
+          title: Row(
             children: [
               Icon(Icons.error_outline, color: Colors.red),
               SizedBox(width: 8),
-              Text('Yêu cầu bị từ chối'),
+              Text(AppStrings.get('requestRejected')),
             ],
           ),
           content: Text(e.message),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng'),
+              child: Text(AppStrings.get('close')),
             ),
           ],
         ),
@@ -294,7 +298,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       Navigator.pop(context); // Close loading
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi gửi SOS: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('${AppStrings.get('errorSendingSos')}: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -352,8 +356,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                           size: 32,
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Cứu hộ khẩn cấp',
+                        Text(
+                          AppStrings.get('emergencyRescue'),
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -363,8 +367,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Gửi vị trí và thông tin sự cố ngay lập tức.\nĐội cứu hộ sẽ hỗ trợ bạn.',
+                    Text(
+                      AppStrings.get('sosDescription'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -457,8 +461,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Thông tin chi tiết',
+                            Text(
+                              AppStrings.get('detailsInfo'),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -470,7 +474,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                             // Name Input
                             _buildTextField(
                               controller: _nameController,
-                              hintText: 'Họ và tên của bạn (*)',
+                              hintText: AppStrings.get('fullNameRequired'),
                               icon: Icons.person_outline,
                             ),
                             const SizedBox(height: 16),
@@ -504,20 +508,20 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                                     IconData icon;
                                     Color color;
                                     switch (type) {
-                                      case 'Y tế':
+                                      case 'medical':
                                         icon = Icons.medical_services_outlined;
                                         color = Colors.red;
                                         break;
-                                      case 'Tai nạn':
+                                      case 'accident':
                                         icon = Icons.car_crash_outlined;
                                         color = Colors.orange;
                                         break;
-                                      case 'Cháy nổ':
+                                      case 'fire':
                                         icon = Icons
                                             .local_fire_department_outlined;
                                         color = Colors.deepOrange;
                                         break;
-                                      case 'Trộm cắp':
+                                      case 'crime':
                                         icon = Icons.security_outlined;
                                         color = Colors.purple;
                                         break;
@@ -546,7 +550,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                                           ),
                                           const SizedBox(width: 12),
                                           Text(
-                                            type,
+                                            _getEmergencyTypeName(type),
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -572,7 +576,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                             // Description Input
                             _buildTextField(
                               controller: _descriptionController,
-                              hintText: 'Mô tả sự cố / Ghi chú thêm...',
+                              hintText: AppStrings.get('describeIncident'),
                               icon: Icons.notes_rounded,
                               maxLines: 3,
                             ),
@@ -681,8 +685,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                                               size: 48,
                                               color: Colors.white,
                                             ),
-                                            const Text(
-                                              'GỬI NGAY',
+                                            Text(
+                                              AppStrings.get('sendNow'),
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w900,
@@ -699,8 +703,8 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'Giữ 3 giây để gửi',
+                            Text(
+                              AppStrings.get('holdToSend'),
                               style: TextStyle(
                                 color: Colors.grey,
                                 fontStyle: FontStyle.italic,

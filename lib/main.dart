@@ -56,9 +56,10 @@ class SOSApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) {
+        return Consumer2<ThemeProvider, LocaleProvider>(
+          builder: (context, themeProvider, localeProvider, child) {
             return MaterialApp(
+              key: ValueKey(localeProvider.currentLocale), // Force rebuild on locale change
               navigatorKey: NavigationService.navigatorKey,
               debugShowCheckedModeBanner: false,
               title: 'SOS App UTH',

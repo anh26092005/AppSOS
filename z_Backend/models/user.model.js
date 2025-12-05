@@ -124,7 +124,7 @@ const userSchema = new mongoose.Schema(
 );
 
 
-userSchema.index({ phone: 1 }, { unique: true, sparse: true }); // sparse allows null
+userSchema.index({ phone: 1 }); // Phone doesn't need to be unique (many social users have null)
 userSchema.index({ email: 1 }, { unique: true, sparse: true });
 userSchema.index({ firebaseUid: 1 }, { unique: true, sparse: true });
 userSchema.index({ 'address.location': '2dsphere' });
