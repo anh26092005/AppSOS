@@ -16,21 +16,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, String>> _onboardingData = [
     {
       'image': 'assets/images/on1.png',
-      'title': 'Trường Đại học Giao thông vận tải TP. Hồ Chí Minh',
+      'title': 'Kết nối nhanh chóng trong mọi tình huống khẩn cấp',
       'description':
-          'Đào tạo nguồn nhân lực cho lĩnh vực giao thông vận tải như hàng hải, hàng không, đường bộ, đường thuỷ nội địa, đường sắt.',
+          'Ứng dụng SOS giúp bạn kết nối với tình nguyện viên xung quanh chỉ trong vài giây khi cần hỗ trợ khẩn cấp.',
     },
     {
       'image': 'assets/images/on2.png',
-      'title': 'Trường Đại học Giao thông vận tải TP. Hồ Chí Minh',
+      'title': 'Đội ngũ tình nguyện viên tận tâm',
       'description':
-          'Trực thuộc Bộ Xây dựng là trường đại học đa ngành thuộc lĩnh vực giao thông vận tải lớn nhất phía Nam Việt Nam',
+          'Tình nguyện viên có nhiều chuyên môn ở nhiều lĩnh vực khác nhau, sẵn sàng hỗ trợ bạn mọi lúc mọi nơi trong thành phố.',
     },
     {
       'image': 'assets/images/on3.png',
-      'title': 'Một ứng dụng duy nhất cho sinh viên và giảng viên',
+      'title': 'An toàn và tin cậy',
       'description':
-          'UTH là ứng dụng giáo dục cung cấp thông tin kịp thời, mọi lúc mọi nơi, giúp tăng cường tương tác giữa sinh viên, giảng viên, phụ huynh và nhà trường.',
+          'Hệ thống theo dõi vị trí thời gian thực, lịch sử hỗ trợ đầy đủ, đảm bảo an toàn tối đa cho người dùng.',
     },
   ];
 
@@ -73,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: _currentPage == index ? 24 : 8,
                         decoration: BoxDecoration(
                           color: _currentPage == index
-                              ? const Color(0xFF00563B) // UTH Green
+                              ? const Color(0xFF1976D2) // Blue color
                               : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -100,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: _currentPage == _onboardingData.length - 1
-                            ? const Color(0xFF00563B)
+                            ? const Color(0xFF1976D2)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -115,7 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               fontWeight: FontWeight.w600,
                               color: _currentPage == _onboardingData.length - 1
                                   ? Colors.white
-                                  : const Color(0xFF00563B),
+                                  : const Color(0xFF1976D2),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -124,7 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             size: 16,
                             color: _currentPage == _onboardingData.length - 1
                                 ? Colors.white
-                                : const Color(0xFF00563B),
+                                : const Color(0xFF1976D2),
                           ),
                         ],
                       ),
