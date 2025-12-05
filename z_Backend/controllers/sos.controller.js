@@ -76,7 +76,10 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers, reporterId])]
       .map(id => new mongoose.Types.ObjectId(id));
 
-    console.log(`🔍 Finding volunteers. Excluded: ${excludedVolunteerIds.length} (including reporter), Radius: ${maxRadius}km`);
+    console.log(`🔍 Finding volunteers. Reporter ID: ${reporterId.toString()}`);
+    console.log(`🔍 Excluded: ${excludedVolunteerIds.length} volunteers (including reporter)`);
+    console.log(`🔍 Excluded IDs:`, excludedVolunteerIds.map(id => id.toString()));
+    console.log(`🔍 Radius: ${maxRadius}km`);
 
     // Tìm TNV trong bán kính, không bận, đã approved và ready
     // Sử dụng $geoNear làm stage đầu tiên (bắt buộc)
@@ -140,8 +143,20 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     ]);
 
     console.log(`Found ${volunteers.length} volunteers. Details:`,
-      volunteers.map(v => ({ id: v.userId, dist: v.distance, ready: v.ready }))
+      volunteers.map(v => ({ 
+        id: v.userId.toString(), 
+        dist: v.distance, 
+        ready: v.ready 
+      }))
     );
+
+    // Double-check: Ensure reporter is NOT in the list
+    const reporterInList = volunteers.find(v => v.userId.toString() === reporterId.toString());
+    if (reporterInList) {
+      console.error(`❌ CRITICAL: Reporter ${reporterId.toString()} found in volunteers list! This should not happen!`);
+    } else {
+      console.log(`✅ Reporter correctly excluded from volunteers list`);
+    }
 
     // Tạo queue cho từng TNV
     const queuePromises = volunteers.map((volunteer) =>
@@ -288,6 +303,15 @@ const createSosCase = async (req, res, next) => {
       trackingStatus: 'ACTIVE',
     });
 
+    console.log(`📍 SOS Case Created:`, {
+      code: code,
+      reporterId: reporterId.toString(),
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      geoJSON: [parseFloat(longitude), parseFloat(latitude)],
+      emergencyType: emergencyType,
+    });
+
     // Tìm TNV gần nhất
     const volunteers = await findAndNotifyNearestVolunteers(sosCase);
 
@@ -381,6 +405,15 @@ const acceptSosCase = async (req, res, next) => {
       volunteerPhone: volunteer.phone,
       acceptedAt: new Date(),
     };
+
+    console.log(`📍 Responder Location Set:`, {
+      volunteerId: volunteerId.toString(),
+      volunteerName: volunteer.fullName,
+      responderLocation: responderLocation,
+      reporterLocation: sosCase.location,
+      reporterCoords: `[${sosCase.location.coordinates[0]}, ${sosCase.location.coordinates[1]}]`,
+      responderCoords: responderLocation ? `[${responderLocation.coordinates[0]}, ${responderLocation.coordinates[1]}]` : 'N/A',
+    });
 
     await sosCase.save();
 
