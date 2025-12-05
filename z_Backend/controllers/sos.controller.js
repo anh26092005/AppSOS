@@ -95,9 +95,9 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     console.log(`📋 Found ${volunteerProfiles.length} ready volunteers`);
 
     // Bước 2: Filter volunteers có user active và có role TNV
-    const activeVolunteers = volunteerProfiles.filter(profile => 
-      profile.userId && 
-      profile.userId.isActive && 
+    const activeVolunteers = volunteerProfiles.filter(profile =>
+      profile.userId &&
+      profile.userId.isActive &&
       (profile.userId.roles.includes('TNV_CN') || profile.userId.roles.includes('TNV_TC'))
     );
 
@@ -141,8 +141,8 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
         const deltaLng = (volunteerLocation.coordinates[0] - location.coordinates[0]) * Math.PI / 180;
 
         const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-                  Math.cos(lat1) * Math.cos(lat2) *
-                  Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+          Math.cos(lat1) * Math.cos(lat2) *
+          Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         distanceKm = R * c;
 
@@ -168,9 +168,9 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       .slice(0, maxVolunteers);
 
     console.log(`Found ${volunteers.length} volunteers. Details:`,
-      volunteers.map(v => ({ 
-        id: v.userId.toString(), 
-        dist: v.distance.toFixed(2), 
+      volunteers.map(v => ({
+        id: v.userId.toString(),
+        dist: v.distance.toFixed(2),
         ready: v.ready,
         usedGPS: v.usedGPS ? 'GPS' : 'HomeBase'
       }))
@@ -184,41 +184,38 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       console.log(`✅ Reporter correctly excluded from volunteers list`);
     }
 
-    // Tạo queue cho từng TNV
+    // Tạo queue cho từng TNV với status ban đầu là QUEUED
     const queuePromises = volunteers.map((volunteer) =>
       SosResponderQueue.create({
         sosId: sosCase._id,
         volunteerId: volunteer.userId,
-        distanceKm: volunteer.distance || volunteer.distanceKm || 0, // distance đã được convert sang km
-        status: 'NOTIFIED',
+        distanceKm: volunteer.distance || volunteer.distanceKm || 0,
+        status: 'QUEUED',
       })
     );
 
     await Promise.all(queuePromises);
 
-    // Gửi FCM notification CHỈ cho TNV đầu tiên (gần nhất)
-    try {
-      if (volunteers.length > 0) {
-        const firstVolunteer = volunteers[0];
-        const distance = (firstVolunteer.distance || firstVolunteer.distanceKm || 0).toFixed(1);
-        
-        console.log('═══════════════════════════════════════');
-        console.log('📏 DISTANCE CALCULATION:');
-        console.log(`   Raw distance: ${firstVolunteer.distance}`);
-        console.log(`   DistanceKm: ${firstVolunteer.distanceKm}`);
-        console.log(`   Final distance: ${distance}km`);
-        console.log(`   Volunteer ID: ${firstVolunteer.userId}`);
-        console.log('═══════════════════════════════════════');
-        
-        // [FIX] Fetch reporter info để gửi vào notification
+    // [FIX] Sequential Notification Logic
+    // Iterate through volunteers to find the first one we can successfully notify
+    let notifiedSuccess = false;
+
+    for (const volunteer of volunteers) {
+      if (notifiedSuccess) break; // Stop if we successfully notified someone
+
+      try {
+        const distance = (volunteer.distance || volunteer.distanceKm || 0).toFixed(1);
+
+        console.log(`🔄 Attempting to notify volunteer ${volunteer.userId} (${distance}km)...`);
+
+        // Fetch reporter info
         const reporter = await User.findById(sosCase.reporterId).select('fullName phone');
         const reporterName = reporter ? reporter.fullName : 'Người dùng';
         const reporterPhone = reporter ? reporter.phone : 'N/A';
-        
+
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
         const body = `${reporterName} - ${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
-        // Tạo in-app notification
         const notificationData = {
           type: 'SOS_CASE',
           caseId: sosCase._id.toString(),
@@ -226,20 +223,31 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           emergencyType: sosCase.emergencyType,
           distance: distance,
           reporterId: sosCase.reporterId.toString(),
-          reporterName: reporterName,  // [NEW] Tên người gặp nạn
-          reporterPhone: reporterPhone, // [NEW] SĐT để contact
-          // [NEW] Location data để TNV biết vị trí chính xác
-          latitude: sosCase.location.coordinates[1],  // GeoJSON format [lng, lat]
+          reporterName: reporterName,
+          reporterPhone: reporterPhone,
+          latitude: sosCase.location.coordinates[1],
           longitude: sosCase.location.coordinates[0],
-          manualAddress: sosCase.manualAddress || null, // Địa chỉ người dùng nhập (nếu có)
+          manualAddress: sosCase.manualAddress || null,
         };
 
-        console.log('📤 Notification data being sent:');
-        console.log(JSON.stringify(notificationData, null, 2));
+        // Try to send FCM first to check for device errors
+        const fcmResult = await sendNotificationToUser(volunteer.userId, title, body, notificationData);
+        if (!fcmResult.success) {
+          throw new Error(fcmResult.error || 'Failed to send FCM notification');
+        }
 
-        // Lưu notification
+        // If FCM success, update queue status to NOTIFIED
+        await SosResponderQueue.findOneAndUpdate(
+          { sosId: sosCase._id, volunteerId: volunteer.userId },
+          {
+            status: 'NOTIFIED',
+            notifiedAt: new Date()
+          }
+        );
+
+        // Save in-app notification
         await Notification.create({
-          userId: firstVolunteer.userId,
+          userId: volunteer.userId,
           type: 'SOS_CASE',
           title,
           body,
@@ -247,17 +255,62 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           deliveredAt: new Date(),
         });
 
-        // Gửi FCM
-        await sendNotificationToUser(firstVolunteer.userId, title, body, notificationData);
+        console.log(`✅ Successfully notified volunteer ${volunteer.userId}`);
+        notifiedSuccess = true;
 
-        console.log(`✅ Notification sent to FIRST volunteer only (${distance}km away)`);
-        console.log(`📋 ${volunteers.length - 1} other volunteers in queue as backup`);
-      } else {
-        console.log('⚠️ No volunteers found in range');
+      } catch (error) {
+        console.error(`❌ Failed to notify volunteer ${volunteer.userId}:`, error.message);
+
+        // Mark as FAILED in queue
+        await SosResponderQueue.findOneAndUpdate(
+          { sosId: sosCase._id, volunteerId: volunteer.userId },
+          {
+            status: 'FAILED',
+            declineReason: `System: ${error.message}`
+          }
+        );
+
+        console.log(`⏭️ Moving to next volunteer...`);
       }
-    } catch (fcmError) {
-      // Không throw error để không ảnh hưởng đến flow chính
-      console.error('Error sending FCM notification to first volunteer:', fcmError);
+    }
+
+    if (!notifiedSuccess) {
+      console.log('⚠️ Could not notify any volunteers (all failed or no devices)');
+
+      // Auto-cancel case immediately
+      sosCase.status = 'CANCELLED';
+      sosCase.cancelReason = 'Không tìm thấy tình nguyện viên phù hợp';
+      sosCase.cancelledByRole = 'SYSTEM';
+      sosCase.cancelledAt = new Date();
+      sosCase.meta = { ...sosCase.meta, autoCancelledDueToTimeout: true };
+      await sosCase.save();
+
+      // Notify reporter
+      const title = '❌ Không tìm thấy tình nguyện viên';
+      const body = 'Rất tiếc, không có tình nguyện viên nào trong khu vực của bạn lúc này. Vui lòng liên hệ số khẩn cấp.';
+
+      const notificationData = {
+        type: 'SOS_AUTO_CANCELLED',
+        caseId: sosCase._id.toString(),
+        caseCode: sosCase.code,
+        cancelReason: 'NO_VOLUNTEERS_AVAILABLE',
+        emergencyType: sosCase.emergencyType,
+      };
+
+      await Notification.create({
+        userId: sosCase.reporterId,
+        type: 'SOS_AUTO_CANCELLED',
+        title,
+        body,
+        data: notificationData,
+        deliveredAt: new Date(),
+      });
+
+      await sendNotificationToUser(sosCase.reporterId, title, body, notificationData);
+      console.log(`❌ Auto-cancelled case ${sosCase.code} due to no reachable volunteers`);
+
+    } else {
+      console.log(`📋 Remaining volunteers are in QUEUED status`);
     }
 
     return volunteers;
@@ -316,7 +369,7 @@ const createSosCase = async (req, res, next) => {
     });
 
     // If >= 3 attempts → Ban for 10 minutes
-    if (logCount >= 100) {
+    if (logCount >= 51) {
       const banUntil = new Date(Date.now() + 10 * 60000);
       await User.updateOne({ _id: reporterId }, { sosBanUntil: banUntil });
 
@@ -426,20 +479,20 @@ const acceptSosCase = async (req, res, next) => {
     // Try to get current location from request body FIRST
     const body = req.body || {};
     const { latitude, longitude } = body;
-    
+
     if (latitude !== undefined && longitude !== undefined) {
       // Validate coordinates
       const lat = parseFloat(latitude);
       const lng = parseFloat(longitude);
-      
+
       if (isNaN(lat) || isNaN(lng)) {
         throw new AppError('Invalid coordinates format', 400);
       }
-      
+
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
         throw new AppError('Coordinates out of range', 400);
       }
-      
+
       responderLocation = {
         type: 'Point',
         coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
@@ -691,17 +744,16 @@ const cancelSosCase = async (req, res, next) => {
             // Find oldest pending SOS case within 50km (excluding the canceled one)
             const nextPendingCases = await SosCase.aggregate([
               {
-                $match: {
-                  status: 'SEARCHING',
-                  _id: { $ne: sosCase._id }
-                }
-              },
-              {
                 $geoNear: {
                   near: volunteerProfile.homeBase.location,
                   distanceField: 'distance',
                   maxDistance: 50000, // 50km in meters
-                  spherical: true
+                  spherical: true,
+                  key: 'location', // [FIX] Specify which index to use
+                  query: {
+                    status: 'SEARCHING',
+                    _id: { $ne: sosCase._id }
+                  }
                 }
               },
               {
@@ -843,6 +895,110 @@ const declineSosCase = async (req, res, next) => {
     queueItem.declinedAt = new Date();
     queueItem.respondedAt = new Date();
     await queueItem.save();
+
+    console.log(`Volunteer ${volunteerId} declined case ${sosCase.code}`);
+
+    // [FIX] Trigger next volunteer immediately
+    // Tìm TNV tiếp theo trong queue (status QUEUED)
+    const nextQueueItem = await SosResponderQueue.findOne({
+      sosId: sosCase._id,
+      status: 'QUEUED',
+    }).sort({ distanceKm: 1 });
+
+    if (nextQueueItem) {
+      console.log(`🔄 Triggering next volunteer ${nextQueueItem.volunteerId} immediately...`);
+
+      try {
+        const distance = nextQueueItem.distanceKm.toFixed(1);
+
+        // Fetch reporter info
+        const reporter = await User.findById(sosCase.reporterId).select('fullName phone');
+        const reporterName = reporter ? reporter.fullName : 'Người dùng';
+        const reporterPhone = reporter ? reporter.phone : 'N/A';
+
+        const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
+        const body = `${reporterName} - ${sosCase.emergencyType} - Cách bạn ${distance}km`;
+
+        const notificationData = {
+          type: 'SOS_CASE',
+          caseId: sosCase._id.toString(),
+          caseCode: sosCase.code,
+          emergencyType: sosCase.emergencyType,
+          distance: distance,
+          reporterId: sosCase.reporterId.toString(),
+          reporterName: reporterName,
+          reporterPhone: reporterPhone,
+          latitude: sosCase.location.coordinates[1],
+          longitude: sosCase.location.coordinates[0],
+          manualAddress: sosCase.manualAddress || null,
+        };
+
+        // Update queue status -> NOTIFIED
+        await SosResponderQueue.findByIdAndUpdate(nextQueueItem._id, {
+          status: 'NOTIFIED',
+          notifiedAt: new Date()
+        });
+
+        // Save in-app notification
+        await Notification.create({
+          userId: nextQueueItem.volunteerId,
+          type: 'SOS_CASE',
+          title,
+          body,
+          data: notificationData,
+          deliveredAt: new Date(),
+        });
+
+        // Send FCM
+        const fcmResult = await sendNotificationToUser(nextQueueItem.volunteerId, title, body, notificationData);
+        if (!fcmResult.success) {
+          throw new Error(fcmResult.error || 'Failed to send FCM notification');
+        }
+
+        console.log(`✅ Successfully notified next volunteer ${nextQueueItem.volunteerId}`);
+      } catch (error) {
+        console.error('Error notifying next volunteer:', error);
+        // If failed, mark as FAILED
+        await SosResponderQueue.findByIdAndUpdate(nextQueueItem._id, {
+          status: 'FAILED',
+          declineReason: `System: Notification failed - ${error.message}`
+        });
+      }
+    } else {
+      console.log('ℹ️ No more volunteers in queue');
+
+      // Auto-cancel case immediately
+      sosCase.status = 'CANCELLED';
+      sosCase.cancelReason = 'Không tìm thấy tình nguyện viên phù hợp';
+      sosCase.cancelledByRole = 'SYSTEM';
+      sosCase.cancelledAt = new Date();
+      sosCase.meta = { ...sosCase.meta, autoCancelledDueToTimeout: true };
+      await sosCase.save();
+
+      // Notify reporter
+      const title = '❌ Không tìm thấy tình nguyện viên';
+      const body = 'Rất tiếc, không có tình nguyện viên nào trong khu vực của bạn lúc này. Vui lòng liên hệ số khẩn cấp.';
+
+      const notificationData = {
+        type: 'SOS_AUTO_CANCELLED',
+        caseId: sosCase._id.toString(),
+        caseCode: sosCase.code,
+        cancelReason: 'NO_VOLUNTEERS_AVAILABLE',
+        emergencyType: sosCase.emergencyType,
+      };
+
+      await Notification.create({
+        userId: sosCase.reporterId,
+        type: 'SOS_AUTO_CANCELLED',
+        title,
+        body,
+        data: notificationData,
+        deliveredAt: new Date(),
+      });
+
+      await sendNotificationToUser(sosCase.reporterId, title, body, notificationData);
+      console.log(`❌ Auto-cancelled case ${sosCase.code} due to exhausted queue`);
+    }
 
     // Tìm TNV tiếp theo trong queue (sử dụng _id của case)
     // Loop để tìm người tiếp theo thỏa mãn điều kiện (ready + active)

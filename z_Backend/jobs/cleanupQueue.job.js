@@ -140,7 +140,7 @@ const processCaseTimeout = async (sosCase, expiredItems) => {
             }
         }
 
-        // Tìm TNV tiếp theo trong queue (chưa expired, status NOTIFIED)
+        // Tìm TNV tiếp theo trong queue (status QUEUED)
         const nextVolunteer = await findNextValidVolunteer(sosCase._id);
 
         if (nextVolunteer) {
@@ -166,9 +166,10 @@ const findNextValidVolunteer = async (sosId) => {
     let currentQueue = null;
 
     while (!found) {
+        // [FIX] Find next QUEUED volunteer (sorted by distance)
         currentQueue = await SosResponderQueue.findOne({
             sosId,
-            status: 'NOTIFIED',
+            status: 'QUEUED',
         }).sort({ distanceKm: 1 });
 
         if (!currentQueue) break; // Hết queue
@@ -204,13 +205,19 @@ const findNextValidVolunteer = async (sosId) => {
 };
 
 /**
- * Gửi notification cho TNV
+ * Gửi notification cho TNV và update status -> NOTIFIED
  */
 const notifyVolunteer = async (sosCase, queueItem) => {
     try {
         const distance = queueItem.distanceKm.toFixed(1);
+
+        // Fetch reporter info
+        const reporter = await User.findById(sosCase.reporterId).select('fullName phone');
+        const reporterName = reporter ? reporter.fullName : 'Người dùng';
+        const reporterPhone = reporter ? reporter.phone : 'N/A';
+
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
-        const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
+        const body = `${reporterName} - ${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
         const notificationData = {
             type: 'SOS_CASE',
@@ -218,7 +225,19 @@ const notifyVolunteer = async (sosCase, queueItem) => {
             caseCode: sosCase.code,
             emergencyType: sosCase.emergencyType,
             distance: distance,
+            reporterId: sosCase.reporterId.toString(),
+            reporterName: reporterName,
+            reporterPhone: reporterPhone,
+            latitude: sosCase.location.coordinates[1],
+            longitude: sosCase.location.coordinates[0],
+            manualAddress: sosCase.manualAddress || null,
         };
+
+        // Update queue status -> NOTIFIED BEFORE sending (to prevent race conditions)
+        await SosResponderQueue.findByIdAndUpdate(queueItem._id, {
+            status: 'NOTIFIED',
+            notifiedAt: new Date()
+        });
 
         // Lưu in-app notification
         await Notification.create({
@@ -231,9 +250,20 @@ const notifyVolunteer = async (sosCase, queueItem) => {
         });
 
         // Gửi FCM
-        await sendNotificationToUser(queueItem.volunteerId, title, body, notificationData);
+        const fcmResult = await sendNotificationToUser(queueItem.volunteerId, title, body, notificationData);
+        if (!fcmResult.success) {
+            throw new Error(fcmResult.error || 'Failed to send FCM notification');
+        }
+
+        console.log(`✅ Successfully notified volunteer ${queueItem.volunteerId}`);
     } catch (error) {
         console.error('Error notifying volunteer:', error);
+
+        // If failed, mark as FAILED so next cycle picks up next person
+        await SosResponderQueue.findByIdAndUpdate(queueItem._id, {
+            status: 'FAILED',
+            declineReason: `System: Notification failed - ${error.message}`
+        });
     }
 };
 

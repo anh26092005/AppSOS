@@ -177,9 +177,13 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
           children: [
             Icon(Icons.check_circle, color: Colors.green, size: 32),
             const SizedBox(width: 12),
-            const Text(
-              'Ứng cứu hoàn thành',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            const Expanded(
+              child: Text(
+                'Ứng cứu hoàn thành',
+                style: TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
             ),
           ],
         ),

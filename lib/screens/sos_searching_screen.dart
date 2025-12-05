@@ -102,7 +102,11 @@ class _SosSearchingScreenState extends State<SosSearchingScreen>
                 backgroundColor: Colors.orange,
               ),
             );
-            Navigator.pop(context);
+            // Navigate back to main screen properly
+            Navigator.of(
+              context,
+              rootNavigator: true,
+            ).pushNamedAndRemoveUntil('/main', (route) => false);
           }
         }
       }

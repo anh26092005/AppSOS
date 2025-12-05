@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const responderStatus = ['NOTIFIED', 'SEEN', 'ACCEPTED', 'DECLINED', 'EXPIRED'];
+const responderStatus = ['QUEUED', 'NOTIFIED', 'SEEN', 'ACCEPTED', 'DECLINED', 'EXPIRED', 'FAILED'];
 
 
 const sosResponderQueueSchema = new mongoose.Schema(
@@ -22,7 +22,7 @@ const sosResponderQueueSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: responderStatus,
-      default: 'NOTIFIED',
+      default: 'QUEUED',
       index: true,
     },
     notifiedAt: {
