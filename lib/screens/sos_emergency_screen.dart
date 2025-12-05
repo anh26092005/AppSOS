@@ -43,7 +43,7 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
 
   // Get localized emergency type name
   String _getEmergencyTypeName(String key) => AppStrings.get(key);
-  
+
   // List of emergency types for dropdown
   List<String> get _emergencyTypes => _emergencyTypesMap.keys.toList();
 
@@ -168,6 +168,10 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
         ];
       });
 
+      print(
+        '📍 Current Position: lat=${position.latitude}, lng=${position.longitude}',
+      );
+
       _mapController.move(LatLng(position.latitude, position.longitude), 16.0);
 
       if (mounted) {
@@ -231,6 +235,10 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
     );
 
     try {
+      print(
+        '📤 Sending SOS: lat=${_currentPosition!.latitude}, lng=${_currentPosition!.longitude}',
+      );
+
       final response = await ApiService.sendSOS(
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
@@ -298,7 +306,10 @@ class _SosEmergencyScreenState extends State<SosEmergencyScreen>
       Navigator.pop(context); // Close loading
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${AppStrings.get('errorSendingSos')}: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('${AppStrings.get('errorSendingSos')}: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

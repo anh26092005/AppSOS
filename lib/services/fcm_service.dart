@@ -10,6 +10,7 @@ import '../widgets/sos_accepted_dialog.dart';
 import '../services/api_service.dart';
 import '../services/notification_sound_service.dart';
 import '../providers/active_sos_provider.dart';
+import 'package:vibration/vibration.dart';
 
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -146,6 +147,19 @@ class FCMService {
 
         // Phát âm thanh thông báo
         NotificationSoundService.playNotificationSound();
+
+        // [NEW] Rụng khi nhận SOS
+        try {
+          if (await Vibration.hasVibrator() ?? false) {
+            // Rung mạnh: 500ms -> dừng 200ms -> 500ms
+            Vibration.vibrate(
+              pattern: [0, 500, 200, 500],
+              intensities: [0, 255, 0, 255],
+            );
+          }
+        } catch (e) {
+          print('⚠️ Vibration error: $e');
+        }
 
         final context = NavigationService.context;
         if (context != null) {

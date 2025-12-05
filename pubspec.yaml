@@ -59,6 +59,7 @@ dependencies:
   google_sign_in: ^7.2.0
   flutter_screenutil: ^5.9.3
   audioplayers: ^6.1.0
+  vibration: ^2.0.0
 
 
   # For details regarding fonts from package dependencies,

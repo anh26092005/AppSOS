@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../providers/active_sos_provider.dart';
+import 'package:vibration/vibration.dart';
 
 class SosFoundScreen extends StatefulWidget {
   final String caseId;
@@ -29,6 +30,9 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
     super.initState();
     _currentCaseData = widget.caseData;
 
+    // [NEW] Rung khi TNV đã chấp nhận (user nhận được thông báo thành công)
+    _triggerAcceptedVibration();
+
     // If we don't have initial data, fetch it
     if (_currentCaseData == null) {
       _fetchCaseDetails();
@@ -40,6 +44,17 @@ class _SosFoundScreenState extends State<SosFoundScreen> {
     _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _fetchCaseDetails();
     });
+  }
+
+  Future<void> _triggerAcceptedVibration() async {
+    try {
+      if (await Vibration.hasVibrator()) {
+        // Rung 3 lần ngắn: 200ms -> dừng 100ms -> 200ms -> dừng 100ms -> 200ms
+        Vibration.vibrate(pattern: [0, 200, 100, 200, 100, 200]);
+      }
+    } catch (e) {
+      print('⚠️ Vibration error: $e');
+    }
   }
 
   @override

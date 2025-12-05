@@ -35,6 +35,7 @@ const findSosCaseByIdOrCode = async (identifier) => {
 };
 
 // Helper function: Tạo Google Maps directions URL
+// [FIX] Origin = TNV (responder), Destination = User (reporter)
 const getDirectionsUrl = (reporterLocation, responderLocation) => {
   if (!reporterLocation || !responderLocation) {
     return null;
@@ -42,10 +43,12 @@ const getDirectionsUrl = (reporterLocation, responderLocation) => {
 
   // Extract coordinates từ GeoJSON Point
   // Format: { type: 'Point', coordinates: [longitude, latitude] }
-  const originLat = reporterLocation.coordinates[1];
-  const originLng = reporterLocation.coordinates[0];
-  const destLat = responderLocation.coordinates[1];
-  const destLng = responderLocation.coordinates[0];
+  // Origin = TNV location (where they start)
+  const originLat = responderLocation.coordinates[1];
+  const originLng = responderLocation.coordinates[0];
+  // Destination = Reporter location (where they need to go)
+  const destLat = reporterLocation.coordinates[1];
+  const destLng = reporterLocation.coordinates[0];
 
   return `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
 };
@@ -76,7 +79,10 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers, reporterId])]
       .map(id => new mongoose.Types.ObjectId(id));
 
-    console.log(`🔍 Finding volunteers. Excluded: ${excludedVolunteerIds.length} (including reporter), Radius: ${maxRadius}km`);
+    console.log(`🔍 Finding volunteers. Reporter ID: ${reporterId.toString()}`);
+    console.log(`🔍 Excluded: ${excludedVolunteerIds.length} volunteers (including reporter)`);
+    console.log(`🔍 Excluded IDs:`, excludedVolunteerIds.map(id => id.toString()));
+    console.log(`🔍 Radius: ${maxRadius}km`);
 
     // Tìm TNV trong bán kính, không bận, đã approved và ready
     // Sử dụng $geoNear làm stage đầu tiên (bắt buộc)
@@ -140,8 +146,20 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     ]);
 
     console.log(`Found ${volunteers.length} volunteers. Details:`,
-      volunteers.map(v => ({ id: v.userId, dist: v.distance, ready: v.ready }))
+      volunteers.map(v => ({ 
+        id: v.userId.toString(), 
+        dist: v.distance, 
+        ready: v.ready 
+      }))
     );
+
+    // Double-check: Ensure reporter is NOT in the list
+    const reporterInList = volunteers.find(v => v.userId.toString() === reporterId.toString());
+    if (reporterInList) {
+      console.error(`❌ CRITICAL: Reporter ${reporterId.toString()} found in volunteers list! This should not happen!`);
+    } else {
+      console.log(`✅ Reporter correctly excluded from volunteers list`);
+    }
 
     // Tạo queue cho từng TNV
     const queuePromises = volunteers.map((volunteer) =>
@@ -289,6 +307,15 @@ const createSosCase = async (req, res, next) => {
       trackingStatus: 'ACTIVE',
     });
 
+    console.log(`📍 SOS Case Created:`, {
+      code: code,
+      reporterId: reporterId.toString(),
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      geoJSON: [parseFloat(longitude), parseFloat(latitude)],
+      emergencyType: emergencyType,
+    });
+
     // Tìm TNV gần nhất
     const volunteers = await findAndNotifyNearestVolunteers(sosCase);
 
@@ -346,29 +373,38 @@ const acceptSosCase = async (req, res, next) => {
       throw new AppError('Volunteer not found', 404);
     }
 
-    // Lấy vị trí từ VolunteerProfile hoặc request body
+    // [FIX] Lấy vị trí: ưu tiên current location từ request body, fallback homeBase
     const volunteerProfile = await VolunteerProfile.findOne({ userId: volunteerId });
     let responderLocation = null;
 
-    if (volunteerProfile && volunteerProfile.homeBase && volunteerProfile.homeBase.location) {
-      // Lấy từ homeBase (ưu tiên)
-      responderLocation = volunteerProfile.homeBase.location;
-    } else {
-      // Fallback: Lấy từ request body nếu không có homeBase
-      const body = req.body || {};
-      const { latitude, longitude } = body;
-      if (latitude && longitude) {
-        // Validate coordinates
-        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-          throw new AppError('Invalid coordinates', 400);
-        }
-        responderLocation = {
-          type: 'Point',
-          coordinates: [parseFloat(longitude), parseFloat(latitude)],
-        };
-      } else {
-        throw new AppError('Volunteer location not found. Please provide coordinates in request body (latitude, longitude) or set up homeBase in VolunteerProfile', 404);
+    // Try to get current location from request body FIRST
+    const body = req.body || {};
+    const { latitude, longitude } = body;
+    
+    if (latitude !== undefined && longitude !== undefined) {
+      // Validate coordinates
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        throw new AppError('Invalid coordinates format', 400);
       }
+      
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        throw new AppError('Coordinates out of range', 400);
+      }
+      
+      responderLocation = {
+        type: 'Point',
+        coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
+      };
+      console.log(`📍 Using TNV current location: [${lng}, ${lat}]`);
+    } else if (volunteerProfile && volunteerProfile.homeBase && volunteerProfile.homeBase.location) {
+      // Fallback: Lấy từ homeBase nếu không có current location
+      responderLocation = volunteerProfile.homeBase.location;
+      console.log(`📍 Using TNV homeBase location (fallback):`, responderLocation.coordinates);
+    } else {
+      throw new AppError('Volunteer location not found. Please provide current coordinates in request body (latitude, longitude)', 404);
     }
 
     // Cập nhật case
@@ -382,6 +418,15 @@ const acceptSosCase = async (req, res, next) => {
       volunteerPhone: volunteer.phone,
       acceptedAt: new Date(),
     };
+
+    console.log(`📍 Responder Location Set:`, {
+      volunteerId: volunteerId.toString(),
+      volunteerName: volunteer.fullName,
+      responderLocation: responderLocation,
+      reporterLocation: sosCase.location,
+      reporterCoords: `[${sosCase.location.coordinates[0]}, ${sosCase.location.coordinates[1]}]`,
+      responderCoords: responderLocation ? `[${responderLocation.coordinates[0]}, ${responderLocation.coordinates[1]}]` : 'N/A',
+    });
 
     await sosCase.save();
 
