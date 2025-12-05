@@ -337,18 +337,6 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
                                 color: Colors.grey.shade300,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             )
                           : Text(
                               '${_calculatedDistance ?? widget.distance} km',
@@ -364,11 +352,6 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
                   if (widget.manualAddress != null &&
                       widget.manualAddress!.isNotEmpty) ...[
                     const Divider(height: 20),
-                    _buildInfoRow(
-                      Icons.place,
-                      'Địa chỉ',
-                      widget.manualAddress!,
-                    ),
                   ],
                   const Divider(height: 20),
                   _buildInfoRow(
