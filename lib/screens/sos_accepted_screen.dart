@@ -21,8 +21,10 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
   late final Map<String, dynamic> _case;
   late final Map<String, dynamic> _reporterInfo;
   late final LatLng _reporterPosition;
-  late final LatLng _volunteerPosition;
+  LatLng?
+  _volunteerPosition; // [FIX] Changed from late final to nullable for real-time updates
   Timer? _distanceTimer;
+  Timer? _locationTimer; // [NEW] Timer for updating TNV location
   double? _distanceInKm;
   String? _estimatedTime;
 
@@ -47,11 +49,17 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
     _reporterPosition = LatLng(reporterLoc[1], reporterLoc[0]);
     print('Reporter position: $_reporterPosition');
 
-    // Lấy tọa độ volunteer
+    // [FIX] Lấy tọa độ volunteer từ backend lần đầu (fallback)
     final volunteerLoc = _case['responderLocation']['coordinates'];
     _volunteerPosition = LatLng(volunteerLoc[1], volunteerLoc[0]);
-    print('Volunteer position: $_volunteerPosition');
+    print('Initial volunteer position from backend: $_volunteerPosition');
     print('═══════════════════════════════════════');
+
+    // [NEW] Start getting TNV real-time location
+    _updateVolunteerLocation();
+    _locationTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _updateVolunteerLocation();
+    });
 
     // Calculate distance initially and every 10 seconds
     _calculateDistance();
@@ -63,17 +71,43 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
   @override
   void dispose() {
     _distanceTimer?.cancel();
+    _locationTimer?.cancel(); // [NEW] Cancel location timer
     super.dispose();
+  }
+
+  // [NEW] Update TNV location from GPS
+  Future<void> _updateVolunteerLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (mounted) {
+        setState(() {
+          _volunteerPosition = LatLng(position.latitude, position.longitude);
+        });
+        print(
+          '📍 TNV location updated: ${position.latitude}, ${position.longitude}',
+        );
+      }
+    } catch (e) {
+      print('⚠️ Error getting TNV location: $e');
+      // Keep using backend location as fallback
+    }
   }
 
   Future<void> _calculateDistance() async {
     try {
-      // Use STATIC volunteer position (at accept time) instead of real-time
-      // This ensures consistent distance with what the reporter sees
-      final volunteerLat = _volunteerPosition.latitude;
-      final volunteerLng = _volunteerPosition.longitude;
+      // [FIX] Use real-time volunteer position if available
+      if (_volunteerPosition == null) {
+        print('⚠️ Volunteer position not available yet');
+        return;
+      }
 
-      // Calculate distance between STATIC positions
+      final volunteerLat = _volunteerPosition!.latitude;
+      final volunteerLng = _volunteerPosition!.longitude;
+
+      // Calculate distance between current positions
       double distanceInMeters = Geolocator.distanceBetween(
         volunteerLat,
         volunteerLng,
@@ -288,17 +322,18 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                           color: Colors.red,
                         ),
                       ),
-                      // Volunteer marker (green)
-                      Marker(
-                        point: _volunteerPosition,
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.navigation,
-                          size: 40,
-                          color: Colors.green,
+                      // Volunteer marker (green) - only show if position available
+                      if (_volunteerPosition != null)
+                        Marker(
+                          point: _volunteerPosition!,
+                          width: 40,
+                          height: 40,
+                          child: const Icon(
+                            Icons.navigation,
+                            size: 40,
+                            color: Colors.green,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
@@ -506,11 +541,14 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                         children: [
                           Icon(Icons.navigation, size: 24),
                           SizedBox(width: 12),
-                          Text(
-                            'Mở Google Maps chỉ đường',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              'Mở Google Maps chỉ đường',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ],
@@ -539,11 +577,14 @@ class _SosAcceptedScreenState extends State<SosAcceptedScreen> {
                         children: [
                           Icon(Icons.check_circle, size: 24),
                           SizedBox(width: 12),
-                          Text(
-                            'Hoàn thành ứng cứu',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              'Hoàn thành ứng cứu',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ],

@@ -10,6 +10,7 @@ import '../widgets/sos_accepted_dialog.dart';
 import '../services/api_service.dart';
 import '../services/notification_sound_service.dart';
 import '../providers/active_sos_provider.dart';
+import 'package:vibration/vibration.dart';
 
 class FCMService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -127,8 +128,38 @@ class FCMService {
 
       // Hiển thị SOS Alert Dialog nếu là tin nhắn SOS
       if (message.data['type'] == 'SOS_CASE') {
+        // [FIX] Check if current user is the reporter - skip dialog if so
+        final currentUser = await ApiService.getCachedUser();
+        final currentUserId = currentUser?['id'] ?? currentUser?['_id'];
+        final reporterId = message.data['reporterId'];
+
+        print('🔍 SOS_CASE notification check:');
+        print('  Current User ID: $currentUserId');
+        print('  Reporter ID: $reporterId');
+
+        // Skip dialog if user is the reporter (don't show TNV dialog to yourself)
+        if (currentUserId != null &&
+            reporterId != null &&
+            currentUserId.toString() == reporterId.toString()) {
+          print('🚫 Skipping SOS dialog - user is the reporter');
+          return;
+        }
+
         // Phát âm thanh thông báo
         NotificationSoundService.playNotificationSound();
+
+        // [NEW] Rụng khi nhận SOS
+        try {
+          if (await Vibration.hasVibrator() ?? false) {
+            // Rung mạnh: 500ms -> dừng 200ms -> 500ms
+            Vibration.vibrate(
+              pattern: [0, 500, 200, 500],
+              intensities: [0, 255, 0, 255],
+            );
+          }
+        } catch (e) {
+          print('⚠️ Vibration error: $e');
+        }
 
         final context = NavigationService.context;
         if (context != null) {
@@ -153,12 +184,23 @@ class FCMService {
                       builder: (context) => SosNotificationDialog(
                         caseId: message.data['caseId'],
                         caseCode:
-                            'SOS-${message.data['caseId'].toString().substring(0, 4)}', // Fallback code
+                            'SOS-${message.data['caseId'].toString().substring(0, 4)}',
                         emergencyType:
                             message.data['emergencyType'] ?? 'EMERGENCY',
                         distance: message.data['distance'] ?? 'Unknown',
+                        reporterName: message.data['reporterName'],
+                        manualAddress: message.data['manualAddress'],
+                        reporterLatitude: message.data['latitude'] != null
+                            ? double.tryParse(
+                                message.data['latitude'].toString(),
+                              )
+                            : null,
+                        reporterLongitude: message.data['longitude'] != null
+                            ? double.tryParse(
+                                message.data['longitude'].toString(),
+                              )
+                            : null,
                         onAccepted: (sosData) {
-                          // Save to active SOS provider
                           context.read<ActiveSosProvider>().setActiveCase(
                             sosData,
                           );

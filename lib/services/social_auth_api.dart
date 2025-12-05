@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'api_service.dart';
+import 'fcm_service.dart';
 
 /// Service to sync Firebase Auth users with backend API
 class SocialAuthApi {
@@ -76,13 +77,32 @@ class SocialAuthApi {
   /// Sign out from both Firebase and backend
   static Future<void> signOutComplete() async {
     try {
+      // [FIX] Unregister FCM token from backend FIRST
+      // This prevents old account from receiving notifications
+      final fcmToken = FCMService.currentToken;
+      if (fcmToken != null) {
+        print('🔓 Unregistering FCM token from backend...');
+        try {
+          await ApiService.unregisterDevice(fcmToken);
+          print('✅ FCM token unregistered from backend');
+        } catch (e) {
+          print('⚠️ Failed to unregister FCM token (continuing logout): $e');
+          // Don't block logout if API call fails
+        }
+      }
+
+      // Delete FCM token locally
+      await FCMService.deleteToken();
+
       // Clear backend session
       await ApiService.clearSession();
 
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
 
-      print('✅ Signed out from both Firebase and backend');
+      print(
+        '✅ Signed out completely - FCM token removed, Firebase signed out, session cleared',
+      );
     } catch (e) {
       print('❌ Sign out error: $e');
       throw Exception('Sign out failed: $e');

@@ -35,6 +35,7 @@ const findSosCaseByIdOrCode = async (identifier) => {
 };
 
 // Helper function: Tạo Google Maps directions URL
+// [FIX] Origin = TNV (responder), Destination = User (reporter)
 const getDirectionsUrl = (reporterLocation, responderLocation) => {
   if (!reporterLocation || !responderLocation) {
     return null;
@@ -42,10 +43,12 @@ const getDirectionsUrl = (reporterLocation, responderLocation) => {
 
   // Extract coordinates từ GeoJSON Point
   // Format: { type: 'Point', coordinates: [longitude, latitude] }
-  const originLat = reporterLocation.coordinates[1];
-  const originLng = reporterLocation.coordinates[0];
-  const destLat = responderLocation.coordinates[1];
-  const destLng = responderLocation.coordinates[0];
+  // Origin = TNV location (where they start)
+  const originLat = responderLocation.coordinates[1];
+  const originLng = responderLocation.coordinates[0];
+  // Destination = Reporter location (where they need to go)
+  const destLat = reporterLocation.coordinates[1];
+  const destLng = reporterLocation.coordinates[0];
 
   return `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
 };
@@ -76,72 +79,110 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
     const excludedVolunteerIds = [...new Set([...busyVolunteers, ...notifiedVolunteers, reporterId])]
       .map(id => new mongoose.Types.ObjectId(id));
 
-    console.log(`🔍 Finding volunteers. Excluded: ${excludedVolunteerIds.length} (including reporter), Radius: ${maxRadius}km`);
+    console.log(`🔍 Finding volunteers. Reporter ID: ${reporterId.toString()}`);
+    console.log(`🔍 Excluded: ${excludedVolunteerIds.length} volunteers (including reporter)`);
+    console.log(`🔍 Excluded IDs:`, excludedVolunteerIds.map(id => id.toString()));
+    console.log(`🔍 Radius: ${maxRadius}km`);
 
-    // Tìm TNV trong bán kính, không bận, đã approved và ready
-    // Sử dụng $geoNear làm stage đầu tiên (bắt buộc)
-    const volunteers = await VolunteerProfile.aggregate([
-      {
-        $geoNear: {
-          near: {
-            type: 'Point',
-            coordinates: location.coordinates,
-          },
-          distanceField: 'distance',
-          maxDistance: maxRadius * 1000, // chuyển km sang mét
-          spherical: true,
-          key: 'homeBase.location', // Explicitly specify index key
-          query: {
-            status: 'APPROVED',
-            ready: true,
-            userId: { $nin: excludedVolunteerIds },
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user',
-        },
-      },
-      {
-        $unwind: '$user',
-      },
-      {
-        $match: {
-          'user.isActive': true,
-          'user.roles': { $in: ['TNV_CN', 'TNV_TC'] },
-        },
-      },
-      {
-        $addFields: {
-          // Convert distance from meters to kilometers
-          distanceKm: {
-            $divide: ['$distance', 1000],
-          },
-        },
-      },
-      {
-        $sort: { distance: 1 },
-      },
-      {
-        $limit: maxVolunteers,
-      },
-      {
-        $project: {
-          userId: 1,
-          distance: { $divide: ['$distance', 1000] }, // distance in km
-          ready: 1, // Include ready status for debugging
-          status: 1 // Include profile status for debugging
-        },
-      },
-    ]);
+    // [NEW APPROACH] Lấy volunteers và tính distance từ GPS thực tế
+    // Bước 1: Lấy tất cả TNV ready, approved, không bận
+    const volunteerProfiles = await VolunteerProfile.find({
+      status: 'APPROVED',
+      ready: true,
+      userId: { $nin: excludedVolunteerIds },
+    }).populate('userId', 'fullName phone isActive roles');
+
+    console.log(`📋 Found ${volunteerProfiles.length} ready volunteers`);
+
+    // Bước 2: Filter volunteers có user active và có role TNV
+    const activeVolunteers = volunteerProfiles.filter(profile => 
+      profile.userId && 
+      profile.userId.isActive && 
+      (profile.userId.roles.includes('TNV_CN') || profile.userId.roles.includes('TNV_TC'))
+    );
+
+    console.log(`✅ ${activeVolunteers.length} active volunteers after filtering`);
+
+    if (activeVolunteers.length === 0) {
+      console.log('⚠️ No active volunteers available');
+      return [];
+    }
+
+    // Bước 3: Lấy Device location cho từng volunteer
+    const { Device } = require('../models');
+    const volunteersWithDistance = [];
+
+    for (const profile of activeVolunteers) {
+      try {
+        // Lấy device gần nhất có location
+        const device = await Device.findOne({
+          userId: profile.userId._id,
+          location: { $exists: true, $ne: null }
+        }).sort({ updatedAt: -1 }); // Lấy location mới nhất
+
+        let volunteerLocation;
+        let distanceKm;
+
+        if (device && device.location) {
+          // Dùng GPS từ Device
+          volunteerLocation = device.location;
+          console.log(`📍 Using GPS for ${profile.userId.fullName}: [${device.location.coordinates}]`);
+        } else {
+          // Fallback về homeBase nếu không có GPS
+          volunteerLocation = profile.homeBase.location;
+          console.log(`🏠 Using homeBase for ${profile.userId.fullName}: [${profile.homeBase.location.coordinates}]`);
+        }
+
+        // Tính distance bằng Haversine formula
+        const R = 6371; // Earth radius in km
+        const lat1 = location.coordinates[1] * Math.PI / 180;
+        const lat2 = volunteerLocation.coordinates[1] * Math.PI / 180;
+        const deltaLat = (volunteerLocation.coordinates[1] - location.coordinates[1]) * Math.PI / 180;
+        const deltaLng = (volunteerLocation.coordinates[0] - location.coordinates[0]) * Math.PI / 180;
+
+        const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                  Math.cos(lat1) * Math.cos(lat2) *
+                  Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distanceKm = R * c;
+
+        // Chỉ thêm nếu trong radius
+        if (distanceKm <= maxRadius) {
+          volunteersWithDistance.push({
+            userId: profile.userId._id,
+            distance: distanceKm,
+            distanceKm: distanceKm,
+            ready: profile.ready,
+            status: profile.status,
+            usedGPS: !!device?.location, // Flag để debug
+          });
+        }
+      } catch (err) {
+        console.error(`Error processing volunteer ${profile.userId._id}:`, err);
+      }
+    }
+
+    // Bước 4: Sort by distance và limit
+    const volunteers = volunteersWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, maxVolunteers);
 
     console.log(`Found ${volunteers.length} volunteers. Details:`,
-      volunteers.map(v => ({ id: v.userId, dist: v.distance, ready: v.ready }))
+      volunteers.map(v => ({ 
+        id: v.userId.toString(), 
+        dist: v.distance.toFixed(2), 
+        ready: v.ready,
+        usedGPS: v.usedGPS ? 'GPS' : 'HomeBase'
+      }))
     );
+
+    // Double-check: Ensure reporter is NOT in the list
+    const reporterInList = volunteers.find(v => v.userId.toString() === reporterId.toString());
+    if (reporterInList) {
+      console.error(`❌ CRITICAL: Reporter ${reporterId.toString()} found in volunteers list! This should not happen!`);
+    } else {
+      console.log(`✅ Reporter correctly excluded from volunteers list`);
+    }
 
     // Tạo queue cho từng TNV
     const queuePromises = volunteers.map((volunteer) =>
@@ -160,8 +201,22 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       if (volunteers.length > 0) {
         const firstVolunteer = volunteers[0];
         const distance = (firstVolunteer.distance || firstVolunteer.distanceKm || 0).toFixed(1);
+        
+        console.log('═══════════════════════════════════════');
+        console.log('📏 DISTANCE CALCULATION:');
+        console.log(`   Raw distance: ${firstVolunteer.distance}`);
+        console.log(`   DistanceKm: ${firstVolunteer.distanceKm}`);
+        console.log(`   Final distance: ${distance}km`);
+        console.log(`   Volunteer ID: ${firstVolunteer.userId}`);
+        console.log('═══════════════════════════════════════');
+        
+        // [FIX] Fetch reporter info để gửi vào notification
+        const reporter = await User.findById(sosCase.reporterId).select('fullName phone');
+        const reporterName = reporter ? reporter.fullName : 'Người dùng';
+        const reporterPhone = reporter ? reporter.phone : 'N/A';
+        
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
-        const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
+        const body = `${reporterName} - ${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
         // Tạo in-app notification
         const notificationData = {
@@ -170,7 +225,17 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           caseCode: sosCase.code,
           emergencyType: sosCase.emergencyType,
           distance: distance,
+          reporterId: sosCase.reporterId.toString(),
+          reporterName: reporterName,  // [NEW] Tên người gặp nạn
+          reporterPhone: reporterPhone, // [NEW] SĐT để contact
+          // [NEW] Location data để TNV biết vị trí chính xác
+          latitude: sosCase.location.coordinates[1],  // GeoJSON format [lng, lat]
+          longitude: sosCase.location.coordinates[0],
+          manualAddress: sosCase.manualAddress || null, // Địa chỉ người dùng nhập (nếu có)
         };
+
+        console.log('📤 Notification data being sent:');
+        console.log(JSON.stringify(notificationData, null, 2));
 
         // Lưu notification
         await Notification.create({
@@ -288,6 +353,15 @@ const createSosCase = async (req, res, next) => {
       trackingStatus: 'ACTIVE',
     });
 
+    console.log(`📍 SOS Case Created:`, {
+      code: code,
+      reporterId: reporterId.toString(),
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      geoJSON: [parseFloat(longitude), parseFloat(latitude)],
+      emergencyType: emergencyType,
+    });
+
     // Tìm TNV gần nhất
     const volunteers = await findAndNotifyNearestVolunteers(sosCase);
 
@@ -345,29 +419,38 @@ const acceptSosCase = async (req, res, next) => {
       throw new AppError('Volunteer not found', 404);
     }
 
-    // Lấy vị trí từ VolunteerProfile hoặc request body
+    // [FIX] Lấy vị trí: ưu tiên current location từ request body, fallback homeBase
     const volunteerProfile = await VolunteerProfile.findOne({ userId: volunteerId });
     let responderLocation = null;
 
-    if (volunteerProfile && volunteerProfile.homeBase && volunteerProfile.homeBase.location) {
-      // Lấy từ homeBase (ưu tiên)
-      responderLocation = volunteerProfile.homeBase.location;
-    } else {
-      // Fallback: Lấy từ request body nếu không có homeBase
-      const body = req.body || {};
-      const { latitude, longitude } = body;
-      if (latitude && longitude) {
-        // Validate coordinates
-        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-          throw new AppError('Invalid coordinates', 400);
-        }
-        responderLocation = {
-          type: 'Point',
-          coordinates: [parseFloat(longitude), parseFloat(latitude)],
-        };
-      } else {
-        throw new AppError('Volunteer location not found. Please provide coordinates in request body (latitude, longitude) or set up homeBase in VolunteerProfile', 404);
+    // Try to get current location from request body FIRST
+    const body = req.body || {};
+    const { latitude, longitude } = body;
+    
+    if (latitude !== undefined && longitude !== undefined) {
+      // Validate coordinates
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      
+      if (isNaN(lat) || isNaN(lng)) {
+        throw new AppError('Invalid coordinates format', 400);
       }
+      
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        throw new AppError('Coordinates out of range', 400);
+      }
+      
+      responderLocation = {
+        type: 'Point',
+        coordinates: [lng, lat], // GeoJSON format: [longitude, latitude]
+      };
+      console.log(`📍 Using TNV current location: [${lng}, ${lat}]`);
+    } else if (volunteerProfile && volunteerProfile.homeBase && volunteerProfile.homeBase.location) {
+      // Fallback: Lấy từ homeBase nếu không có current location
+      responderLocation = volunteerProfile.homeBase.location;
+      console.log(`📍 Using TNV homeBase location (fallback):`, responderLocation.coordinates);
+    } else {
+      throw new AppError('Volunteer location not found. Please provide current coordinates in request body (latitude, longitude)', 404);
     }
 
     // Cập nhật case
@@ -381,6 +464,15 @@ const acceptSosCase = async (req, res, next) => {
       volunteerPhone: volunteer.phone,
       acceptedAt: new Date(),
     };
+
+    console.log(`📍 Responder Location Set:`, {
+      volunteerId: volunteerId.toString(),
+      volunteerName: volunteer.fullName,
+      responderLocation: responderLocation,
+      reporterLocation: sosCase.location,
+      reporterCoords: `[${sosCase.location.coordinates[0]}, ${sosCase.location.coordinates[1]}]`,
+      responderCoords: responderLocation ? `[${responderLocation.coordinates[0]}, ${responderLocation.coordinates[1]}]` : 'N/A',
+    });
 
     await sosCase.save();
 

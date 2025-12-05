@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
 import '../utils/navigation_service.dart';
@@ -27,10 +28,14 @@ class SOSAlertDialog extends StatefulWidget {
 class _SOSAlertDialogState extends State<SOSAlertDialog> {
   StreamSubscription? _cancelSubscription;
   bool _isDismissed = false;
+  String? _calculatedDistance;
+  bool _isCalculatingDistance = true; // [NEW] Loading state
 
   @override
   void initState() {
     super.initState();
+    _calculateRealDistance(); // [NEW] Calculate real distance on init
+
     // Listen for cancellation events
     _cancelSubscription = FCMService.cancelStream.listen((cancelledCaseId) {
       if (cancelledCaseId == widget.caseId && !_isDismissed) {
@@ -59,6 +64,55 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
         }
       }
     });
+  }
+
+  // [NEW] Calculate real distance from TNV GPS to reporter
+  Future<void> _calculateRealDistance() async {
+    try {
+      // Get reporter coordinates from FCM data
+      final reporterLat = widget.data['latitude'];
+      final reporterLng = widget.data['longitude'];
+
+      if (reporterLat == null || reporterLng == null) {
+        print('⚠️ Reporter coordinates not in notification data');
+        setState(() {
+          _calculatedDistance =
+              widget.data['distance']; // Fallback to backend distance
+          _isCalculatingDistance = false;
+        });
+        return;
+      }
+
+      // Get TNV current GPS location
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Calculate distance
+      final distanceMeters = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        double.parse(reporterLat.toString()),
+        double.parse(reporterLng.toString()),
+      );
+
+      final distanceKm = distanceMeters / 1000;
+
+      setState(() {
+        _calculatedDistance = distanceKm.toStringAsFixed(1);
+        _isCalculatingDistance = false;
+      });
+
+      print('📏 Calculated real distance: ${distanceKm.toStringAsFixed(1)}km');
+      print('   TNV: [${position.latitude}, ${position.longitude}]');
+      print('   Reporter: [$reporterLat, $reporterLng]');
+    } catch (e) {
+      print('❌ Error calculating distance: $e');
+      setState(() {
+        _calculatedDistance = widget.data['distance']; // Fallback
+        _isCalculatingDistance = false;
+      });
+    }
   }
 
   @override
@@ -160,8 +214,20 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
   Widget build(BuildContext context) {
     // Parse data
     final emergencyType = widget.data['emergencyType'] ?? 'Khẩn cấp';
-    final distance = widget.data['distance'] ?? '---';
-    // final caseCode = data['caseCode'];
+    final distance =
+        _calculatedDistance ??
+        widget.data['distance'] ??
+        '---'; // [CHANGED] Use calculated distance
+    final reporterName = widget.data['reporterName'] ?? 'Người gặp nạn';
+    final manualAddress = widget.data['manualAddress'];
+
+    // [DEBUG] Log to check distance value
+    print('═══════════════════════════════════════');
+    print('🔍 SOS ALERT DIALOG DATA:');
+    print('   Backend distance: ${widget.data['distance']}');
+    print('   Calculated distance: $_calculatedDistance');
+    print('   Displaying: $distance');
+    print('═══════════════════════════════════════');
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -208,6 +274,19 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
             const SizedBox(height: 5),
 
+            // Reporter name
+            Text(
+              reporterName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
             // Subtitle
             const Text(
               "Đang cần sự giúp đỡ của bạn",
@@ -238,16 +317,51 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
             const SizedBox(height: 20),
 
-            // Distance
-            Text(
-              "Cách bạn ${distance}km",
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
+            // Distance with skeleton loading
+            _isCalculatingDistance
+                ? _buildDistanceSkeleton()
+                : Text(
+                    "Cách bạn ${_calculatedDistance ?? distance}km",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
 
+            // // Manual address if available
+            // if (manualAddress != null &&
+            //     manualAddress.toString().isNotEmpty) ...{
+            //   const SizedBox(height: 8),
+            //   Container(
+            //     padding: const EdgeInsets.symmetric(
+            //       horizontal: 16,
+            //       vertical: 8,
+            //     ),
+            //     decoration: BoxDecoration(
+            //       color: Colors.blue.shade50,
+            //       borderRadius: BorderRadius.circular(8),
+            //       border: Border.all(color: Colors.blue.shade200),
+            //     ),
+            //     child: Row(
+            //       children: [
+            //         Icon(Icons.place, size: 16, color: Colors.blue.shade700),
+            //         const SizedBox(width: 8),
+            //         Expanded(
+            //           child: Text(
+            //             manualAddress.toString(),
+            //             style: TextStyle(
+            //               fontSize: 13,
+            //               color: Colors.blue.shade900,
+            //             ),
+            //             maxLines: 2,
+            //             overflow: TextOverflow.ellipsis,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // },
             const SizedBox(height: 25),
 
             // Buttons
@@ -307,6 +421,18 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
             const SizedBox(height: 10),
           ],
         ),
+      ),
+    );
+  }
+
+  // [NEW] Build skeleton loading for distance
+  Widget _buildDistanceSkeleton() {
+    return Container(
+      height: 24,
+      width: 150,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }

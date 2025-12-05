@@ -7,6 +7,10 @@ class SosNotificationDialog extends StatefulWidget {
   final String caseCode;
   final String emergencyType;
   final String distance;
+  final String? reporterName;
+  final String? manualAddress;
+  final double? reporterLatitude; // [NEW]
+  final double? reporterLongitude; // [NEW]
   final Function(Map<String, dynamic>)? onAccepted;
 
   const SosNotificationDialog({
@@ -15,6 +19,10 @@ class SosNotificationDialog extends StatefulWidget {
     required this.caseCode,
     required this.emergencyType,
     required this.distance,
+    this.reporterName,
+    this.manualAddress,
+    this.reporterLatitude, // [NEW]
+    this.reporterLongitude, // [NEW]
     this.onAccepted,
   });
 
@@ -24,6 +32,62 @@ class SosNotificationDialog extends StatefulWidget {
 
 class _SosNotificationDialogState extends State<SosNotificationDialog> {
   bool _isLoading = false;
+  String? _calculatedDistance;
+  bool _isCalculatingDistance = true; // [NEW] Loading state for distance
+
+  @override
+  void initState() {
+    super.initState();
+    _calculateRealDistance(); // Calculate distance on init
+  }
+
+  // [NEW] Calculate real distance from TNV GPS
+  Future<void> _calculateRealDistance() async {
+    if (widget.reporterLatitude == null || widget.reporterLongitude == null) {
+      print('⚠️ Reporter coordinates not provided');
+      if (mounted) {
+        setState(() {
+          _calculatedDistance = widget.distance;
+          _isCalculatingDistance = false;
+        });
+      }
+      return;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final distanceMeters = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        widget.reporterLatitude!,
+        widget.reporterLongitude!,
+      );
+
+      final distanceKm = distanceMeters / 1000;
+
+      if (mounted) {
+        setState(() {
+          _calculatedDistance = distanceKm.toStringAsFixed(1);
+          _isCalculatingDistance = false;
+        });
+      }
+
+      print(
+        '📏 Notification Dialog - Calculated distance: ${distanceKm.toStringAsFixed(1)}km',
+      );
+    } catch (e) {
+      print('❌ Error calculating distance: $e');
+      if (mounted) {
+        setState(() {
+          _calculatedDistance = widget.distance;
+          _isCalculatingDistance = false;
+        });
+      }
+    }
+  }
 
   Future<void> _handleAccept() async {
     setState(() => _isLoading = true);
@@ -232,17 +296,63 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
               ),
               child: Column(
                 children: [
+                  // [NEW] Reporter name if available
+                  if (widget.reporterName != null) ...[
+                    _buildInfoRow(
+                      Icons.person,
+                      'Người gặp nạn',
+                      widget.reporterName!,
+                    ),
+                    const Divider(height: 20),
+                  ],
                   _buildInfoRow(
                     Icons.emergency,
                     'Loại khẩn cấp',
                     _getEmergencyText(widget.emergencyType),
                   ),
                   const Divider(height: 20),
-                  _buildInfoRow(
-                    Icons.location_on,
-                    'Khoảng cách',
-                    '${widget.distance} km',
+                  // Distance with skeleton loading
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Khoảng cách',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      _isCalculatingDistance
+                          ? Container(
+                              height: 18,
+                              width: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            )
+                          : Text(
+                              '${_calculatedDistance ?? widget.distance} km',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                    ],
                   ),
+                  // [NEW] Show manual address if available
+                  if (widget.manualAddress != null &&
+                      widget.manualAddress!.isNotEmpty) ...[
+                    const Divider(height: 20),
+                  ],
                   const Divider(height: 20),
                   _buildInfoRow(
                     Icons.confirmation_number,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -6,6 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import '../services/fcm_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/active_sos_provider.dart';
 
 class VolunteerDashboardScreen extends StatefulWidget {
   const VolunteerDashboardScreen({super.key});
@@ -18,45 +21,67 @@ class VolunteerDashboardScreen extends StatefulWidget {
 class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   GoogleMapController? _mapController;
 
-  // Sample SOS incident data
-  final Map<String, dynamic> _currentIncident = {
-    'id': 'SOS-303',
-    'victimName': 'Nguyễn Bị Bé Năm',
-    'gender': 'Nữ',
-    'birthYear': 1999,
-    'personalPhone': '0993824773',
-    'relativePhone': '0923652374',
-    'rescueContent': 'Tôi Gặp Tai nạn tại jhsgdshjadgsadg',
-    'isVerified': false,
-    'distance': '1.2Km',
-    // Sample coordinates for Ho Chi Minh City (District 12 - Tô Ký area)
-    'victimLat': 10.8500,
-    'victimLng': 106.6500,
-  };
-
-  // Current location (default to Ho Chi Minh City)
+  // Current location (default fallback to Ho Chi Minh City if GPS fails)
   LatLng _currentLocation = const LatLng(10.8500, 106.6500);
   LatLng? _victimLocation;
   bool _isLocationLoaded = false;
   Set<Marker> _markers = {};
   bool _isReady = false;
+  Timer? _locationUpdateTimer; // [NEW] Timer for periodic location updates
 
   // Check if Google Maps is supported on current platform
-  // Google Maps Flutter only supports Android, iOS, and Web
-  // For desktop (Windows/Linux/macOS), we show fallback map
-  bool _isGoogleMapsSupported = true; // Will be set in initState
+  bool _isGoogleMapsSupported = true;
 
   @override
   void initState() {
     super.initState();
-    _victimLocation = LatLng(
-      _currentIncident['victimLat'] as double,
-      _currentIncident['victimLng'] as double,
-    );
-    // Check platform support for Google Maps
     _checkPlatformSupport();
     _requestLocationPermission();
     _fetchStatus();
+
+    // [NEW] Start periodic location updates every 10 seconds
+    _locationUpdateTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _getCurrentLocation();
+    });
+
+    // Load active case if any
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadActiveCase();
+    });
+  }
+
+  Future<void> _loadActiveCase() async {
+    final provider = context.read<ActiveSosProvider>();
+    if (!provider.hasActiveCase) {
+      await provider.loadActiveCaseFromStorage();
+    }
+    _updateVictimLocation();
+  }
+
+  void _updateVictimLocation() {
+    final provider = context.read<ActiveSosProvider>();
+    if (provider.hasActiveCase) {
+      final sosCase = provider.activeSosCase!['case'];
+      final coords = sosCase['location']['coordinates'];
+      if (coords != null && coords is List && coords.length == 2) {
+        setState(() {
+          _victimLocation = LatLng(
+            coords[1],
+            coords[0],
+          ); // GeoJSON is [lng, lat]
+          _updateMarkers();
+        });
+
+        // Fit bounds if map is ready
+        if (_mapController != null && _currentLocation != null) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            _mapController?.animateCamera(
+              CameraUpdate.newLatLngBounds(_getBounds(), 100.0),
+            );
+          });
+        }
+      }
+    }
   }
 
   void _checkPlatformSupport() {
@@ -76,6 +101,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   @override
   void dispose() {
     _mapController?.dispose();
+    _locationUpdateTimer?.cancel(); // [NEW] Cancel periodic updates
     super.dispose();
   }
 
@@ -117,6 +143,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
               .then((_) {
                 print(
                   '✅ Location updated to backend: ${position.latitude}, ${position.longitude}',
+                );
+                print(
+                  '📍 TNV current location: ${position.latitude}, ${position.longitude}',
                 );
               })
               .catchError((e) {
@@ -227,6 +256,14 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
 
   void _updateMarkers() {
     if (_isGoogleMapsSupported) {
+      final provider = context.read<ActiveSosProvider>();
+      final hasActiveCase = provider.hasActiveCase;
+      final sosCase = hasActiveCase ? provider.activeSosCase!['case'] : null;
+      final reporter = sosCase != null ? sosCase['reporterId'] : null;
+      final victimName = hasActiveCase
+          ? (reporter != null ? reporter['fullName'] : 'Nạn nhân')
+          : 'Vị trí ứng cứu';
+
       _markers = {
         // Current location marker (blue)
         Marker(
@@ -248,7 +285,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
             ),
             infoWindow: InfoWindow(
               title: 'Vị trí nạn nhân',
-              snippet: _currentIncident['victimName'],
+              snippet: victimName,
             ),
           ),
       };
@@ -257,6 +294,27 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<ActiveSosProvider>();
+    final hasActiveCase = provider.hasActiveCase;
+    final sosCase = hasActiveCase ? provider.activeSosCase!['case'] : null;
+    final reporter = sosCase != null ? sosCase['reporterId'] : null;
+
+    // Calculate distance
+    String distanceDisplay = 'Đang tính...';
+    if (hasActiveCase && _victimLocation != null) {
+      final distMeters = Geolocator.distanceBetween(
+        _currentLocation.latitude,
+        _currentLocation.longitude,
+        _victimLocation!.latitude,
+        _victimLocation!.longitude,
+      );
+      if (distMeters < 1000) {
+        distanceDisplay = '${distMeters.toStringAsFixed(0)}m';
+      } else {
+        distanceDisplay = '${(distMeters / 1000).toStringAsFixed(1)}km';
+      }
+    }
+
     final now = DateTime.now();
     final hour = now.hour;
     final minute = now.minute;
@@ -470,7 +528,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                             },
                           ),
                           _buildLocationButton(
-                            'Cách ${_currentIncident['distance']}',
+                            'Cách $distanceDisplay',
                             const Color(0xFF43A047),
                             Icons.directions_run,
                             onTap: () {
@@ -566,115 +624,153 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Incident Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE3F2FD),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.sos,
-                                  color: Color(0xFF1976D2),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                _currentIncident['id'],
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1976D2),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildInfoRow(
-                            'Nạn nhân',
-                            _currentIncident['victimName'],
-                            Icons.person_outline,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildInfoRow(
-                            'Thông tin',
-                            '${_currentIncident['gender']} • ${_currentIncident['birthYear']}',
-                            Icons.info_outline,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildInfoRow(
-                            'Liên hệ',
-                            _currentIncident['personalPhone'],
-                            Icons.phone_outlined,
-                          ),
-                          const SizedBox(height: 12),
-                          const Divider(),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Nội dung ứng cứu:',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF333333),
+                    if (!hasActiveCase)
+                      Center(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 40),
+                            Icon(
+                              Icons.volunteer_activism,
+                              size: 64,
+                              color: Colors.grey.shade300,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _currentIncident['rescueContent'],
-                            style: GoogleFonts.montserrat(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (!_currentIncident['isVerified'])
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFFFCC80),
-                                ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Chưa có nhiệm vụ nào',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 16,
+                                color: Colors.grey.shade500,
+                                fontWeight: FontWeight.w600,
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.warning_amber_rounded,
-                                    color: Color(0xFFF57F17),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Vui lòng giữ trạng thái "Sẵn sàng" để nhận thông báo',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE3F2FD),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.sos,
+                                    color: Color(0xFF1976D2),
                                     size: 20,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Chưa xác thực CCCD, vui lòng cẩn thận',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 12,
-                                        color: const Color(0xFFE65100),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  sosCase['code'] ?? 'SOS-???',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1976D2),
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInfoRow(
+                              'Nạn nhân',
+                              reporter != null
+                                  ? reporter['fullName'] ?? 'Không tên'
+                                  : 'Không tên',
+                              Icons.person_outline,
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              'Thông tin',
+                              '${sosCase['emergencyType'] ?? 'KHẨN CẤP'}',
+                              Icons.info_outline,
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              'Liên hệ',
+                              reporter != null
+                                  ? reporter['phone'] ?? 'Không có SĐT'
+                                  : 'Không có SĐT',
+                              Icons.phone_outlined,
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Nội dung ứng cứu:',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF333333),
                               ),
                             ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              sosCase['description'] ?? 'Không có mô tả',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Note: Backend currently doesn't have verification status, hiding for now or assuming false
+                            /*
+                            if (false)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3E0),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFFFCC80),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Color(0xFFF57F17),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Chưa xác thực CCCD, vui lòng cẩn thận',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 12,
+                                          color: const Color(0xFFE65100),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              */
+                          ],
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 24),
                     // Action Button
                     Center(

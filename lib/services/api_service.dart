@@ -12,16 +12,17 @@ class ApiService {
   // Development: Local emulator
 
   // static const String baseUrl = 'http://42.116.145.85:5000/api';
-  // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
-  static const String baseUrl = 'http://42.116.145.85:5000/api';
+  static const String baseUrl = 'http://42.115.15.110:5000/api';
+
+  // static const String baseUrl = 'http://42.116.145.85:5000/api';
+
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';
   static const String _rememberStorageKey = 'remember_login';
   static String? _token;
   static Map<String, dynamic>? _cachedUser;
   static bool? _rememberLogin;
-
   static Future<Map<String, String>> _headers() async {
     final headers = {'Content-Type': 'application/json'};
     final token = await getToken();
@@ -69,13 +70,16 @@ class ApiService {
   }
 
   static Future<void> clearSession() async {
+    // Clear in-memory cache
     _token = null;
     _cachedUser = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenStorageKey);
-    await prefs.remove(_userStorageKey);
-    await prefs.remove(_rememberStorageKey);
     _rememberLogin = null;
+
+    // Clear ALL SharedPreferences data to ensure complete logout
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+
+    print('✅ Session cleared completely - all stored data removed');
   }
 
   static Future<void> setRememberMe(bool value) async {
@@ -752,6 +756,34 @@ class ApiService {
     }
 
     throw Exception(data['message'] ?? 'Không thể đổi mật khẩu');
+  }
+
+  /// Xóa FCM token khỏi backend (dùng khi logout)
+  static Future<void> unregisterDevice(String pushToken) async {
+    final token = await getToken();
+    if (token == null) {
+      // If no auth token, can't call API (user might be already logged out)
+      print('⚠️ No auth token, skipping unregisterDevice');
+      return;
+    }
+
+    final url = Uri.parse('$baseUrl/devices/unregister');
+    final headers = await _headers();
+
+    final res = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode({'pushToken': pushToken}),
+    );
+
+    if (res.statusCode == 200) {
+      print('✅ Device unregistered successfully');
+      return;
+    }
+
+    // Log error but don't throw to avoid blocking logout
+    final data = _decode(res);
+    print('⚠️ Failed to unregister device: ${data['message']}');
   }
 }
 
