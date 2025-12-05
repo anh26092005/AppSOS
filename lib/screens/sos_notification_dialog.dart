@@ -7,6 +7,8 @@ class SosNotificationDialog extends StatefulWidget {
   final String caseCode;
   final String emergencyType;
   final String distance;
+  final String? reporterName; // [NEW] Tên người gặp nạn
+  final String? manualAddress; // [NEW] Địa chỉ (nếu có)
   final Function(Map<String, dynamic>)? onAccepted;
 
   const SosNotificationDialog({
@@ -15,6 +17,8 @@ class SosNotificationDialog extends StatefulWidget {
     required this.caseCode,
     required this.emergencyType,
     required this.distance,
+    this.reporterName, // [NEW]
+    this.manualAddress, // [NEW]
     this.onAccepted,
   });
 
@@ -232,6 +236,15 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
               ),
               child: Column(
                 children: [
+                  // [NEW] Reporter name if available
+                  if (widget.reporterName != null) ...[
+                    _buildInfoRow(
+                      Icons.person,
+                      'Người gặp nạn',
+                      widget.reporterName!,
+                    ),
+                    const Divider(height: 20),
+                  ],
                   _buildInfoRow(
                     Icons.emergency,
                     'Loại khẩn cấp',
@@ -243,6 +256,16 @@ class _SosNotificationDialogState extends State<SosNotificationDialog> {
                     'Khoảng cách',
                     '${widget.distance} km',
                   ),
+                  // [NEW] Show manual address if available
+                  if (widget.manualAddress != null &&
+                      widget.manualAddress!.isNotEmpty) ...[
+                    const Divider(height: 20),
+                    _buildInfoRow(
+                      Icons.place,
+                      'Địa chỉ',
+                      widget.manualAddress!,
+                    ),
+                  ],
                   const Divider(height: 20),
                   _buildInfoRow(
                     Icons.confirmation_number,

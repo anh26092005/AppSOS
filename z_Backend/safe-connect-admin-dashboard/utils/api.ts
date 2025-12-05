@@ -1,12 +1,8 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
-<<<<<<< HEAD
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-=======
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://42.116.145.85:5000/api';
->>>>>>> 035e59bfdd1ca9cdfa459c666c5379ea850f56af
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://42.116.145.85:5000/api';
 // Tạo axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

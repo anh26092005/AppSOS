@@ -178,8 +178,14 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
       if (volunteers.length > 0) {
         const firstVolunteer = volunteers[0];
         const distance = (firstVolunteer.distance || firstVolunteer.distanceKm || 0).toFixed(1);
+        
+        // [FIX] Fetch reporter info để gửi vào notification
+        const reporter = await User.findById(sosCase.reporterId).select('fullName phone');
+        const reporterName = reporter ? reporter.fullName : 'Người dùng';
+        const reporterPhone = reporter ? reporter.phone : 'N/A';
+        
         const title = '🚨 Có trường hợp khẩn cấp cần hỗ trợ';
-        const body = `${sosCase.emergencyType} - Cách bạn ${distance}km`;
+        const body = `${reporterName} - ${sosCase.emergencyType} - Cách bạn ${distance}km`;
 
         // Tạo in-app notification
         const notificationData = {
@@ -189,6 +195,12 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           emergencyType: sosCase.emergencyType,
           distance: distance,
           reporterId: sosCase.reporterId.toString(),
+          reporterName: reporterName,  // [NEW] Tên người gặp nạn
+          reporterPhone: reporterPhone, // [NEW] SĐT để contact
+          // [NEW] Location data để TNV biết vị trí chính xác
+          latitude: sosCase.location.coordinates[1],  // GeoJSON format [lng, lat]
+          longitude: sosCase.location.coordinates[0],
+          manualAddress: sosCase.manualAddress || null, // Địa chỉ người dùng nhập (nếu có)
         };
 
         // Lưu notification

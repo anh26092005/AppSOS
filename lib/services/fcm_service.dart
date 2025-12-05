@@ -184,12 +184,13 @@ class FCMService {
                       builder: (context) => SosNotificationDialog(
                         caseId: message.data['caseId'],
                         caseCode:
-                            'SOS-${message.data['caseId'].toString().substring(0, 4)}', // Fallback code
+                            'SOS-${message.data['caseId'].toString().substring(0, 4)}',
                         emergencyType:
                             message.data['emergencyType'] ?? 'EMERGENCY',
                         distance: message.data['distance'] ?? 'Unknown',
+                        reporterName: message.data['reporterName'],
+                        manualAddress: message.data['manualAddress'],
                         onAccepted: (sosData) {
-                          // Save to active SOS provider
                           context.read<ActiveSosProvider>().setActiveCase(
                             sosData,
                           );

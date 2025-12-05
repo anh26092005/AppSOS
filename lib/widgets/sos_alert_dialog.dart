@@ -161,7 +161,8 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
     // Parse data
     final emergencyType = widget.data['emergencyType'] ?? 'Khẩn cấp';
     final distance = widget.data['distance'] ?? '---';
-    // final caseCode = data['caseCode'];
+    final reporterName = widget.data['reporterName'] ?? 'Người gặp nạn';
+    final manualAddress = widget.data['manualAddress'];
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -208,6 +209,19 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
 
             const SizedBox(height: 5),
 
+            // Reporter name
+            Text(
+              reporterName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
             // Subtitle
             const Text(
               "Đang cần sự giúp đỡ của bạn",
@@ -247,6 +261,40 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
                 color: Colors.black87,
               ),
             ),
+
+            // Manual address if available
+            if (manualAddress != null &&
+                manualAddress.toString().isNotEmpty) ...{
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.place, size: 16, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        manualAddress.toString(),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue.shade900,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            },
 
             const SizedBox(height: 25),
 
