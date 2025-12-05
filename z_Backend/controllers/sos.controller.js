@@ -179,6 +179,14 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
         const firstVolunteer = volunteers[0];
         const distance = (firstVolunteer.distance || firstVolunteer.distanceKm || 0).toFixed(1);
         
+        console.log('═══════════════════════════════════════');
+        console.log('📏 DISTANCE CALCULATION:');
+        console.log(`   Raw distance: ${firstVolunteer.distance}`);
+        console.log(`   DistanceKm: ${firstVolunteer.distanceKm}`);
+        console.log(`   Final distance: ${distance}km`);
+        console.log(`   Volunteer ID: ${firstVolunteer.userId}`);
+        console.log('═══════════════════════════════════════');
+        
         // [FIX] Fetch reporter info để gửi vào notification
         const reporter = await User.findById(sosCase.reporterId).select('fullName phone');
         const reporterName = reporter ? reporter.fullName : 'Người dùng';
@@ -202,6 +210,9 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           longitude: sosCase.location.coordinates[0],
           manualAddress: sosCase.manualAddress || null, // Địa chỉ người dùng nhập (nếu có)
         };
+
+        console.log('📤 Notification data being sent:');
+        console.log(JSON.stringify(notificationData, null, 2));
 
         // Lưu notification
         await Notification.create({

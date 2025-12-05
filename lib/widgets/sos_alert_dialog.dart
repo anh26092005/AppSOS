@@ -164,6 +164,15 @@ class _SOSAlertDialogState extends State<SOSAlertDialog> {
     final reporterName = widget.data['reporterName'] ?? 'Người gặp nạn';
     final manualAddress = widget.data['manualAddress'];
 
+    // [DEBUG] Log to check distance value
+    print('═══════════════════════════════════════');
+    print('🔍 SOS ALERT DIALOG DATA:');
+    print('   Full data: ${widget.data}');
+    print('   Distance from data: $distance');
+    print('   Emergency type: $emergencyType');
+    print('   Reporter name: $reporterName');
+    print('═══════════════════════════════════════');
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       elevation: 5,
