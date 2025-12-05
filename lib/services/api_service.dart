@@ -14,7 +14,7 @@ class ApiService {
   // static const String baseUrl = 'http://42.116.145.85:5000/api';
   // static const String baseUrl = 'http://10.0.2.2:5000/api';
 
-  static const String baseUrl = 'http://42.116.145.85:5000/api';
+  static const String baseUrl = 'http://42.115.15.110:5000/api';
   static const String _tokenStorageKey = 'auth_token';
   static const String _userStorageKey = 'auth_user';
   static const String _rememberStorageKey = 'remember_login';

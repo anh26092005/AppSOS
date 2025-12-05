@@ -127,6 +127,23 @@ class FCMService {
 
       // Hiển thị SOS Alert Dialog nếu là tin nhắn SOS
       if (message.data['type'] == 'SOS_CASE') {
+        // [FIX] Check if current user is the reporter - skip dialog if so
+        final currentUser = await ApiService.getCachedUser();
+        final currentUserId = currentUser?['id'] ?? currentUser?['_id'];
+        final reporterId = message.data['reporterId'];
+
+        print('🔍 SOS_CASE notification check:');
+        print('  Current User ID: $currentUserId');
+        print('  Reporter ID: $reporterId');
+
+        // Skip dialog if user is the reporter (don't show TNV dialog to yourself)
+        if (currentUserId != null &&
+            reporterId != null &&
+            currentUserId.toString() == reporterId.toString()) {
+          print('🚫 Skipping SOS dialog - user is the reporter');
+          return;
+        }
+
         // Phát âm thanh thông báo
         NotificationSoundService.playNotificationSound();
 

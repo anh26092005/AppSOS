@@ -170,6 +170,7 @@ const findAndNotifyNearestVolunteers = async (sosCase) => {
           caseCode: sosCase.code,
           emergencyType: sosCase.emergencyType,
           distance: distance,
+          reporterId: sosCase.reporterId.toString(),
         };
 
         // Lưu notification
