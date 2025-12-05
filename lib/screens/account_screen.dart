@@ -55,7 +55,11 @@ class _AccountScreenState extends State<AccountScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
+        _showCustomSnackBar(
+          context,
+          '${AppStrings.get('error')}: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -180,10 +184,214 @@ class _AccountScreenState extends State<AccountScreen> {
         }
       } catch (e) {
         if (mounted) {
-          _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
+          _showCustomSnackBar(
+            context,
+            '${AppStrings.get('error')}: $e',
+            isError: true,
+          );
         }
       }
     }
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool obscureCurrentPassword = true;
+    bool obscureNewPassword = true;
+    bool obscureConfirmPassword = true;
+
+    return showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            AppStrings.get('changePassword'),
+            style: GoogleFonts.montserrat(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentPasswordController,
+                  obscureText: obscureCurrentPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Mật khẩu hiện tại',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureCurrentPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureCurrentPassword = !obscureCurrentPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: obscureNewPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Mật khẩu mới',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureNewPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureNewPassword = !obscureNewPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Xác nhận mật khẩu mới',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureConfirmPassword = !obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                AppStrings.get('cancel'),
+                style: GoogleFonts.montserrat(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final currentPassword = currentPasswordController.text.trim();
+                final newPassword = newPasswordController.text.trim();
+                final confirmPassword = confirmPasswordController.text.trim();
+
+                if (currentPassword.isEmpty ||
+                    newPassword.isEmpty ||
+                    confirmPassword.isEmpty) {
+                  _showCustomSnackBar(
+                    context,
+                    'Vui lòng điền đầy đủ thông tin',
+                    isError: true,
+                  );
+                  return;
+                }
+
+                if (newPassword.length < 6) {
+                  _showCustomSnackBar(
+                    context,
+                    'Mật khẩu mới phải có ít nhất 6 ký tự',
+                    isError: true,
+                  );
+                  return;
+                }
+
+                if (newPassword != confirmPassword) {
+                  _showCustomSnackBar(
+                    context,
+                    'Mật khẩu mới không khớp',
+                    isError: true,
+                  );
+                  return;
+                }
+
+                if (currentPassword == newPassword) {
+                  _showCustomSnackBar(
+                    context,
+                    'Mật khẩu mới phải khác mật khẩu hiện tại',
+                    isError: true,
+                  );
+                  return;
+                }
+
+                try {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) =>
+                        const Center(child: CircularProgressIndicator()),
+                  );
+
+                  await ApiService.changePassword(
+                    currentPassword: currentPassword,
+                    newPassword: newPassword,
+                  );
+
+                  if (!mounted) return;
+                  Navigator.pop(context); // Close loading
+                  Navigator.pop(context); // Close dialog
+
+                  _showCustomSnackBar(context, 'Đổi mật khẩu thành công!');
+                } catch (e) {
+                  if (!mounted) return;
+                  Navigator.pop(context); // Close loading
+                  _showCustomSnackBar(
+                    context,
+                    '${AppStrings.get('error')}: $e',
+                    isError: true,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF6C343),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                AppStrings.get('saveChanges'),
+                style: GoogleFonts.montserrat(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildLoading() {
@@ -352,7 +560,9 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    email.isNotEmpty ? email : AppStrings.get('emailNotUpdated'),
+                    email.isNotEmpty
+                        ? email
+                        : AppStrings.get('emailNotUpdated'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
                       fontSize: 14,
@@ -382,7 +592,9 @@ class _AccountScreenState extends State<AccountScreen> {
                   _buildInfoTile(
                     icon: Icons.email_outlined,
                     title: AppStrings.get('email'),
-                    value: email.isNotEmpty ? email : AppStrings.get('notUpdated'),
+                    value: email.isNotEmpty
+                        ? email
+                        : AppStrings.get('notUpdated'),
                     onTap: () {},
                     showEdit: false,
                   ),
@@ -390,7 +602,9 @@ class _AccountScreenState extends State<AccountScreen> {
                   _buildInfoTile(
                     icon: Icons.phone_outlined,
                     title: AppStrings.get('phoneNumber'),
-                    value: phone.isNotEmpty ? phone : AppStrings.get('notUpdated'),
+                    value: phone.isNotEmpty
+                        ? phone
+                        : AppStrings.get('notUpdated'),
                     onTap: () {},
                     showEdit: false,
                   ),
@@ -422,57 +636,18 @@ class _AccountScreenState extends State<AccountScreen> {
                   const SizedBox(height: 24),
                   _buildSectionTitle(AppStrings.get('security')),
                   const SizedBox(height: 12),
-                  _buildInfoTile(
-                    icon: Icons.lock_outline,
-                    title: AppStrings.get('changePassword'),
-                    value: '••••••••',
-                    isAction: true,
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  // Only show change password for local auth (not Google login)
+                  if (_user?['authProvider'] != 'google') ...[
+                    _buildInfoTile(
+                      icon: Icons.lock_outline,
+                      title: AppStrings.get('changePassword'),
+                      value: '••••••••',
+                      isAction: true,
+                      onTap: _showChangePasswordDialog,
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF8E1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                          size: 24,
-                        ),
-                      ),
-                      title: Text(
-                        AppStrings.get('deleteAccount'),
-                        style: GoogleFonts.montserrat(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.red,
-                        ),
-                      ),
-                      onTap: () {
-                        // TODO: Implement delete account
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 12),
+                  ],
+                  const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(

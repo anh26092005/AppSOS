@@ -65,6 +65,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark
+        ? Colors.grey.shade400
+        : Colors.grey.shade700;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -73,13 +79,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         leading: Container(
           margin: const EdgeInsets.only(left: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: (isDark ? Colors.black : Colors.white).withValues(
+              alpha: 0.8,
+            ),
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios_new,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.black,
               size: 20,
             ),
             onPressed: () => Navigator.pop(context, _currentPost),
@@ -94,7 +102,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               decoration: BoxDecoration(
                 color: _currentPost.isLiked
                     ? Colors.red.withValues(alpha: 0.15)
-                    : Colors.white.withValues(alpha: 0.8),
+                    : (isDark ? Colors.black : Colors.white).withValues(
+                        alpha: 0.8,
+                      ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: _currentPost.isLiked
@@ -119,7 +129,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: _currentPost.isLiked ? Colors.red : Colors.black87,
+                      color: _currentPost.isLiked ? Colors.red : textColor,
                     ),
                   ),
                 ],
@@ -128,17 +138,28 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           ),
         ],
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF8E1), Colors.white, Colors.white],
-            stops: [0.0, 0.3, 1.0],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF2D2500),
+                    Color(0xFF1E1E1E),
+                    Color(0xFF1E1E1E),
+                  ],
+                  stops: [0.0, 0.3, 1.0],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFFFF8E1), Colors.white, Colors.white],
+                  stops: [0.0, 0.3, 1.0],
+                ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -148,17 +169,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               children: [
                 Text(
                   _currentPost.contentText,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                    color: textColor,
                     height: 1.3,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${_calculateReadingTime(_currentPost.bodyContent)} | ${_formatDate(_currentPost.createdAt)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: secondaryTextColor),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -195,10 +216,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     const SizedBox(width: 12),
                     Text(
                       _currentPost.authorName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: textColor,
                       ),
                     ),
                   ],
@@ -213,10 +234,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         height: 200,
-                        color: Colors.grey.shade200,
-                        child: const Icon(
+                        color: isDark
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade200,
+                        child: Icon(
                           Icons.broken_image,
-                          color: Colors.grey,
+                          color: isDark ? Colors.grey.shade600 : Colors.grey,
                         ),
                       ),
                     ),
@@ -230,9 +253,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     child: Text(
                       paragraph.trim(),
                       textAlign: TextAlign.justify,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF333333),
+                        color: isDark
+                            ? Colors.grey.shade300
+                            : const Color(0xFF333333),
                         height: 1.6,
                       ),
                     ),

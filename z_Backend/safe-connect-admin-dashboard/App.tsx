@@ -8,13 +8,14 @@ import VolunteerManagement from './components/VolunteerManagement';
 import UserManagement from './components/UserManagement';
 import CommunityManagement from './components/CommunityManagement';
 import BlogManagement from './components/BlogManagement';
+import SystemSettings from './components/SystemSettings';
 import AvatarImage from './components/AvatarImage';
-import { HomeIcon, ShieldAlertIcon, UsersIcon, UserCogIcon, MessageSquareIcon, FileTextIcon, LogOutIcon } from './components/icons';
+import { HomeIcon, ShieldAlertIcon, UsersIcon, UserCogIcon, MessageSquareIcon, FileTextIcon, LogOutIcon, SettingsIcon } from './components/icons';
 
 import { volunteerService } from './services/volunteerService';
 import { articleService } from './services/articleService';
 
-type NavItem = 'dashboard' | 'sos' | 'volunteers' | 'users' | 'community' | 'blog';
+type NavItem = 'dashboard' | 'sos' | 'volunteers' | 'users' | 'community' | 'blog' | 'settings';
 
 const NavLink: React.FC<{
     nav: NavItem;
@@ -101,6 +102,8 @@ const App: React.FC = () => {
                 return <CommunityManagement />;
             case 'blog':
                 return <BlogManagement />;
+            case 'settings':
+                return <SystemSettings />;
             default:
                 return <Dashboard />;
         }
@@ -120,6 +123,7 @@ const App: React.FC = () => {
                     <NavLink nav="community" icon={<MessageSquareIcon className="w-5 h-5" />} label="Quản lý Cộng đồng" count={communityCount} activeNav={activeNav} setActiveNav={setActiveNav} />
                     <NavLink nav="users" icon={<UserCogIcon className="w-5 h-5" />} label="Quản lý Người dùng" activeNav={activeNav} setActiveNav={setActiveNav} />
                     <NavLink nav="blog" icon={<FileTextIcon className="w-5 h-5" />} label="Quản lý Blog" activeNav={activeNav} setActiveNav={setActiveNav} />
+                    <NavLink nav="settings" icon={<SettingsIcon className="w-5 h-5" />} label="Cài đặt hệ thống" activeNav={activeNav} setActiveNav={setActiveNav} />
                 </nav>
                  <div className="p-4 border-t border-gray-700">
                     <div className="flex items-center">

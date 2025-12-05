@@ -5,6 +5,10 @@ const {
   updateUser,
   deleteUser,
   deleteSosCase,
+  getSystemSettings,
+  updateSystemSettings,
+  getDemoUsers,
+  updateUserDemoAccess,
 } = require('../controllers/admin.controller');
 const { authenticate, authorize } = require('../middleware/auth');
 
@@ -28,6 +32,20 @@ router.delete('/users/:id', deleteUser);
 
 // Xóa SOS case (hard delete) - chỉ dành cho admin khi có lỗi
 router.delete('/sos-cases/:caseId', deleteSosCase);
+
+// ================ SYSTEM SETTINGS ================
+
+// Lấy system settings
+router.get('/system-settings', getSystemSettings);
+
+// Cập nhật system settings
+router.put('/system-settings', updateSystemSettings);
+
+// Lấy danh sách demo users
+router.get('/demo-users', getDemoUsers);
+
+// Cập nhật demo access cho user
+router.put('/users/:id/demo-access', updateUserDemoAccess);
 
 module.exports = router;
 

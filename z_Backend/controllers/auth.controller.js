@@ -14,6 +14,7 @@ const buildUserResponse = (user) => {
     bio: user.bio,
     dateOfBirth: user.dateOfBirth,
     address: user.address,
+    authProvider: user.authProvider || 'local',
   };
 };
 
@@ -229,6 +230,55 @@ const logout = async (req, res, next) => {
   }
 };
 
+const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { currentPassword, newPassword } = req.body;
+
+    // Validation
+    if (!currentPassword || !newPassword) {
+      throw new AppError('Current password and new password are required', 400);
+    }
+
+    if (newPassword.length < 6) {
+      throw new AppError('New password must be at least 6 characters', 400);
+    }
+
+    if (currentPassword === newPassword) {
+      throw new AppError('New password must be different from current password', 400);
+    }
+
+    // Find user with password
+    const user = await User.findById(userId).select('+passwordHash');
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Check if user uses social login (no password)
+    if (!user.passwordHash || user.authProvider !== 'local') {
+      throw new AppError('Password change not available for social login accounts', 400);
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new AppError('Current password is incorrect', 401);
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -236,4 +286,5 @@ module.exports = {
   getProfile,
   updateProfile,
   updateAvatar,
+  changePassword,
 };

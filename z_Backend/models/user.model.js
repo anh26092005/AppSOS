@@ -111,6 +111,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Demo Mode Access: When demo mode is enabled, only users with this flag can use SOS APIs
+    isDemoAllowed: {
+      type: Boolean,
+      default: false,
+      index: true, // For quick queries when checking demo access
+    },
     sosBanUntil: {
       type: Date,
       default: null,

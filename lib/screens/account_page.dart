@@ -102,7 +102,11 @@ class _AccountPageState extends State<AccountPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUploadingAvatar = false);
-        _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
+        _showCustomSnackBar(
+          context,
+          '${AppStrings.get('error')}: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -177,7 +181,11 @@ class _AccountPageState extends State<AccountPage> {
         }
       } catch (e) {
         if (mounted) {
-          _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
+          _showCustomSnackBar(
+            context,
+            '${AppStrings.get('error')}: $e',
+            isError: true,
+          );
         }
       }
     }
@@ -465,8 +473,12 @@ class _AccountPageState extends State<AccountPage> {
                                               _showCustomSnackBar(
                                                 context,
                                                 newReadyStatus
-                                                    ? AppStrings.get('sosRequestOn')
-                                                    : AppStrings.get('sosRequestOff'),
+                                                    ? AppStrings.get(
+                                                        'sosRequestOn',
+                                                      )
+                                                    : AppStrings.get(
+                                                        'sosRequestOff',
+                                                      ),
                                                 isError: !newReadyStatus,
                                               );
                                             } catch (e) {
@@ -490,7 +502,9 @@ class _AccountPageState extends State<AccountPage> {
                                 context,
                                 icon: Icons.badge_outlined,
                                 title: AppStrings.get('viewVolunteerProfile'),
-                                subtitle: AppStrings.get('manageVolunteerProfile'),
+                                subtitle: AppStrings.get(
+                                  'manageVolunteerProfile',
+                                ),
                                 onTap: () {
                                   Navigator.pushNamed(
                                     context,
@@ -707,9 +721,9 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> _showAboutDialog(BuildContext context) async {
     final packageInfo = await PackageInfo.fromPlatform();
-    
+
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -721,14 +735,8 @@ class _AccountPageState extends State<AccountPage> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: Theme.of(context).brightness == Brightness.dark
-                  ? [
-                      const Color(0xFF1A237E),
-                      const Color(0xFF0D47A1),
-                    ]
-                  : [
-                      const Color(0xFFFFF8E1),
-                      const Color(0xFFFFE082),
-                    ],
+                  ? [const Color(0xFF1A237E), const Color(0xFF0D47A1)]
+                  : [const Color(0xFFFFF8E1), const Color(0xFFFFE082)],
             ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
@@ -812,7 +820,7 @@ class _AccountPageState extends State<AccountPage> {
                   ],
                 ),
               ),
-              
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(24),
@@ -844,7 +852,7 @@ class _AccountPageState extends State<AccountPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Features Icons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -866,9 +874,9 @@ class _AccountPageState extends State<AccountPage> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Credits
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -892,7 +900,9 @@ class _AccountPageState extends State<AccountPage> {
                                 style: GoogleFonts.montserrat(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).brightness == Brightness.dark
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? Colors.white70
                                       : Colors.grey.shade700,
                                 ),
@@ -901,11 +911,13 @@ class _AccountPageState extends State<AccountPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'êu mấy cưng',
+                            'TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI TPHCM',
                             style: GoogleFonts.montserrat(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.white54
                                   : Colors.grey.shade600,
                             ),
@@ -916,7 +928,7 @@ class _AccountPageState extends State<AccountPage> {
                   ],
                 ),
               ),
-              
+
               // Close Button
               Padding(
                 padding: const EdgeInsets.only(bottom: 24, left: 24, right: 24),
@@ -925,10 +937,12 @@ class _AccountPageState extends State<AccountPage> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.dark
                           ? Colors.white
                           : const Color(0xFF0D47A1),
-                      foregroundColor: Theme.of(context).brightness == Brightness.dark
+                      foregroundColor:
+                          Theme.of(context).brightness == Brightness.dark
                           ? const Color(0xFF0D47A1)
                           : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),

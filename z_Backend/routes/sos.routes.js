@@ -12,11 +12,15 @@ const {
   markSosCaseAsSeen,
 } = require('../controllers/sos.controller');
 const { authenticate } = require('../middleware/auth');
+const { checkDemoMode } = require('../middleware/checkDemoMode');
 
 const router = express.Router();
 
 // Tất cả routes cần xác thực
 router.use(authenticate);
+
+// Kiểm tra demo mode restrictions
+router.use(checkDemoMode);
 
 // Tạo SOS case
 router.post('/', createSosCase);

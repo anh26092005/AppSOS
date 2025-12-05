@@ -114,7 +114,11 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
-      _showCustomSnackBar(context, '${AppStrings.get('error')}: $e', isError: true);
+      _showCustomSnackBar(
+        context,
+        '${AppStrings.get('error')}: $e',
+        isError: true,
+      );
     }
   }
 
@@ -480,9 +484,6 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscureText = false,
     VoidCallback? onTogglePassword,
   }) {
-    // For email/phone field, allow phone number input
-    final bool isEmailOrPhoneField = hint.contains('Email');
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -492,9 +493,6 @@ class _LoginScreenState extends State<LoginScreen> {
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
-        inputFormatters: isEmailOrPhoneField
-            ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9@._a-zA-Z]'))]
-            : null,
         style: GoogleFonts.montserrat(
           fontSize: 15,
           color: Colors.black87,

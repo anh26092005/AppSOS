@@ -13,4 +13,5 @@ module.exports = {
   Comment: require('./comment.model'),
   ModerationLog: require('./moderationLog.model'),
   MediaAsset: require('./mediaAsset.model'),
+  SystemSettings: require('./systemSettings.model'),
 };

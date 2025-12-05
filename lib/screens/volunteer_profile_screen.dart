@@ -130,6 +130,7 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final volunteer = widget.volunteerData;
     final name =
         volunteer['authorName'] ?? volunteer['name'] ?? 'Tình nguyện viên';
@@ -176,7 +177,9 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 240, 240, 240),
+      backgroundColor: isDark
+          ? const Color(0xFF1E1E1E)
+          : const Color.fromARGB(255, 240, 240, 240),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -192,11 +195,17 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                     bottom: 50,
                   ), // Space for content inside header
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
-                    ),
+                    gradient: isDark
+                        ? const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+                          )
+                        : const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF42A5F5), Color(0xFF1976D2)],
+                          ),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(26),
                       bottomRight: Radius.circular(26),
@@ -225,13 +234,15 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                               Container(
                                 margin: const EdgeInsets.only(left: 0),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color:
+                                      (isDark ? Colors.black87 : Colors.white)
+                                          .withValues(alpha: 0.5),
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.arrow_back_ios_new,
-                                    color: Colors.black,
+                                    color: isDark ? Colors.white : Colors.black,
                                     size: 20,
                                   ),
                                   onPressed: () => Navigator.pop(context),
@@ -372,9 +383,9 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
                               avatar,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) =>
-                                  _buildPlaceholderAvatar(),
+                                  _buildPlaceholderAvatar(isDark),
                             )
-                          : _buildPlaceholderAvatar(),
+                          : _buildPlaceholderAvatar(isDark),
                     ),
                   ),
                 ),
@@ -406,10 +417,14 @@ class _VolunteerProfileScreenState extends State<VolunteerProfileScreen> {
     );
   }
 
-  Widget _buildPlaceholderAvatar() {
+  Widget _buildPlaceholderAvatar(bool isDark) {
     return Container(
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.person, size: 60, color: Colors.grey),
+      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+      child: Icon(
+        Icons.person,
+        size: 60,
+        color: isDark ? Colors.grey.shade600 : Colors.grey,
+      ),
     );
   }
 

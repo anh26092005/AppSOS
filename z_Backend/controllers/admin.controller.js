@@ -1,4 +1,4 @@
-const { User, VolunteerProfile, Device, Notification, SosCase, SosResponderQueue } = require('../models');
+const { User, VolunteerProfile, Device, Notification, SosCase, SosResponderQueue, SystemSettings } = require('../models');
 const AppError = require('../utils/appError');
 
 // Lấy danh sách users
@@ -214,11 +214,132 @@ const deleteSosCase = async (req, res, next) => {
   }
 };
 
+// ================ SYSTEM SETTINGS ================
+
+// Lấy system settings
+const getSystemSettings = async (req, res, next) => {
+  try {
+    const settings = await SystemSettings.getSettings();
+    
+    res.json({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Cập nhật system settings (demo mode)
+const updateSystemSettings = async (req, res, next) => {
+  try {
+    const { demoMode } = req.body;
+
+    if (typeof demoMode !== 'boolean') {
+      throw new AppError('demoMode must be a boolean value', 400);
+    }
+
+    const settings = await SystemSettings.updateSettings({ demoMode });
+
+    res.json({
+      success: true,
+      data: settings,
+      message: `Demo mode ${demoMode ? 'enabled' : 'disabled'} successfully`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Lấy danh sách users có demo access
+const getDemoUsers = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      sortBy = 'fullName',
+      sortOrder = 'asc',
+    } = req.query;
+
+    const query = { isDemoAllowed: true };
+
+    // Search theo tên, phone, email
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const sort = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    const users = await User.find(query)
+      .select('-passwordHash')
+      .sort(sort)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean();
+
+    const total = await User.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Cập nhật demo access cho user
+const updateUserDemoAccess = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isDemoAllowed } = req.body;
+
+    if (typeof isDemoAllowed !== 'boolean') {
+      throw new AppError('isDemoAllowed must be a boolean value', 400);
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    user.isDemoAllowed = isDemoAllowed;
+    await user.save();
+
+    const userObj = user.toObject ? user.toObject() : user;
+    delete userObj.passwordHash;
+
+    res.json({
+      success: true,
+      data: userObj,
+      message: `Demo access ${isDemoAllowed ? 'granted' : 'revoked'} successfully`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
   updateUser,
   deleteUser,
   deleteSosCase,
+  getSystemSettings,
+  updateSystemSettings,
+  getDemoUsers,
+  updateUserDemoAccess,
 };
 

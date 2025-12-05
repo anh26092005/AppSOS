@@ -18,6 +18,7 @@ export enum ApprovalStatus {
 export type UserStatus = 'active' | 'suspended';
 
 export interface User {
+  _id?: string; // Backend returns _id
   id: string;
   name: string;
   avatar: string;
@@ -73,4 +74,16 @@ export interface BlogPost {
   author: User; // Admin user
   publishedDate: string;
   likeCount?: number;
+}
+
+// System Settings
+export interface SystemSettings {
+  _id: string;
+  demoMode: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DemoUser extends User {
+  isDemoAllowed: boolean;
 }

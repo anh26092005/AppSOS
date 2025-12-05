@@ -159,34 +159,6 @@ class InfoTnvScreen extends StatelessWidget {
                         color: const Color(0xFF1565C0), // Blue 800
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          size: 20,
-                          color: Color(0xFFFFB300),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${tnv['rating']}',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF333333),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '(${tnv['reviews']} đánh giá)',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -198,56 +170,6 @@ class InfoTnvScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status Card
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatColumn(
-                          'Ca hoàn thành',
-                          '${tnv['completedCases']}',
-                          Icons.task_alt_rounded,
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: Colors.grey.shade200,
-                        ),
-                        _buildStatColumn(
-                          'Kinh nghiệm',
-                          tnv['experience'],
-                          Icons.history_rounded,
-                        ),
-                        Container(
-                          width: 1,
-                          height: 40,
-                          color: Colors.grey.shade200,
-                        ),
-                        _buildStatColumn(
-                          'Khoảng cách',
-                          tnv['distance'],
-                          Icons.near_me_rounded,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
                   // Specialties
                   Text(
                     'Chuyên môn',
@@ -318,7 +240,7 @@ class InfoTnvScreen extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      tnv['description'] ?? 'Không có mô tả',
+                      tnv['bio'] ?? 'Không có giới thiệu',
                       style: GoogleFonts.montserrat(
                         fontSize: 14,
                         color: Colors.grey.shade700,
@@ -438,93 +360,6 @@ class InfoTnvScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Action Buttons
-                  if (isOnline)
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF29B6F6),
-                            Color(0xFF0288D1),
-                          ], // Light Blue to Blue
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF0288D1,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Đã gửi yêu cầu đến ${tnv['name']}',
-                                  style: GoogleFonts.montserrat(),
-                                ),
-                                backgroundColor: const Color(0xFF43A047),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Center(
-                            child: Text(
-                              'Liên Hệ Ngay',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (!isOnline)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          // TODO: Send message
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF0288D1), // Blue 700
-                          side: const BorderSide(
-                            color: Color(0xFF0288D1), // Blue 700
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Text(
-                          'Gửi Tin Nhắn',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
                   const SizedBox(height: 30),
                 ],
               ),
@@ -532,44 +367,6 @@ class InfoTnvScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatColumn(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE1F5FE), // Light Blue 50
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF0288D1),
-            size: 24,
-          ), // Blue 700
-        ),
-        const SizedBox(height: 12),
-        Text(
-          value,
-          style: GoogleFonts.montserrat(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF333333),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
     );
   }
 

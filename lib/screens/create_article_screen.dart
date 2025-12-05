@@ -82,19 +82,22 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
+          icon: Icon(Icons.close, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Tạo bài viết',
           style: GoogleFonts.montserrat(
-            color: Colors.black87,
+            color: textColor,
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
@@ -148,7 +151,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
                 aspectRatio: 16 / 9,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(16),
                     image: _selectedImage != null
                         ? DecorationImage(
@@ -164,13 +167,17 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
                             Icon(
                               Icons.add_photo_alternate_rounded,
                               size: 40,
-                              color: Colors.grey.shade400,
+                              color: isDark
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade400,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Thêm ảnh bìa',
                               style: GoogleFonts.montserrat(
-                                color: Colors.grey.shade500,
+                                color: isDark
+                                    ? Colors.grey.shade500
+                                    : Colors.grey.shade500,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -214,7 +221,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
               decoration: InputDecoration(
                 hintText: 'Tiêu đề bài viết',
                 hintStyle: GoogleFonts.montserrat(
-                  color: Colors.grey.shade400,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -227,7 +234,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
               style: GoogleFonts.montserrat(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: textColor,
               ),
               maxLines: null,
               textInputAction: TextInputAction.next,
@@ -246,7 +253,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
               decoration: InputDecoration(
                 hintText: 'Nội dung bài viết...',
                 hintStyle: GoogleFonts.montserrat(
-                  color: Colors.grey.shade400,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
                   fontSize: 16,
                   height: 1.5,
                 ),
@@ -259,7 +266,7 @@ class _CreateArticleScreenState extends State<CreateArticleScreen> {
               style: GoogleFonts.montserrat(
                 fontSize: 16,
                 height: 1.5,
-                color: Colors.black87,
+                color: textColor,
               ),
               maxLines: null,
               validator: (value) {
