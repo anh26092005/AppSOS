@@ -2,6 +2,7 @@
 
 > Ứng dụng cứu hộ khẩn cấp - Kết nối nhanh chóng người cần giúp đỡ với tình nguyện viên gần nhất
 
+
 [![Flutter](https://img.shields.io/badge/Flutter-3.9.2-blue)](https://flutter.dev/) [![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/) [![MongoDB](https://img.shields.io/badge/MongoDB-4.x+-brightgreen)](https://www.mongodb.com/)
 
 ---
@@ -9,6 +10,8 @@
 ## 📱 Giới Thiệu
 
 **AppSOS** là hệ thống cứu hộ khẩn cấp kết nối người cần trợ giúp với tình nguyện viên trong vòng 5km. Ứng dụng sử dụng GPS, Firebase và thông báo thời gian thực để phản hồi nhanh chóng trong các tình huống khẩn cấp.
+
+![AppSOS Screenshot](pic1.jpg)
 
 ## ✨ Tính Năng Chính
 
